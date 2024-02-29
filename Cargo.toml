@@ -1,0 +1,23 @@
+[package]
+name = "nebula"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.80"
+clap = { version = "4.5.1", features = ["derive"] }
+serde = "1.0.197"
+serde_json = "1.0.114"
+candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.4.1" }
+candle-transformers = { git = "https://github.com/huggingface/candle.git", version = "0.4.1" }
+candle-nn = { git = "https://github.com/huggingface/candle.git", version = "0.4.1" }
+hf-hub = "0.3.2"
+tokenizers = "0.15.2"
+tracing-subscriber = "0.3.18"
+tracing-chrome = "0.7.1"
+
+
+[features]
+cuda = ["candle-core/cuda", "candle-transformers/cuda", "candle-nn/cuda"]
