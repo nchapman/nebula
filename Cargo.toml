@@ -18,7 +18,18 @@ tokenizers = "0.15.2"
 tracing-subscriber = "0.3.18"
 tracing-chrome = "0.7.1"
 
+thiserror = "1"
+log = "0.4.17"
+serde_yaml = "0.9.32"
+actix-web = { version = "4", features = ["openssl"] }
+signal-hook = "0.3"
+tokio = { version = "1", features = ["rt-multi-thread"]}
+openssl = { version = "0.10", features = ["vendored"] }
 
 [features]
 cuda = ["candle-core/cuda", "candle-transformers/cuda", "candle-nn/cuda"]
 metal = ["candle-core/metal", "candle-transformers/metal", "candle-nn/metal"]
+
+[[bin]]
+name = "nebula-server"
+path = "src/main.rs"
