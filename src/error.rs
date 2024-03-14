@@ -2,18 +2,33 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
+    #[cfg(feature = "llama")]
     #[error("{0}")]
-    Yaml(#[from] serde_yaml::Error),
+    LLamaCpp(#[from] llama_cpp_2::LLamaCppError),
+    #[cfg(feature = "llama")]
     #[error("{0}")]
-    Io(#[from] std::io::Error),
+    LLamaModelLoad(#[from] llama_cpp_2::LlamaModelLoadError),
+    #[cfg(feature = "llama")]
     #[error("{0}")]
-    SslStack(#[from] openssl::error::ErrorStack),
+    LlamaContextLoad(#[from] llama_cpp_2::LlamaContextLoadError),
+    #[cfg(feature = "llama")]
     #[error("{0}")]
-    ListenerType(String),
+    LlamaStringToToken(#[from] llama_cpp_2::StringToTokenError),
+    #[cfg(feature = "llama")]
     #[error("{0}")]
-    RequiredParameter(&'static str),
+    LlamaBatchAdd(#[from] llama_cpp_2::llama_batch::BatchAddError),
+    #[cfg(feature = "llama")]
+    #[error("{0}")]
+    LlamaDecode(#[from] llama_cpp_2::DecodeError),
+    #[cfg(feature = "llama")]
+    #[error("{0}")]
+    LlamaTokenToString(#[from] llama_cpp_2::TokenToStringError),
+
+    #[error("{0} > {1}: the required kv cache size is not big enough either reduce n_len or increase n_ctx")]
+    KVCacheNotBigEnough(usize, usize),
+    #[error("the prompt is too long, it has more tokens than n_len")]
+    PromtTooLong,
+
     #[error("{0}")]
     Unknown(String),
 }
-
-impl actix_web::ResponseError for Error {}

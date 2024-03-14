@@ -1,0 +1,49 @@
+* nebula
+
+** requiremens
+- ~clang~
+
+** example [[https://github.com/nchapman/nebula/blob/main/examples/basic.rs][basic]]
+
+*** code
+#+BEGIN_SRC Rust
+use nebula::{
+    options::{ModelOptions, PredictOptions},
+    Model,
+};
+
+fn main() {
+    let model_options = ModelOptions::default().use_cpu();
+
+    let mut model =
+        Model::new("models/mistral-7b-instruct-v0.2.Q5_K_M.gguf", model_options).unwrap();
+
+    let predict_options = PredictOptions::default().with_n_len(150);
+
+    model
+        .predict(
+            "Write helloworld code in Rust.".into(),
+            predict_options,
+            Box::new(|token| {
+                print!("{}", token);
+                true
+            }),
+        )
+        .unwrap();
+    println!("");
+}
+#+END_SRC
+
+*** model
+
+#+BEGIN_SRC bash
+  mkdir models
+  cd models
+  wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/blob/main/mistral-7b-instruct-v0.2.Q5_K_M.gguf
+  cd -
+#+END_SRC
+
+*** start
+#+BEGIN_SRC bash
+  cargo r --example basic
+#+END_SRC
