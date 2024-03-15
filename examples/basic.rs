@@ -4,7 +4,7 @@ use nebula::{
 };
 
 fn main() {
-    let model_options = ModelOptions::default().use_cpu();
+    let model_options = ModelOptions::default().with_n_gpu_layers(10);
 
     let mut model =
         Model::new("models/mistral-7b-instruct-v0.2.Q5_K_M.gguf", model_options).unwrap();

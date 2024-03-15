@@ -13,7 +13,7 @@ candle-nn = { git = "https://github.com/huggingface/candle.git", version = "0.4.
 tokenizers = { version = "0.15.2", optional = true }
 
 #llama feature
-llama-cpp-2 = { version = "0.1.39", optional = true }
+llama-cpp = { path="backends/llama_cpp/llama-cpp", optional = true }
 
 hf-hub = "0.3.2"
 tracing-subscriber = "0.3.18"
@@ -24,7 +24,6 @@ log = "0.4.17"
 
 [features]
 default = ["llama"]
-llama = ["llama-cpp-2"]
+llama = ["llama-cpp"]
 candle = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
-cuda = ["llama-cpp-2?/cublas", "candle-core?/cuda", "candle-transformers?/cuda", "candle-nn?/cuda"]
-#metal = ["candle-core/metal", "candle-transformers/metal", "candle-nn/metal"]
+cuda = ["llama-cpp?/cublas", "candle-core?/cuda", "candle-transformers?/cuda", "candle-nn?/cuda"]

@@ -4,7 +4,7 @@ use std::{
     pin::Pin,
 };
 
-use llama_cpp_2::{
+use llama_cpp::{
     context::params::LlamaContextParams,
     llama_backend::LlamaBackend,
     llama_batch::LlamaBatch,

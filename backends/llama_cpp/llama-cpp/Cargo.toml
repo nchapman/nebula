@@ -1,0 +1,27 @@
+[package]
+name = "llama-cpp"
+version = "0.0.1"
+edition = "2021"
+
+[dependencies]
+llama-cpp-sys = { path = "../llama-cpp-sys" }
+thiserror = "1"
+tracing = "0.1"
+
+[dev-dependencies]
+
+hf-hub = "0.3.2"
+criterion = "0.5.1"
+pprof = { version = "0.13.0", features = ["criterion", "flamegraph"] }
+
+[[bench]]
+name = "grammar_bias"
+harness = false
+
+[[bench]]
+name = "generate"
+harness = false
+
+[features]
+cublas = ["llama-cpp-sys/cublas"]
+
