@@ -28,6 +28,9 @@ log = "0.4.17"
 [dev-dependencies]
 hf-hub = "0.3.2"
 
+#whisper feature
+whisper-rs = "0.10.0"
+
 [features]
 default = ["llama"]
 llama = ["llama-cpp"]
