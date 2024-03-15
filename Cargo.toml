@@ -22,6 +22,9 @@ tracing-chrome = "0.7.1"
 thiserror = "1"
 log = "0.4.17"
 
+#whisper feature
+whisper-rs = "0.10.0"
+
 [features]
 default = ["llama"]
 llama = ["llama-cpp"]
