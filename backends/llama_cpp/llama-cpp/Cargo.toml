@@ -24,4 +24,6 @@ harness = false
 
 [features]
 cublas = ["llama-cpp-sys/cublas"]
-
+clblas = ["llama-cpp-sys/clblas"]
+openblas = ["llama-cpp-sys/openblas"]
+blis = ["llama-cpp-sys/blis"]

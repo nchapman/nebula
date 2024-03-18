@@ -39,3 +39,8 @@ cc = "1.0.90"
 
 [features]
 cublas = []
+openblas = []
+blis = []
+#sycl = []
+hipBlas = []
+clblas = []

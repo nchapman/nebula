@@ -43,7 +43,11 @@ fn main() {
   cd -
 #+END_SRC
 
-*** start
+*** start with CPU
 #+BEGIN_SRC bash
   cargo r --example basic
+#+END_SRC
+*** start with CUDA
+#+BEGIN_SRC bash
+  cargo r --features cuda --release --example basic
 #+END_SRC

@@ -2,16 +2,83 @@ use std::env;
 use std::path::Path;
 use std::path::PathBuf;
 
+// https://github.com/ggerganov/llama.cpp/blob/a836c8f534ab789b02da149fbdaf7735500bff74/Makefile#L364-L368
+fn ggml_cudablas_build(llama_cpp: &mut cc::Build, ggml: &mut cc::Build) -> cc::Build {
+    let mut ggml_cuda = cc::Build::new();
+    for lib in [
+        "cuda", "cublas", "culibos", "cudart", "cublasLt", "pthread", "dl", "rt",
+    ] {
+        println!("cargo:rustc-link-lib={}", lib);
+    }
+    if !ggml_cuda.get_compiler().is_like_msvc() {
+        for lib in ["culibos", "pthread", "dl", "rt"] {
+            println!("cargo:rustc-link-lib={}", lib);
+        }
+    }
+
+    println!("cargo:rustc-link-search=native=/usr/local/cuda/lib64");
+
+    if cfg!(target_arch = "aarch64") {
+        ggml_cuda
+            .flag_if_supported("-mfp16-format=ieee")
+            .flag_if_supported("-mno-unaligned-access");
+        ggml.flag_if_supported("-mfp16-format=ieee")
+            .flag_if_supported("-mno-unaligned-access");
+        llama_cpp
+            .flag_if_supported("-mfp16-format=ieee")
+            .flag_if_supported("-mno-unaligned-access");
+    }
+
+    ggml_cuda
+        .cuda(true)
+        .flag("-arch=all")
+        .file("llama.cpp/ggml-cuda.cu")
+        .include("llama.cpp");
+
+    if ggml_cuda.get_compiler().is_like_msvc() {
+        ggml_cuda.std("c++14");
+    } else {
+        ggml_cuda.flag("-std=c++11").std("c++11");
+    }
+
+    ggml.define("GGML_USE_CUBLAS", None);
+    ggml_cuda.define("GGML_USE_CUBLAS", None);
+    llama_cpp.define("GGML_USE_CUBLAS", None);
+    ggml_cuda
+}
+
+fn ggml_hipblas_build(_llama_cpp: &mut cc::Build, _ggml: &mut cc::Build) -> cc::Build {
+    unimplemented!()
+}
+
+fn ggml_clblas_build(llama_cpp: &mut cc::Build, ggml: &mut cc::Build) -> cc::Build {
+    let mut ggml_opencl = cc::Build::new();
+    if cfg!(target_os = "macos") {
+        println!("cargo:rustc-link-lib=clblast");
+        println!("cargo:rustc-link-lib=framework=OpenCL");
+    } else {
+        println!("cargo:rustc-link-lib=clblast");
+        println!("cargo:rustc-link-lib=OpenCL");
+    }
+
+    ggml_opencl
+        .file("llama.cpp/ggml-opencl.cpp")
+        .include("llama.cpp");
+
+    if ggml_opencl.get_compiler().is_like_msvc() {
+        ggml_opencl.std("c++14");
+    } else {
+        ggml_opencl.flag("-std=c++11").std("c++11");
+    }
+
+    ggml.define("GGML_USE_CLBLAST", None);
+    ggml_opencl.define("GGML_USE_CLBLAST", None);
+    llama_cpp.define("GGML_USE_CLBLAST", None);
+    ggml_opencl
+}
+
 fn main() {
     println!("cargo:rerun-if-changed=llama.cpp");
-
-    let cublas_enabled = env::var("CARGO_FEATURE_CUBLAS").is_ok();
-
-    let mut ggml_cuda = if cublas_enabled {
-        Some(cc::Build::new())
-    } else {
-        None
-    };
 
     if !Path::new("llama.cpp/ggml.c").exists() {
         panic!("llama.cpp seems to not be populated, try running `git submodule update --init --recursive` to init.")
@@ -23,50 +90,32 @@ fn main() {
     ggml.cpp(false);
     llama_cpp.cpp(true);
 
-    // https://github.com/ggerganov/llama.cpp/blob/a836c8f534ab789b02da149fbdaf7735500bff74/Makefile#L364-L368
-    if let Some(ggml_cuda) = &mut ggml_cuda {
-        for lib in [
-            "cuda", "cublas", "culibos", "cudart", "cublasLt", "pthread", "dl", "rt",
-        ] {
-            println!("cargo:rustc-link-lib={}", lib);
+    let cublas = env::var("CARGO_FEATURE_CUBLAS").is_ok();
+    let openblas = env::var("CARGO_FEATURE_OPENBLAS").is_ok();
+    let hipblas = env::var("CARGO_FEATURE_HIPBLAS").is_ok();
+    let clblas = env::var("CARGO_FEATURE_CLBLAS").is_ok();
+    let blis = env::var("CARGO_FEATURE_BLIS").is_ok();
+
+    let mut ggml_acc = match (cublas, openblas, hipblas, clblas, blis) {
+        (true, false, false, false, false) => Some(ggml_cudablas_build(&mut llama_cpp, &mut ggml)),
+        (false, true, false, false, false) => {
+            println!("cargo:rustc-link-search=native=/usr/lib/x86_64-linux-gnu/openblas-pthread/");
+            println!("cargo:rustc-link-lib=openblas");
+            ggml.define("GGML_USE_OPENBLAS", None);
+            llama_cpp.define("GGML_USE_OPENBLAS", None);
+            None
         }
-        if !ggml_cuda.get_compiler().is_like_msvc() {
-            for lib in ["culibos", "pthread", "dl", "rt"] {
-                println!("cargo:rustc-link-lib={}", lib);
-            }
+        (false, false, true, false, false) => Some(ggml_hipblas_build(&mut llama_cpp, &mut ggml)),
+        (false, false, false, true, false) => Some(ggml_clblas_build(&mut llama_cpp, &mut ggml)),
+        (false, false, false, false, true) => {
+            println!("cargo:rustc-link-lib=blis");
+            ggml.define("GGML_USE_OPENBLAS", None);
+            llama_cpp.define("GGML_USE_OPENBLAS", None);
+            None
         }
-
-        println!("cargo:rustc-link-search=native=/usr/local/cuda/lib64");
-
-        if cfg!(target_arch = "aarch64") {
-            ggml_cuda
-                .flag_if_supported("-mfp16-format=ieee")
-                .flag_if_supported("-mno-unaligned-access");
-            ggml.flag_if_supported("-mfp16-format=ieee")
-                .flag_if_supported("-mno-unaligned-access");
-            llama_cpp
-                .flag_if_supported("-mfp16-format=ieee")
-                .flag_if_supported("-mno-unaligned-access");
-            ggml.flag_if_supported("-mfp16-format=ieee")
-                .flag_if_supported("-mno-unaligned-access");
-        }
-
-        ggml_cuda
-            .cuda(true)
-            .flag("-arch=all")
-            .file("llama.cpp/ggml-cuda.cu")
-            .include("llama.cpp");
-
-        if ggml_cuda.get_compiler().is_like_msvc() {
-            ggml_cuda.std("c++14");
-        } else {
-            ggml_cuda.flag("-std=c++11").std("c++11");
-        }
-
-        ggml.define("GGML_USE_CUBLAS", None);
-        ggml_cuda.define("GGML_USE_CUBLAS", None);
-        llama_cpp.define("GGML_USE_CUBLAS", None);
-    }
+        (false, false, false, false, false) => None,
+        _ => panic!("should be selected only 1 feature"),
+    };
 
     for build in [&mut ggml, &mut llama_cpp] {
         let compiler = build.get_compiler();
@@ -116,7 +165,7 @@ fn main() {
 
     // https://github.com/ggerganov/llama.cpp/blob/191221178f51b6e81122c5bda0fd79620e547d07/Makefile#L133-L141
     if cfg!(target_os = "macos") {
-        assert!(!cublas_enabled, "CUBLAS is not supported on macOS");
+        assert!(!cublas, "CUBLAS is not supported on macOS");
 
         println!("cargo:rustc-link-lib=framework=Metal");
         println!("cargo:rustc-link-lib=framework=Foundation");
@@ -164,15 +213,15 @@ fn main() {
     if is_release {
         ggml.define("NDEBUG", None);
         llama_cpp.define("NDEBUG", None);
-        if let Some(cuda) = ggml_cuda.as_mut() {
-            cuda.define("NDEBUG", None);
+        if let Some(ggml_acc) = ggml_acc.as_mut() {
+            ggml_acc.define("NDEBUG", None);
         }
     }
 
-    if let Some(ggml_cuda) = ggml_cuda {
-        println!("compiling ggml-cuda");
-        ggml_cuda.compile("ggml-cuda");
-        println!("compiled ggml-cuda");
+    if let Some(ggml_acc) = ggml_acc {
+        println!("compiling ggml-acc");
+        ggml_acc.compile("ggml-acc");
+        println!("compiled ggml-acc");
     }
 
     println!("compiling ggml");
