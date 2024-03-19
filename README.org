@@ -1,6 +1,6 @@
 * nebula
 
-** requiremens
+** requirements
 - ~clang~
 
 ** example [[https://github.com/nchapman/nebula/blob/main/examples/basic.rs][basic]]
