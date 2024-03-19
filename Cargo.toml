@@ -30,3 +30,4 @@ cuda = ["llama-cpp?/cublas", "candle-core?/cuda", "candle-transformers?/cuda", "
 opencl = ["llama-cpp?/clblas"]
 openblas = ["llama-cpp?/openblas"]
 blis = ["llama-cpp?/blis"]
+hip = ["llama-cpp?/hipblas"]

@@ -47,8 +47,50 @@ fn ggml_cudablas_build(llama_cpp: &mut cc::Build, ggml: &mut cc::Build) -> cc::B
     ggml_cuda
 }
 
-fn ggml_hipblas_build(_llama_cpp: &mut cc::Build, _ggml: &mut cc::Build) -> cc::Build {
-    unimplemented!()
+fn ggml_hipblas_build(
+    llama_cpp: &mut cc::Build,
+    ggml: &mut cc::Build,
+    hip_uma: bool,
+    cuda_force_dmmv: bool,
+) -> cc::Build {
+    let mut ggml_hip = cc::Build::new();
+    let rocm_path = if Path::new("/opt/rocm").exists() {
+        "/opt/rocm"
+    } else {
+        "/usr"
+    };
+
+    println!("cargo:rustc-link-search=native={}/lib", rocm_path);
+    for lib in ["hipblas", "amdhip64", "rocblas"] {
+        println!("cargo:rustc-link-lib={}", lib);
+    }
+
+    ggml_hip
+        .compiler(&format!("{}/bin/hipcc", rocm_path))
+        .flag("-arch=all")
+        .file("llama.cpp/ggml-cuda.cu")
+        .include("llama.cpp");
+
+    if ggml_hip.get_compiler().is_like_msvc() {
+        ggml_hip.std("c++14");
+    } else {
+        ggml_hip.flag("-std=c++11").std("c++11");
+    }
+
+    for gg in [&mut ggml_hip, ggml, llama_cpp] {
+        gg.define("GGML_USE_CUBLAS", None);
+        gg.define("GGML_USE_HIPBLAS", None);
+        gg.define("GGML_CUDA_DMMV_X", Some("32"));
+        gg.define("GGML_CUDA_MMV_Y", Some("1"));
+        gg.define("K_QUANTS_PER_ITERATION", Some("2"));
+        if hip_uma {
+            gg.define("GGML_HIP_UMA", None);
+        }
+        if cuda_force_dmmv {
+            gg.define("GGML_CUDA_FORCE_DMMV", None);
+        }
+    }
+    ggml_hip
 }
 
 fn ggml_clblas_build(llama_cpp: &mut cc::Build, ggml: &mut cc::Build) -> cc::Build {
@@ -105,7 +147,16 @@ fn main() {
             llama_cpp.define("GGML_USE_OPENBLAS", None);
             None
         }
-        (false, false, true, false, false) => Some(ggml_hipblas_build(&mut llama_cpp, &mut ggml)),
+        (false, false, true, false, false) => {
+            let hip_uma = env::var("CARGO_FEATURE_HIP_UMA").is_ok();
+            let cuda_force_dmmv = env::var("CARGO_FEATURE_CUDA_FORCE_DMMV").is_ok();
+            Some(ggml_hipblas_build(
+                &mut llama_cpp,
+                &mut ggml,
+                hip_uma,
+                cuda_force_dmmv,
+            ))
+        }
         (false, false, false, true, false) => Some(ggml_clblas_build(&mut llama_cpp, &mut ggml)),
         (false, false, false, false, true) => {
             println!("cargo:rustc-link-lib=blis");
