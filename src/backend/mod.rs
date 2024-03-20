@@ -7,6 +7,8 @@ use crate::{
 
 #[cfg(feature = "llama")]
 pub mod llama;
+#[cfg(feature = "whisper")]
+pub mod whisper;
 
 pub trait Context: Send {
     fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()>;
@@ -20,6 +22,7 @@ pub trait Context: Send {
     ) -> Result<()>;
 }
 
+
 pub trait Model: Send {
     fn with_mmproj(&mut self, mmproj: PathBuf) -> Result<()>;
     fn new_context(&self, opions: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context>>>>;
@@ -27,5 +30,7 @@ pub trait Model: Send {
 
 pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Model> {
     #[cfg(feature = "llama")]
-    llama::Llama::new(model, options)
+    Ok(llama::Llama::new(model, options)?);
+    #[cfg(feature = "whisper")]
+    Ok(whisper::Whisper::new(model, options)?)
 }

@@ -29,10 +29,12 @@ log = "0.4.17"
 hf-hub = "0.3.2"
 
 #whisper feature
-whisper-rs = "0.10.0"
+hound = "3.5.0"
+whisper-rs = { git = "https://github.com/tazz4843/whisper-rs", rev = "9861dfdb939d1923beb65adad20acea74afb7a78", optional = true }
 
 [features]
-default = ["llama"]
+default = ["whisper"]
+whisper = ["whisper-rs"]
 llama = ["llama-cpp"]
 #candle = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
 cuda = ["llama-cpp?/cublas"] #, "candle-core?/cuda", "candle-transformers?/cuda", "candle-nn?/cuda"]
