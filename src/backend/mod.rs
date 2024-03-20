@@ -7,6 +7,8 @@ use crate::{
 
 #[cfg(feature = "llama")]
 pub mod llama;
+#[cfg(feature = "whisper")]
+pub mod whisper;
 
 pub trait Backend {
     fn predict(
@@ -19,5 +21,7 @@ pub trait Backend {
 
 pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Backend> {
     #[cfg(feature = "llama")]
-    Ok(llama::Llama::new(model, options)?)
+    Ok(llama::Llama::new(model, options)?);
+    #[cfg(feature = "whisper")]
+    Ok(whisper::Whisper::new(model, options)?)
 }
