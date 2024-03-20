@@ -4,11 +4,10 @@
 *** [[https://github.com/ggerganov/llama.cpp][llama.cpp]] backend
 **** CPU
 ***** Windows
-****** [[https://github.com/skeeto/w64devkit/releases][w64devkit]]
-- Download the latest fortran version of
-[[https://github.com/skeeto/w64devkit/releases][w64devkit]].
-- Extract w64devkit.
-- Run ~w64devkit.exe~
+- [[https://github.com/skeeto/w64devkit/releases][w64devkit]]
+-- Download the latest fortran version of [[https://github.com/skeeto/w64devkit/releases][w64devkit]].
+-- Extract w64devkit.
+-- Run ~w64devkit.exe~
 **** Acceleration
 ***** CPU openBLAS
 This provides BLAS acceleration using only the CPU.
