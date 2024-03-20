@@ -78,3 +78,56 @@ fn main() {
 #+BEGIN_SRC bash
   cargo r --features cuda --release --example basic
 #+END_SRC
+
+
+
+** example [[https://github.com/nchapman/nebula/blob/main/examples/llava_1_6.rs][llava 1.6]]
+*** code
+#+BEGIN_SRC Rust
+use nebula::{
+    options::{ModelOptions, PredictOptions},
+    Model,
+};
+
+fn main() {
+    let model_options = ModelOptions::default().with_n_gpu_layers(10);
+
+    let mut model = Model::new("models/llava-v1.6-mistral-7b.Q4_K_M.gguf", model_options).unwrap();
+
+    let predict_options = PredictOptions::default().with_n_len(150);
+
+    model
+        .predict(
+            "Write helloworld code in Rust.".into(),
+            predict_options,
+            Box::new(|token| {
+                print!("{}", token);
+                true
+            }),
+        )
+        .unwrap();
+    println!("");
+}
+#+END_SRC
+
+*** model
+
+#+BEGIN_SRC bash
+  mkdir models
+  cd models
+  wget https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/llava-v1.6-mistral-7b.Q4_K_M.gguf
+  cd -
+#+END_SRC
+
+*** start with CPU
+#+BEGIN_SRC bash
+  cargo r --release --example llava_1_6
+#+END_SRC
+*** start with OpenBLAS
+#+BEGIN_SRC bash
+  cargo r --release --features openblas --example llava_1_6
+#+END_SRC
+*** start with CUDA
+#+BEGIN_SRC bash
+  cargo r --features cuda --release --example llava_1_6
+#+END_SRC
