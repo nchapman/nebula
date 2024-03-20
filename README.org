@@ -84,7 +84,7 @@ fn main() {
 
 
 ** example [[https://github.com/nchapman/nebula/blob/main/examples/llava_1_6.rs][llava 1.6]]
-*** code
+- code
 #+BEGIN_SRC Rust
 use nebula::{
     options::{ModelOptions, PredictOptions},
@@ -112,7 +112,7 @@ fn main() {
 }
 #+END_SRC
 
-*** model
+- model
 
 #+BEGIN_SRC bash
   mkdir models
@@ -121,15 +121,15 @@ fn main() {
   cd -
 #+END_SRC
 
-*** start with CPU
+- start with CPU
 #+BEGIN_SRC bash
   cargo r --release --example llava_1_6
 #+END_SRC
-*** start with OpenBLAS
+- start with OpenBLAS
 #+BEGIN_SRC bash
   cargo r --release --features openblas --example llava_1_6
 #+END_SRC
-*** start with CUDA
+- start with CUDA
 #+BEGIN_SRC bash
   cargo r --features cuda --release --example llava_1_6
 #+END_SRC
