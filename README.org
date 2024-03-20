@@ -1,6 +1,6 @@
 * nebula
 
-** requiremens
+** requirements
 *** [[https://github.com/ggerganov/llama.cpp][llama.cpp]] backend
 **** CPU
 ***** Windows
