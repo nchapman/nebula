@@ -11,14 +11,14 @@
 **** Acceleration
 ***** CPU openBLAS
 This provides BLAS acceleration using only the CPU.
-****** Windows
-******* [[https://github.com/skeeto/w64devkit/releases][w64devkit]]
-- Download the latest fortran version of [[https://github.com/skeeto/w64devkit/releases][w64devkit]].
-- Download the latest version of [[https://github.com/xianyi/OpenBLAS/releases][OpenBLAS for Windows]].
-- Extract w64devkit.
-- From the OpenBLAS zip that you just downloaded copy ~libopenblas.a~, located inside the ~lib~ folder, inside ~w64devkit\x86_64-w64-mingw32\lib~.
-- From the same OpenBLAS zip copy the content of the ~include~ folder inside ~w64devkit\x86_64-w64-mingw32\include~.
-- Run ~w64devkit.exe~.
+-  Windows
+  -  [[https://github.com/skeeto/w64devkit/releases][w64devkit]]
+    - Download the latest fortran version of [[https://github.com/skeeto/w64devkit/releases][w64devkit]].
+    - Download the latest version of [[https://github.com/xianyi/OpenBLAS/releases][OpenBLAS for Windows]].
+    - Extract w64devkit.
+    - From the OpenBLAS zip that you just downloaded copy ~libopenblas.a~, located inside the ~lib~ folder, inside ~w64devkit\x86_64-w64-mingw32\lib~.
+    - From the same OpenBLAS zip copy the content of the ~include~ folder inside ~w64devkit\x86_64-w64-mingw32\include~.
+    - Run ~w64devkit.exe~.
 ***** NVIDIA GPU
 This provides BLAS acceleration using the CUDA cores of your Nvidia GPU
 ****** [[https://developer.nvidia.com/cuda-downloads][Cuda Toolkit]]
