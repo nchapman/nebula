@@ -20,11 +20,14 @@ This provides BLAS acceleration using only the CPU.
     - From the same OpenBLAS zip copy the content of the ~include~ folder inside ~w64devkit\x86_64-w64-mingw32\include~.
     - Run ~w64devkit.exe~.
 ***** NVIDIA GPU
-This provides BLAS acceleration using the CUDA cores of your Nvidia GPU
-****** [[https://developer.nvidia.com/cuda-downloads][Cuda Toolkit]]
+This provides BLAS acceleration using the CUDA cores of your Nvidia
+GPU
+- Windows, Linux
+  - [[https://developer.nvidia.com/cuda-downloads][Cuda Toolkit]]
 ***** AMD GPU
 This provides BLAS acceleration on HIP-supported AMD GPUs.
-****** [[https://rocm.docs.amd.com/en/latest/deploy/linux/quick_start.html][ROCm]]
+- Windows, Linux
+  -  [[https://rocm.docs.amd.com/en/latest/deploy/linux/quick_start.html][ROCm]]
 ** example [[https://github.com/nchapman/nebula/blob/main/examples/basic.rs][basic]]
 
 *** code
