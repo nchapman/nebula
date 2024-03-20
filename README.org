@@ -1,8 +1,31 @@
 * nebula
 
 ** requiremens
-- ~clang~
-
+*** [[https://github.com/ggerganov/llama.cpp][llama.cpp]] backend
+**** CPU
+***** Windows
+****** [[https://github.com/skeeto/w64devkit/releases][w64devkit]]
+- Download the latest fortran version of
+[[https://github.com/skeeto/w64devkit/releases][w64devkit]].
+- Extract w64devkit.
+- Run ~w64devkit.exe~
+**** Acceleration
+***** CPU openBLAS
+This provides BLAS acceleration using only the CPU.
+****** Windows
+******* [[https://github.com/skeeto/w64devkit/releases][w64devkit]]
+- Download the latest fortran version of [[https://github.com/skeeto/w64devkit/releases][w64devkit]].
+- Download the latest version of [[https://github.com/xianyi/OpenBLAS/releases][OpenBLAS for Windows]].
+- Extract w64devkit.
+- From the OpenBLAS zip that you just downloaded copy ~libopenblas.a~, located inside the ~lib~ folder, inside ~w64devkit\x86_64-w64-mingw32\lib~.
+- From the same OpenBLAS zip copy the content of the ~include~ folder inside ~w64devkit\x86_64-w64-mingw32\include~.
+- Run ~w64devkit.exe~.
+***** NVIDIA GPU
+This provides BLAS acceleration using the CUDA cores of your Nvidia GPU
+****** [[https://developer.nvidia.com/cuda-downloads][Cuda Toolkit]]
+***** AMD GPU
+This provides BLAS acceleration on HIP-supported AMD GPUs.
+****** [[https://rocm.docs.amd.com/en/latest/deploy/linux/quick_start.html][ROCm]]
 ** example [[https://github.com/nchapman/nebula/blob/main/examples/basic.rs][basic]]
 
 *** code
@@ -45,7 +68,11 @@ fn main() {
 
 *** start with CPU
 #+BEGIN_SRC bash
-  cargo r --example basic
+  cargo r --release --example basic
+#+END_SRC
+*** start with OpenBLAS
+#+BEGIN_SRC bash
+  cargo r --release --features openblas --example basic
 #+END_SRC
 *** start with CUDA
 #+BEGIN_SRC bash
