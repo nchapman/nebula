@@ -1,5 +1,4 @@
 use std::{
-    collections::HashSet,
     env,
     fs::{read_dir, File, OpenOptions},
     io::{Read, Write},
@@ -7,85 +6,6 @@ use std::{
 };
 
 use cc::Build;
-
-const CUDA_LINUX_GLOBS: &'static [&'static str] = &[
-    "/usr/local/cuda/lib64/libnvidia-ml.so*",
-    "/usr/lib/x86_64-linux-gnu/nvidia/current/libnvidia-ml.so*",
-    "/usr/lib/x86_64-linux-gnu/libnvidia-ml.so*",
-    "/usr/lib/wsl/lib/libnvidia-ml.so*",
-    "/usr/lib/wsl/drivers/*/libnvidia-ml.so*",
-    "/opt/cuda/lib64/libnvidia-ml.so*",
-    "/usr/lib*/libnvidia-ml.so*",
-    "/usr/local/lib*/libnvidia-ml.so*",
-    "/usr/lib/aarch64-linux-gnu/nvidia/current/libnvidia-ml.so*",
-    "/usr/lib/aarch64-linux-gnu/libnvidia-ml.so*",
-    "/opt/cuda/targets/x86_64-linux/lib/stubs/libnvidia-ml.so*",
-];
-
-const CUDA_WINDOWS_GLOBS: &'static [&'static str] = &["c:\\Windows\\System32\\nvml.dll"];
-
-fn find_libs(system_patterns: Vec<String>, patterns: &[&str]) -> Result<HashSet<PathBuf>, String> {
-    system_patterns
-        .iter()
-        .map(|s| s.to_string())
-        .chain(patterns.iter().map(|s| s.to_string()))
-        .try_fold(HashSet::new(), |mut acc, s| {
-            for entry in glob::glob(&s).map_err(|e| e.to_string())? {
-                let ee = entry.map_err(|e| e.to_string())?;
-                if let Ok(ll) = std::fs::read_link(ee.clone()) {
-                    acc.insert(ll);
-                } else {
-                    acc.insert(ee);
-                }
-            }
-            if acc.len() > 0 {
-                Ok(acc)
-            } else {
-                Err("no libs".to_string())
-            }
-        })
-}
-
-fn find_cuda_libs() -> Result<HashSet<PathBuf>, String> {
-    if cfg!(target_os = "windows") {
-        let ppaterns = env::var("PATH")
-            .unwrap_or("".to_string())
-            .split(";")
-            .map(|s| format!("{}/{}*", s, "nvml.dll"))
-            .collect::<Vec<String>>();
-        find_libs(ppaterns, CUDA_WINDOWS_GLOBS)
-    } else if cfg!(target_os = "linux") {
-        let ppaterns = env::var("LD_LIBRARY_PATH")
-            .unwrap_or("".to_string())
-            .split(";")
-            .map(|s| format!("{}/{}*", s, "libnvidia-ml.so"))
-            .collect::<Vec<String>>();
-        find_libs(ppaterns, CUDA_LINUX_GLOBS)
-    } else {
-        Err("no cuda libs".to_string())
-    }
-}
-
-fn find_hip_libs() -> Result<HashSet<PathBuf>, String> {
-    if cfg!(target_os = "windows") {
-        let ppaterns = env::var("PATH")
-            .unwrap_or("".to_string())
-            .split(";")
-            .map(|s| format!("{}/{}*", s, "amdhip64.dll"))
-            .collect::<Vec<String>>();
-        find_libs(ppaterns, &[])
-    } else if cfg!(target_os = "linux") {
-        if Path::new("/sys/module/amdgpu/version").exists() {
-            let mut ss = HashSet::new();
-            ss.insert(PathBuf::from("/sys/module/amdgpu/version"));
-            Ok(ss)
-        } else {
-            Err("no libs".to_string())
-        }
-    } else {
-        Err("no libs".to_string())
-    }
-}
 
 fn compile_opencl(cx: &mut Build, cxx: &mut Build) {
     cx.flag("-DGGML_USE_CLBLAST");

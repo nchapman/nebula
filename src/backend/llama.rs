@@ -21,22 +21,22 @@ use crate::{
 
 use super::Backend;
 
-impl Into<LlamaModelParams> for ModelOptions {
-    fn into(self) -> LlamaModelParams {
-        let lmp = LlamaModelParams::default();
-        if !self.cpu {
-            lmp.with_n_gpu_layers(self.n_gpu_layers as u32)
+impl From<ModelOptions> for LlamaModelParams {
+    fn from(val: ModelOptions) -> Self {
+        let lmp = Self::default();
+        if !val.cpu {
+            lmp.with_n_gpu_layers(val.n_gpu_layers as u32)
         } else {
             lmp
         }
     }
 }
 
-impl Into<LlamaContextParams> for PredictOptions {
-    fn into(self) -> LlamaContextParams {
-        LlamaContextParams::default()
-            .with_n_ctx(NonZeroU32::new(self.n_ctx as u32))
-            .with_seed(self.seed)
+impl From<PredictOptions> for LlamaContextParams {
+    fn from(val: PredictOptions) -> Self {
+        Self::default()
+            .with_n_ctx(NonZeroU32::new(val.n_ctx as u32))
+            .with_seed(val.seed)
     }
 }
 
