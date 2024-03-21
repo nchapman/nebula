@@ -440,12 +440,12 @@ fn main() {
         compile_openblas(&mut cx);
     } else if cfg!(feature = "blis") {
         compile_blis(&mut cx);
-    } else if cfg!(feature = "metal") && cfg!(target_os = "macos") {
+    } else if !cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
         compile_metal(&mut cx, &mut cxx, &out_path);
         ggml_type = "metal".to_string();
     }
 
-    if !cfg!(feature = "metal") && cfg!(target_os = "macos") {
+    if cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
         println!("cargo:rustc-link-lib=framework=Accelerate");
         cx.define("GGML_USE_ACCELERATE", None);
     }
