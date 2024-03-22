@@ -35,10 +35,7 @@ usage:
 	cargo r --release --example basic -- <model_file_path> "<promt>" [<n_len = 150>]
 #+END_SRC
 ** models
-- [[llava-1.6-mistral-7b-gguf]]
-- [[Mistral-7B-Instruct-v0.2-GGUF]]
-- [[Mixtral-8x7B-Instruct-v0.1-GGUF]]
-*** <<llava-1.6-mistral-7b-gguf>>llava-1.6-mistral-7b-gguf
+*** llava-1.6-mistral-7b-gguf
 #+BEGIN_SRC bash
   mkdir models
   cd models
@@ -46,7 +43,7 @@ usage:
   cd -
   cargo r --release --example basic -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
-*** <<Mistral-7B-Instruct-v0.2-GGUF>>Mistral-7B-Instruct-v0.2-GGUF
+*** Mistral-7B-Instruct-v0.2-GGUF
 **** Q5_K_M
 #+BEGIN_SRC bash
   mkdir models
@@ -64,7 +61,7 @@ usage:
   cd -
   cargo r --release --example basic -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
-*** <<Mixtral-8x7B-Instruct-v0.1-GGUF>>Mixtral-8x7B-Instruct-v0.1-GGUF
+*** Mixtral-8x7B-Instruct-v0.1-GGUF
 #+BEGIN_SRC bash
   mkdir models
   cd models
