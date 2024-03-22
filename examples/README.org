@@ -36,6 +36,9 @@ usage:
 #+END_SRC
 ** models
 *** llava-1.6-mistral-7b-gguf
+:PROPERTIES:
+:HTML_CONTAINER_CLASS: hsCollapsed
+:END:
 #+BEGIN_SRC bash
   mkdir models
   cd models
