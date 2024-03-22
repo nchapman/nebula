@@ -1,6 +1,3 @@
-* Table of contents :TOC:
-- [[#basic][Basic example]]
-
 * [[https://github.com/nchapman/nebula/blob/main/examples/basic.rs][basic]]
 
 ** code
