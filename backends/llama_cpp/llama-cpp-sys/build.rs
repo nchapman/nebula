@@ -161,9 +161,14 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
 }
 
 fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) {
-    cx.flag("-DGGML_USE_METAL")
-        .flag("-DGGML_METAL_NDEBUG")
-        .flag("-DGGML_METAL_EMBED_LIBRARY");
+    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
+        cx.flag("-DGGML_USE_METAL")
+            .flag("-DGGML_METAL_NDEBUG")
+            .flag("-DGGML_METAL_EMBED_LIBRARY");
+    } else {
+        cx.flag("-DGGML_USE_METAL")
+            .flag("-DGGML_METAL_EMBED_LIBRARY");
+    }
     cxx.flag("-DGGML_USE_METAL")
         .flag("-DGGML_METAL_EMBED_LIBRARY");
 
@@ -275,40 +280,51 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .file("./llama.cpp/common/build-info.cpp");
     }
 
-    const LLAMACPP_PATH: &str = "llama.cpp/llama.cpp";
-    const PATCHED_LLAMACPP_PATH: &str = "llama.cpp/llama-patched.cpp";
-    let llamacpp_code =
-        std::fs::read_to_string(LLAMACPP_PATH).expect("Could not read llama.cpp source file.");
-    let needle1 =
-        r#"#define LLAMA_LOG_INFO(...)  llama_log_internal(GGML_LOG_LEVEL_INFO , __VA_ARGS__)"#;
-    let needle2 =
-        r#"#define LLAMA_LOG_WARN(...)  llama_log_internal(GGML_LOG_LEVEL_WARN , __VA_ARGS__)"#;
-    let needle3 =
-        r#"#define LLAMA_LOG_ERROR(...) llama_log_internal(GGML_LOG_LEVEL_ERROR, __VA_ARGS__)"#;
-    if !llamacpp_code.contains(needle1)
-        || !llamacpp_code.contains(needle2)
-        || !llamacpp_code.contains(needle3)
-    {
-        panic!("llama.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
+        const LLAMACPP_PATH: &str = "llama.cpp/llama.cpp";
+        const PATCHED_LLAMACPP_PATH: &str = "llama.cpp/llama-patched.cpp";
+        let llamacpp_code =
+            std::fs::read_to_string(LLAMACPP_PATH).expect("Could not read llama.cpp source file.");
+        let needle1 =
+            r#"#define LLAMA_LOG_INFO(...)  llama_log_internal(GGML_LOG_LEVEL_INFO , __VA_ARGS__)"#;
+        let needle2 =
+            r#"#define LLAMA_LOG_WARN(...)  llama_log_internal(GGML_LOG_LEVEL_WARN , __VA_ARGS__)"#;
+        let needle3 =
+            r#"#define LLAMA_LOG_ERROR(...) llama_log_internal(GGML_LOG_LEVEL_ERROR, __VA_ARGS__)"#;
+        if !llamacpp_code.contains(needle1)
+            || !llamacpp_code.contains(needle2)
+            || !llamacpp_code.contains(needle3)
+        {
+            panic!("llama.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+        }
+        let patched_llamacpp_code = llamacpp_code
+            .replace(
+                needle1,
+                "#include \"log.h\"\n#define LLAMA_LOG_INFO(...)  LOG(__VA_ARGS__)",
+            )
+            .replace(needle2, "#define LLAMA_LOG_WARN(...)  LOG(__VA_ARGS__)")
+            .replace(needle3, "#define LLAMA_LOG_ERROR(...) LOG(__VA_ARGS__)");
+        std::fs::write(&PATCHED_LLAMACPP_PATH, patched_llamacpp_code)
+            .expect("Attempted to write the patched llama.cpp file out to llama-patched.cpp");
+        cxx.shared_flag(true)
+            .file("./llama.cpp/common/common.cpp")
+            .file("./llama.cpp/unicode.cpp")
+            .file("./llama.cpp/common/sampling.cpp")
+            .file("./llama.cpp/common/grammar-parser.cpp")
+            .file("./llama.cpp/llama-patched.cpp")
+            .cpp(true)
+            .compile("binding");
+        let _ = std::fs::remove_file(&PATCHED_LLAMACPP_PATH);
+    } else {
+        cxx.shared_flag(true)
+            .file("./llama.cpp/common/common.cpp")
+            .file("./llama.cpp/unicode.cpp")
+            .file("./llama.cpp/common/sampling.cpp")
+            .file("./llama.cpp/common/grammar-parser.cpp")
+            .file("./llama.cpp/llama.cpp")
+            .cpp(true)
+            .compile("binding");
     }
-    let patched_llamacpp_code = llamacpp_code
-        .replace(
-            needle1,
-            "#include \"log.h\"\n#define LLAMA_LOG_INFO(...)  LOG(__VA_ARGS__)",
-        )
-        .replace(needle2, "#define LLAMA_LOG_WARN(...)  LOG(__VA_ARGS__)")
-        .replace(needle3, "#define LLAMA_LOG_ERROR(...) LOG(__VA_ARGS__)");
-    std::fs::write(&PATCHED_LLAMACPP_PATH, patched_llamacpp_code)
-        .expect("Attempted to write the patched llama.cpp file out to llama-patched.cpp");
-
-    cxx.shared_flag(true)
-        .file("./llama.cpp/common/common.cpp")
-        .file("./llama.cpp/unicode.cpp")
-        .file("./llama.cpp/common/sampling.cpp")
-        .file("./llama.cpp/common/grammar-parser.cpp")
-        .file("./llama.cpp/llama-patched.cpp")
-        .cpp(true)
-        .compile("binding");
 }
 
 fn main() {
