@@ -1,13 +1,13 @@
 use std::path::PathBuf;
 
 use crate::{
-    options::{ModelOptions, PredictOptions},
+    options::{ModelOptions, PredictOptions, AutomaticSpeechRecognitionOptions},
     Result,
 };
 
 #[cfg(feature = "llama")]
 pub mod llama;
-#[cfg(feature = "whisper")]
+
 pub mod whisper;
 
 pub trait Backend {
@@ -19,9 +19,20 @@ pub trait Backend {
     ) -> Result<()>;
 }
 
+#[cfg(feature = "llama")]
 pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Backend> {
-    #[cfg(feature = "llama")]
-    Ok(llama::Llama::new(model, options)?);
-    #[cfg(feature = "whisper")]
-    Ok(whisper::Whisper::new(model, options)?)
+    Ok(llama::Llama::new(model, options)?)
+}
+
+pub trait AutomaticSpeechRecognitionBackend {
+    fn predict(
+        &mut self,
+        samples: &[f32],
+        out_file_path: &str,
+        options: AutomaticSpeechRecognitionOptions,
+    ) -> Result<()>;
+}
+
+pub fn init_automatic_speech_recognition_backend(model: impl Into<PathBuf>) -> Result<impl AutomaticSpeechRecognitionBackend> {
+    Ok(whisper::Whisper::new(model)?)
 }
