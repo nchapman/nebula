@@ -13,6 +13,7 @@ pub struct Model {
     backend: Pin<Box<dyn backend::Model>>,
 }
 
+#[cfg(feature = "llama")]
 impl Model {
     pub fn new(
         model: impl Into<PathBuf> + 'static,
@@ -249,4 +250,33 @@ mod test {
     models_with_mmproj_tests! {
     //        model_test_llava_1_6_mistral_7b_gguf_with_mmproj: ("cjpais/llava-1.6-mistral-7b-gguf", "llava-v1.6-mistral-7b.Q4_K_M.gguf", "mmproj-model-f16.gguf"),
         }
+}
+
+pub struct AutomaticSpeechRecognitionModel {
+    backend: Box<dyn backend::AutomaticSpeechRecognitionBackend>,
+}
+
+impl AutomaticSpeechRecognitionModel {
+    pub fn new(
+        model: impl Into<PathBuf> + 'static
+    ) -> Result<Self> {
+        let backend = backend::init_automatic_speech_recognition_backend(model)?;
+        Ok(Self {
+            backend: Box::new(backend),
+        })
+    }
+
+    pub fn predict(
+        &mut self,
+        samples: &[f32],
+        out_file_path: &str,
+        options: options::AutomaticSpeechRecognitionOptions,
+    ) -> Result<()> {
+        self.backend.predict(samples, out_file_path, options)?;
+        Ok(())
+    }
+}
+
+impl Drop for AutomaticSpeechRecognitionModel {
+    fn drop(&mut self) {}
 }
