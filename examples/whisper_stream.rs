@@ -78,6 +78,7 @@ fn main() {
     std::io::stdin().read_line(&mut input).expect("failed to read line");
 
     stream.pause().expect("failed to pause audio stream");
+    drop(stream);
 
     let mut model = AutomaticSpeechRecognitionModel::new(
         "models/ggml-base.en.bin")
