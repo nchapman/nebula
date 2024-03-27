@@ -8,14 +8,10 @@ use whisper_rs::{
     WhisperContext,
     WhisperContextParameters,
 };
-use std::{
-    path::PathBuf,
-    fs::File,
-    io::Write,
-};
+use std::path::PathBuf;
 
 use crate::{
-    options::{AutomaticSpeechRecognitionOptions},
+    options::AutomaticSpeechRecognitionOptions,
     Result,
 };
 
@@ -36,9 +32,8 @@ impl AutomaticSpeechRecognitionBackend for Whisper {
     fn predict(
         &mut self,
         samples: &[f32],
-        out_file_path: &str,
         options: AutomaticSpeechRecognitionOptions,
-    ) -> Result<()> {
+    ) -> Result<String> {
         let ctx = WhisperContext::new_with_params(
             &self.model_str,
             WhisperContextParameters::default()
@@ -59,30 +54,17 @@ impl AutomaticSpeechRecognitionBackend for Whisper {
     
         state.full(params, &samples[..]).expect("failed to run model");
 
-        let mut out_file = File::create(out_file_path)
-            .expect("failed to create file");
-
         let num_segments = state
             .full_n_segments()
             .expect("failed to get number of segments");
+        let mut out = String::new();
         for i in 0..num_segments {
             let segment = state
                 .full_get_segment_text(i)
                 .expect("failed to get segment");
-            let start_timestamp = state
-                .full_get_segment_t0(i)
-                .expect("failed to get start timestamp");
-            let end_timestamp = state
-                .full_get_segment_t1(i)
-                .expect("failed to get end timestamp");
-
-            println!("[{} - {}]: {}", start_timestamp, end_timestamp, segment);
-
-            let line = format!("[{} - {}]: {}\n", start_timestamp, end_timestamp, segment);
-
-            out_file.write_all(line.as_bytes())
-                .expect("failed to write to file");
+            out.push_str(&segment);
+            out.push_str(" ");
         }
-        Ok(())
+        Ok(out)
     }
 }

@@ -269,11 +269,9 @@ impl AutomaticSpeechRecognitionModel {
     pub fn predict(
         &mut self,
         samples: &[f32],
-        out_file_path: &str,
         options: options::AutomaticSpeechRecognitionOptions,
-    ) -> Result<()> {
-        self.backend.predict(samples, out_file_path, options)?;
-        Ok(())
+    ) -> Result<String> {
+        Ok(self.backend.predict(samples, options)?)
     }
 }
 

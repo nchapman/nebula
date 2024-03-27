@@ -37,9 +37,8 @@ pub trait AutomaticSpeechRecognitionBackend {
     fn predict(
         &mut self,
         samples: &[f32],
-        out_file_path: &str,
         options: AutomaticSpeechRecognitionOptions,
-    ) -> Result<()>;
+    ) -> Result<String>;
 }
 
 pub fn init_automatic_speech_recognition_backend(model: impl Into<PathBuf>) -> Result<impl AutomaticSpeechRecognitionBackend> {
