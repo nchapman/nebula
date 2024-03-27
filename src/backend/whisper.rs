@@ -1,7 +1,3 @@
-extern crate anyhow;
-extern crate cpal;
-extern crate ringbuf;
-
 use whisper_rs::{
     FullParams,
     SamplingStrategy,

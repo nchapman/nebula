@@ -32,8 +32,9 @@ hf-hub = "0.3.2"
 hound = "3.5.0"
 whisper-rs = { git = "https://github.com/tazz4843/whisper-rs", rev = "9861dfdb939d1923beb65adad20acea74afb7a78", optional = true }
 cpal = "0.15.1"
-ringbuf = "0.3.2"
 anyhow = "1.0.70"
+rubato = "0.15.0"
+
 
 [features]
 default = ["whisper"]
