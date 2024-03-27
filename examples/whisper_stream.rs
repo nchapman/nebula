@@ -6,37 +6,35 @@ use rubato::{Resampler, SincFixedIn, SincInterpolationType, SincInterpolationPar
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use hound::{WavSpec, WavWriter};
 
-
 use nebula::{
     options::AutomaticSpeechRecognitionOptions,
     AutomaticSpeechRecognitionModel,
+    utils,
 };
 
-const LATENCY_MS: f32 = 5000.0;
-const NUM_ITERS: usize = 2;
-const NUM_ITERS_SAVED: usize = 2;
+use std::{env, path::PathBuf};
 
 fn main() {
-    let mut model = AutomaticSpeechRecognitionModel::new(
-        "models/ggml-base.en.bin")
-        .unwrap();
-    let options = AutomaticSpeechRecognitionOptions::default().with_n_threads(1);
-
     let host = cpal::default_host();
 
-    // Get the default input device
     let input_device = host.default_input_device().expect("no input device available");
-
-    // Get the default input format
     let config: cpal::StreamConfig = input_device.default_input_config().unwrap().into();
 
-    // Create WAV specifications based on the input format
     println!("Config channels: {}", config.channels);
     println!("Config sample rate: {}", config.sample_rate.0);
     let input_sample_rate = config.sample_rate.0;
     let input_channels = config.channels;
     let target_channels = 1;
     let target_sample_rate = 16000;
+    let spec = WavSpec {
+        channels: target_channels,
+        sample_rate: target_sample_rate,
+        bits_per_sample: 16,
+        sample_format: hound::SampleFormat::Int,
+    };
+    let path_to_tmp_wav: PathBuf = [env::temp_dir(), "tmp.wav".into()].iter().collect();
+    let mut writer = WavWriter::create(path_to_tmp_wav, spec)
+        .expect("failed to create WAV file");
 
     let params = SincInterpolationParameters {
         sinc_len: 256,
@@ -53,7 +51,6 @@ fn main() {
         target_channels as usize,
     ).unwrap();
 
-    let mut samples: Vec<f32> = Vec::new();
     let stream = input_device.build_input_stream(
         &config,
         move |data: &[i16], _: &_| {
@@ -68,7 +65,7 @@ fn main() {
                 .process(&data_f64, None)
                 .unwrap()[0]
                 .iter()
-                .for_each(|&value| {samples.push(value as f32)});
+                .for_each(|&value| {writer.write_sample(value as i32).unwrap()});
         },
         |err| eprintln!("an error occurred on the input stream: {}", err),
         None
@@ -81,6 +78,16 @@ fn main() {
     std::io::stdin().read_line(&mut input).expect("failed to read line");
 
     stream.pause().expect("failed to pause audio stream");
+
+    let mut model = AutomaticSpeechRecognitionModel::new(
+        "models/ggml-base.en.bin")
+        .unwrap();
+    let options = AutomaticSpeechRecognitionOptions::default().with_n_threads(1);
+
+    let path_to_tmp_wav: PathBuf = [env::temp_dir(), "tmp.wav".into()].iter().collect();
+    let samples = utils::convert_wav_to_samples(
+        path_to_tmp_wav.into_os_string().into_string().unwrap().as_str()
+    );
 
     let out = model.predict(&samples[..], options).unwrap();
     println!("Text that I understood from your speech: {}", out)
