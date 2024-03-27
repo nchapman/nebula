@@ -6,6 +6,7 @@ use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 pub mod error;
 pub mod options;
 pub type Result<T> = std::result::Result<T, error::Error>;
+pub mod utils;
 
 mod backend;
 
