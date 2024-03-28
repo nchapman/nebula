@@ -22,11 +22,13 @@ use std::os::raw::c_int;
 use std::path::PathBuf;
 use std::string::FromUtf8Error;
 
+pub mod clip;
 pub mod context;
 pub mod grammar;
 pub mod llama_backend;
 pub mod llama_batch;
 pub mod model;
+//pub mod sample;
 pub mod timing;
 pub mod token;
 pub mod token_type;
@@ -56,6 +58,19 @@ pub enum LLamaCppError {
     /// see [`EmbeddingsError`]
     #[error(transparent)]
     EmbeddingError(#[from] EmbeddingsError),
+
+    #[error["{0}"]]
+    ClipError(#[from] ClipError),
+}
+
+#[derive(Debug, Eq, PartialEq, thiserror::Error)]
+pub enum ClipError {
+    #[error("{0}")]
+    PathToStrError(PathBuf),
+    #[error("null reference from llama.cpp")]
+    NullReturn,
+    #[error("null byte in string {0}")]
+    NullError(#[from] NulError),
 }
 
 /// Failed to Load context
@@ -78,6 +93,12 @@ pub enum DecodeError {
     /// An unknown error occurred.
     #[error("Decode Error {0}: unknown")]
     Unknown(c_int),
+    #[error("{0}")]
+    StringToToken(#[from] StringToTokenError),
+    #[error("{0}")]
+    BatcAdd(#[from] BatchAddError),
+    #[error("")]
+    EvalEmbedImage,
 }
 
 /// When embedding related functions fail
@@ -183,7 +204,7 @@ pub enum TokenToStringError {
 }
 
 /// Failed to convert a string to a token sequence.
-#[derive(Debug, thiserror::Error)]
+#[derive(Debug, thiserror::Error, Eq, PartialEq)]
 pub enum StringToTokenError {
     /// the string contained a null byte and thus could not be converted to a c string.
     #[error("{0}")]

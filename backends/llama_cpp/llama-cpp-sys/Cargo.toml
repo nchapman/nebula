@@ -29,6 +29,8 @@ include = [
     "/llama.cpp/llama.h",
     "/llama.cpp/unicode.h",
     "/llama.cpp/unicode.cpp",
+    "/llama.cpp/common/sampling.h",
+    "/llama.cpp/common/sampling.cpp",
 ]
 
 [dependencies]

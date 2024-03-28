@@ -231,9 +231,8 @@ impl LlamaModel {
         let len = string.as_bytes().len();
         let len = c_int::try_from(len).expect("length fits into c_int");
         let buf = string.into_raw();
-        let size = unsafe {
-            llama_cpp_sys::llama_token_to_piece(self.model.as_ptr(), token.0, buf, len)
-        };
+        let size =
+            unsafe { llama_cpp_sys::llama_token_to_piece(self.model.as_ptr(), token.0, buf, len) };
 
         match size {
             0 => Err(TokenToStringError::UnknownTokenType),

@@ -20,6 +20,8 @@ pub enum Error {
     #[cfg(feature = "llama")]
     #[error("{0}")]
     LlamaDecode(#[from] llama_cpp::DecodeError),
+    #[error("{0}")]
+    LlamaClip(#[from] llama_cpp::ClipError),
     #[cfg(feature = "llama")]
     #[error("{0}")]
     LlamaTokenToString(#[from] llama_cpp::TokenToStringError),
@@ -28,7 +30,8 @@ pub enum Error {
     KVCacheNotBigEnough(usize, usize),
     #[error("the prompt is too long, it has more tokens than n_len")]
     PromtTooLong,
-
+    #[error("for image processing mmproj model should be defined")]
+    MmprojNotDefined,
     #[error("{0}")]
     Unknown(String),
 }

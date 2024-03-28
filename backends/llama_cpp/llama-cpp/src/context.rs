@@ -5,8 +5,9 @@ use std::num::NonZeroI32;
 use std::ptr::NonNull;
 use std::slice;
 
+use crate::clip::ImageEmbed;
 use crate::llama_batch::LlamaBatch;
-use crate::model::LlamaModel;
+use crate::model::{AddBos, LlamaModel};
 use crate::timing::LlamaTimings;
 use crate::token::data::LlamaTokenData;
 use crate::token::LlamaToken;
@@ -202,6 +203,46 @@ impl<'model> LlamaContext<'model> {
     pub fn timings(&mut self) -> LlamaTimings {
         let timings = unsafe { llama_cpp_sys::llama_get_timings(self.context.as_ptr()) };
         LlamaTimings { timings }
+    }
+
+    pub fn eval_string(
+        &mut self,
+        string: &str,
+        batch: usize,
+        add_bos: AddBos,
+    ) -> Result<usize, DecodeError> {
+        let tokens = self.model.str_to_token(string, add_bos)?;
+        tokens.chunks(batch).into_iter().try_for_each(|ch| {
+            let mut batch = LlamaBatch::new(batch, 1);
+            let last_index = ch.len() - 1;
+            ch.into_iter()
+                .enumerate()
+                .try_for_each(|(i, t)| batch.add(t.clone(), i as i32, &[0], i == last_index))?;
+            self.decode(&mut batch)?;
+            Ok::<(), DecodeError>(())
+        })?;
+        Ok(tokens.len())
+    }
+
+    pub fn eval_embed_image(
+        &mut self,
+        tokens: ImageEmbed,
+        batch: usize,
+    ) -> Result<(), DecodeError> {
+        let res = unsafe {
+            let mut aa = 0;
+            llama_cpp_sys::llava_eval_image_embed(
+                self.context.as_ptr(),
+                tokens.embed.as_ptr(),
+                batch as i32,
+                &mut aa,
+            )
+        };
+        if !res {
+            Err(DecodeError::EvalEmbedImage)
+        } else {
+            Ok(())
+        }
     }
 }
 

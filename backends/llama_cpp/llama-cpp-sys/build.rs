@@ -312,6 +312,8 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .file("./llama.cpp/common/sampling.cpp")
             .file("./llama.cpp/common/grammar-parser.cpp")
             .file("./llama.cpp/llama-patched.cpp")
+            .file("./llama.cpp/examples/llava/clip.cpp")
+            .file("./llama.cpp/examples/llava/llava.cpp")
             .cpp(true)
             .compile("binding");
         let _ = std::fs::remove_file(&PATCHED_LLAMACPP_PATH);
@@ -322,6 +324,8 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .file("./llama.cpp/common/sampling.cpp")
             .file("./llama.cpp/common/grammar-parser.cpp")
             .file("./llama.cpp/llama.cpp")
+            .file("./llama.cpp/examples/llava/clip.cpp")
+            .file("./llama.cpp/examples/llava/llava.cpp")
             .cpp(true)
             .compile("binding");
     }
@@ -335,7 +339,11 @@ fn main() {
     println!("cargo:rerun-if-changed={header}");
 
     let bindings = bindgen::builder()
+        .clang_args(&["-x", "c++", "-std=c++14", "-I./llama.cpp"])
+        //        .header("llama.cpp/common/sampling.h")
         .header(header)
+        .header("llama.cpp/examples/llava/clip.h")
+        .header("llama.cpp/examples/llava/llava.h")
         .derive_partialeq(true)
         .no_debug("llama_grammar_element")
         .prepend_enum_name(false)
