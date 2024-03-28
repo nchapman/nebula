@@ -151,7 +151,7 @@ usage:
 #+END_SRC
 
 
-* basic_with_image
+* [[https://github.com/nchapman/nebula/blob/main/examples/basic_with_image.rs][basic_with_image]]
 ** code
 #+BEGIN_SRC
   use std::io::Read;
