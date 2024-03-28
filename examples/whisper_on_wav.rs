@@ -14,7 +14,7 @@ fn main() {
         "models/ggml-base.en.bin")
         .unwrap();
 
-    let wav_file_path = "samples/ivan_2.wav";
+    let wav_file_path = "samples/jfk.wav";
     let samples = utils::convert_wav_to_samples(wav_file_path);
     let options = AutomaticSpeechRecognitionOptions::default().with_n_threads(1);
 
@@ -26,7 +26,7 @@ fn main() {
         .unwrap();
     println!("Text extracted from wav: {}", out);
 
-    let out_file_path = "samples/ivan_2.txt";
+    let out_file_path = "samples/jfk.txt";
     let mut out_file = File::create(out_file_path).expect("failed to create file");
     out_file.write_all(out.as_bytes()).expect("failed to write to file");
     print!("");
