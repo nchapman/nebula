@@ -210,38 +210,41 @@ impl<'model> LlamaContext<'model> {
         string: &str,
         batch: usize,
         add_bos: AddBos,
-    ) -> Result<usize, DecodeError> {
+        mut n_curr: i32,
+    ) -> Result<i32, DecodeError> {
         let tokens = self.model.str_to_token(string, add_bos)?;
         tokens.chunks(batch).into_iter().try_for_each(|ch| {
             let mut batch = LlamaBatch::new(batch, 1);
             let last_index = ch.len() - 1;
-            ch.into_iter()
-                .enumerate()
-                .try_for_each(|(i, t)| batch.add(t.clone(), i as i32, &[0], i == last_index))?;
+            ch.into_iter().enumerate().try_for_each(|(i, t)| {
+                batch.add(t.clone(), n_curr, &[0], i == last_index)?;
+                n_curr += 1;
+                Ok::<(), DecodeError>(())
+            })?;
             self.decode(&mut batch)?;
             Ok::<(), DecodeError>(())
         })?;
-        Ok(tokens.len())
+        Ok(n_curr)
     }
 
     pub fn eval_embed_image(
         &mut self,
         tokens: ImageEmbed,
         batch: usize,
-    ) -> Result<(), DecodeError> {
+        mut n_curr: i32,
+    ) -> Result<i32, DecodeError> {
         let res = unsafe {
-            let mut aa = 0;
             llama_cpp_sys::llava_eval_image_embed(
                 self.context.as_ptr(),
                 tokens.embed.as_ptr(),
                 batch as i32,
-                &mut aa,
+                &mut n_curr,
             )
         };
         if !res {
             Err(DecodeError::EvalEmbedImage)
         } else {
-            Ok(())
+            Ok(n_curr)
         }
     }
 }

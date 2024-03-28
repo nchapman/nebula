@@ -33,7 +33,7 @@ fn main() {
     let mut model =
         Model::new_with_mmproj(model_file_name, mmproj_model_file_name, model_options).unwrap();
 
-    let predict_options = PredictOptions::default().with_n_len(n_len);
+    let predict_options = PredictOptions::default().with_n_ctx(6000).with_n_len(n_len);
     //read image
     let mut image_bytes = vec![];
     let mut f = std::fs::File::open(&image_file_name).unwrap();

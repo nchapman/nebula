@@ -11,6 +11,7 @@ use llama_cpp::{
     llama_batch::LlamaBatch,
     model::{params::LlamaModelParams, AddBos, LlamaModel},
     token::data_array::LlamaTokenDataArray,
+    DecodeError,
 };
 use log::debug;
 
@@ -144,16 +145,17 @@ impl Backend for Llama {
         } else {
             return Err(crate::error::Error::MmprojNotDefined);
         };
+        eprintln!("{system_prompt}, {user_prompt}");
         let mut ctx = self.model.new_context(&self.backend, ctx_params)?;
-        ctx.eval_string(system_prompt, 2048, AddBos::Always)?;
-        ctx.eval_embed_image(embedded_image, 2048)?;
+        let mut n_curr = ctx.eval_string(system_prompt, 2048, AddBos::Always, 0)?;
+        n_curr = ctx.eval_embed_image(embedded_image, 2048, n_curr)?;
         let tokens_list = self.model.str_to_token(user_prompt, AddBos::Never)?;
         let n_cxt = ctx.n_ctx() as usize;
         let n_kv_req = tokens_list.len() + (n_len - tokens_list.len());
         debug!("n_len = {}, n_ctx = {n_cxt}, k_kv_req = {n_kv_req}", n_len);
-        if n_kv_req > n_cxt {
-            return Err(Error::KVCacheNotBigEnough(n_kv_req, n_cxt));
-        }
+        //        if n_kv_req > n_cxt {
+        //            return Err(Error::KVCacheNotBigEnough(n_kv_req, n_cxt));
+        //        }
         if tokens_list.len() >= n_len {
             return Err(Error::PromtTooLong);
         }
@@ -167,16 +169,17 @@ impl Backend for Llama {
         );
         let mut batch = LlamaBatch::new(2048, 1);
         let last_index = tokens_list.len() - 1;
-        tokens_list
-            .into_iter()
-            .enumerate()
-            .try_for_each(|(i, t)| batch.add(t, i as i32, &[0], i == last_index))?;
+        tokens_list.into_iter().enumerate().try_for_each(|(i, t)| {
+            batch.add(t, n_curr, &[0], i == last_index)?;
+            n_curr += 1;
+            Ok::<(), DecodeError>(())
+        })?;
 
         ctx.decode(&mut batch)?;
 
-        let mut n_cur = batch.n_tokens() as usize;
+        //        n_curr += batch.n_tokens() as usize;
 
-        while n_cur <= n_len {
+        while n_curr <= n_len as i32 {
             {
                 let candidates = ctx.candidates_ith(batch.n_tokens() - 1);
                 let candidates_p = LlamaTokenDataArray::from_iter(candidates, false);
@@ -188,9 +191,9 @@ impl Backend for Llama {
                     break;
                 }
                 batch.clear();
-                batch.add(new_token_id, n_cur as i32, &[0], true)?;
+                batch.add(new_token_id, n_curr, &[0], true)?;
             }
-            n_cur += 1;
+            n_curr += 1;
             ctx.decode(&mut batch)?;
         }
         Ok(())
