@@ -17,6 +17,7 @@ pub enum Error {
     #[cfg(feature = "llama")]
     #[error("{0}")]
     LlamaDecode(#[from] llama_cpp::DecodeError),
+    #[cfg(feature = "llama")]
     #[error("{0}")]
     LlamaClip(#[from] llama_cpp::ClipError),
     #[cfg(feature = "llama")]

@@ -8,6 +8,7 @@ use crate::{
 #[cfg(feature = "llama")]
 pub mod llama;
 
+#[cfg(feature = "whisper")]
 pub mod whisper;
 
 pub trait Context: Send {
@@ -41,6 +42,16 @@ pub trait AutomaticSpeechRecognitionBackend {
     ) -> Result<String>;
 }
 
+#[cfg(feature = "whisper")]
 pub fn init_automatic_speech_recognition_backend(model: impl Into<PathBuf>) -> Result<impl AutomaticSpeechRecognitionBackend> {
     Ok(whisper::Whisper::new(model)?)
+}
+
+#[cfg(feature = "llama")]
+pub fn init_with_mmproj(
+    model: impl Into<PathBuf>,
+    mmproj: impl Into<PathBuf>,
+    options: ModelOptions,
+) -> Result<impl Backend> {
+    Ok(llama::Llama::new(model, options)?.with_mmproj(mmproj)?)
 }

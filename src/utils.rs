@@ -1,5 +1,7 @@
+#[cfg(feature = "whisper")]
 use hound;
 
+#[cfg(feature = "whisper")]
 pub fn convert_wav_to_samples(wav_file_path: &str) -> Vec<f32> {
     let mut reader = hound::WavReader::open(
         wav_file_path)

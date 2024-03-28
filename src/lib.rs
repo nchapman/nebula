@@ -257,6 +257,7 @@ pub struct AutomaticSpeechRecognitionModel {
     backend: Box<dyn backend::AutomaticSpeechRecognitionBackend>,
 }
 
+#[cfg(feature = "whisper")]
 impl AutomaticSpeechRecognitionModel {
     pub fn new(
         model: impl Into<PathBuf> + 'static
