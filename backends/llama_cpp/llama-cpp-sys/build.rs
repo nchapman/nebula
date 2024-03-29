@@ -366,6 +366,10 @@ fn main() {
     if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
         cx_flags.push_str(" -std=c11 -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -pthread -march=native -mtune=native");
         cxx_flags.push_str(" -std=c++11 -Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -fPIC -pthread -march=native -mtune=native");
+        if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
+            cx_flags.push_str(" -DNDEBUG");
+            cxx_flags.push_str(" -DNDEBUG");
+        }
     } else if cfg!(target_os = "windows") {
         cx_flags.push_str(" /W4 /Wall /wd4820 /wd4710 /wd4711 /wd4820 /wd4514");
         cxx_flags.push_str(" /W4 /Wall /wd4820 /wd4710 /wd4711 /wd4820 /wd4514");

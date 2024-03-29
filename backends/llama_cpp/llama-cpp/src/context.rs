@@ -11,7 +11,7 @@ use crate::model::{AddBos, LlamaModel};
 use crate::timing::LlamaTimings;
 use crate::token::data::LlamaTokenData;
 use crate::token::LlamaToken;
-use crate::{DecodeError, EmbeddingsError};
+use crate::{DecodeError, EmbeddingsError, PredictError};
 
 pub mod kv_cache;
 pub mod params;
@@ -210,42 +210,71 @@ impl<'model> LlamaContext<'model> {
         string: &str,
         batch: usize,
         add_bos: AddBos,
-        mut n_curr: i32,
+        n_curr: &mut i32,
     ) -> Result<i32, DecodeError> {
         let tokens = self.model.str_to_token(string, add_bos)?;
-        tokens.chunks(batch).into_iter().try_for_each(|ch| {
+        tokens.chunks(batch).into_iter().try_fold(0, |acc, ch| {
             let mut batch = LlamaBatch::new(batch, 1);
             let last_index = ch.len() - 1;
             ch.into_iter().enumerate().try_for_each(|(i, t)| {
-                batch.add(t.clone(), n_curr, &[0], i == last_index)?;
-                n_curr += 1;
+                batch.add(t.clone(), *n_curr, &[0], i == last_index)?;
+                *n_curr += 1;
                 Ok::<(), DecodeError>(())
             })?;
             self.decode(&mut batch)?;
-            Ok::<(), DecodeError>(())
-        })?;
-        Ok(n_curr)
+            Ok::<_, DecodeError>(batch.n_tokens() - 1)
+        })
     }
 
     pub fn eval_embed_image(
         &mut self,
         tokens: ImageEmbed,
         batch: usize,
-        mut n_curr: i32,
+        n_curr: &mut i32,
     ) -> Result<i32, DecodeError> {
         let res = unsafe {
             llama_cpp_sys::llava_eval_image_embed(
                 self.context.as_ptr(),
                 tokens.embed.as_ptr(),
                 batch as i32,
-                &mut n_curr,
+                n_curr,
             )
         };
         if !res {
             Err(DecodeError::EvalEmbedImage)
         } else {
-            Ok(n_curr)
+            Ok(0)
         }
+    }
+
+    pub fn pedict(
+        &mut self,
+        mut logit: i32,
+        n_curr: &mut i32,
+        n_len: i32,
+        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
+    ) -> Result<i32, PredictError> {
+        let mut batch = LlamaBatch::new(2048, 1);
+        while *n_curr <= n_len {
+            {
+                let candidates = self.candidates_ith(logit);
+                let candidates_p =
+                    crate::token::data_array::LlamaTokenDataArray::from_iter(candidates, false);
+                let new_token_id = self.sample_token_greedy(candidates_p);
+                if new_token_id == self.model.token_eos() {
+                    break;
+                }
+                if !token_callback(self.model.token_to_str(new_token_id)?) {
+                    break;
+                }
+                batch.clear();
+                batch.add(new_token_id, *n_curr, &[0], true)?;
+            }
+            *n_curr += 1;
+            self.decode(&mut batch)?;
+            logit = 0;
+        }
+        Ok(logit)
     }
 }
 

@@ -9,7 +9,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 4 {
         println!(
-            "usage:\n\t{} <model_file_path> <mmproj_model_file_path> <image_file_name> \"<promt = <image>\\nUSER:\\nProvide a full description.\\nASSISTANT:\\n>\" <n_len = 6000>",
+            "usage:\n\t{} <model_file_path> <mmproj_model_file_path> <image_file_name> \"<promt = <image>Provide a full description.>\" <n_len = 6000>",
             args[0]
         );
         return;
@@ -20,7 +20,7 @@ fn main() {
     let prompt = if args.len() > 4 && !args[4].is_empty() {
         args[4].clone()
     } else {
-        "<image>\nUSER:\nProvide a full description.\nASSISTANT:\n".to_string()
+        "<image>Provide a full description.".to_string()
     };
     let mut n_len = 6000;
     if args.len() > 5 {

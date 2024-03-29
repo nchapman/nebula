@@ -16,15 +16,12 @@ pub enum Error {
     LlamaStringToToken(#[from] llama_cpp::StringToTokenError),
     #[cfg(feature = "llama")]
     #[error("{0}")]
-    LlamaBatchAdd(#[from] llama_cpp::llama_batch::BatchAddError),
-    #[cfg(feature = "llama")]
-    #[error("{0}")]
     LlamaDecode(#[from] llama_cpp::DecodeError),
     #[error("{0}")]
     LlamaClip(#[from] llama_cpp::ClipError),
     #[cfg(feature = "llama")]
     #[error("{0}")]
-    LlamaTokenToString(#[from] llama_cpp::TokenToStringError),
+    Predict(#[from] llama_cpp::PredictError),
 
     #[error("{0} > {1}: the required kv cache size is not big enough either reduce n_len or increase n_ctx")]
     KVCacheNotBigEnough(usize, usize),

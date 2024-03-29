@@ -26,8 +26,10 @@ impl ClipContext {
             .ok_or(ClipError::PathToStrError(path.to_path_buf()))?;
 
         let cstr = CString::new(path)?;
+        #[cfg(debug_assertions)]
         let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 1) };
-
+        #[cfg(not(debug_assertions))]
+        let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 0) };
         let context = NonNull::new(clip).ok_or(ClipError::NullReturn)?;
 
         tracing::debug!(?path, "Loaded model");

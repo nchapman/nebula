@@ -101,6 +101,17 @@ pub enum DecodeError {
     EvalEmbedImage,
 }
 
+/// Failed to decode a batch.
+#[derive(Debug, thiserror::Error)]
+pub enum PredictError {
+    #[error("{0}")]
+    Decode(#[from] DecodeError),
+    #[error("{0}")]
+    TokenToString(#[from] TokenToStringError),
+    #[error("{0}")]
+    BatchAdd(#[from] BatchAddError),
+}
+
 /// When embedding related functions fail
 #[derive(Debug, Eq, PartialEq, thiserror::Error)]
 pub enum EmbeddingsError {
