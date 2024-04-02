@@ -1,5 +1,5 @@
 use nebula::{
-    options::{ModelOptions, PredictOptions},
+    options::{ContextOptions, ModelOptions},
     Model,
 };
 
@@ -22,19 +22,16 @@ fn main() {
     }
     let model_options = ModelOptions::default().with_n_gpu_layers(10);
 
-    let mut model = Model::new(model_file_name, model_options).unwrap();
+    let model = Model::new(model_file_name, model_options).unwrap();
 
-    let predict_options = PredictOptions::default().with_n_len(n_len);
+    let ctx_options = ContextOptions::default();
 
-    model
-        .predict(
-            &prompt,
-            predict_options,
-            Box::new(|token| {
-                print!("{}", token);
-                true
-            }),
-        )
-        .unwrap();
+    let mut ctx = model.context(ctx_options).unwrap();
+
+    ctx.eval_str(&prompt, true).unwrap();
+
+    let answer = ctx.predict(n_len).unwrap();
+
+    println!("{answer}");
     println!("");
 }

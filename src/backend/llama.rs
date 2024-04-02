@@ -2,10 +2,11 @@ use std::{
     num::NonZeroU32,
     path::{Path, PathBuf},
     pin::Pin,
+    sync::{Arc, Mutex},
 };
 
 use crate::{
-    options::{ModelOptions, PredictOptions},
+    options::{ContextOptions, ModelOptions},
     Result,
 };
 use llama_cpp::{
@@ -15,7 +16,7 @@ use llama_cpp::{
     model::{params::LlamaModelParams, AddBos, LlamaModel},
 };
 
-use super::Backend;
+use super::{Context, Model};
 
 impl From<ModelOptions> for LlamaModelParams {
     fn from(val: ModelOptions) -> Self {
@@ -28,8 +29,8 @@ impl From<ModelOptions> for LlamaModelParams {
     }
 }
 
-impl From<PredictOptions> for LlamaContextParams {
-    fn from(val: PredictOptions) -> Self {
+impl From<ContextOptions> for LlamaContextParams {
+    fn from(val: ContextOptions) -> Self {
         Self::default()
             .with_n_ctx(NonZeroU32::new(val.n_ctx as u32))
             .with_seed(val.seed)
@@ -53,56 +54,88 @@ impl Llama {
             mmproj: None,
         })
     }
+}
 
-    pub fn with_mmproj(mut self, model: impl Into<PathBuf>) -> Result<Self> {
-        let clip_context = ClipContext::load(Path::new(&model.into()))?;
+impl Model for Llama {
+    fn with_mmproj(&mut self, mmproj: PathBuf) -> Result<()> {
+        let clip_context = ClipContext::load(Path::new(&mmproj))?;
         self.mmproj = Some(clip_context);
-        Ok(self)
+        Ok(())
+    }
+    fn new_context(&self, options: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context + '_>>>> {
+        Ok(Box::pin(Mutex::new(LlamaContext::new(self, options)?)))
     }
 }
 
-impl Backend for Llama {
-    fn predict(
-        &mut self,
-        prompt: &str,
-        options: PredictOptions,
-        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
-    ) -> Result<()> {
-        let n_len = options.n_len;
+pub struct LlamaContext<'a> {
+    logit: i32,
+    n_curr: i32,
+    n_threads: usize,
+    ctx: Pin<Box<llama_cpp::context::LlamaContext<'a>>>,
+    model: &'a Llama,
+}
+
+impl<'a> LlamaContext<'a> {
+    pub fn new(model: &'a Llama, options: ContextOptions) -> Result<Self> {
         let ctx_params: LlamaContextParams = options.into();
-        let mut ctx = self.model.new_context(&self.backend, ctx_params)?;
-        let mut n_curr = 0;
-        let mut _logit = ctx.eval_string(prompt, 512, AddBos::Always, &mut n_curr)?;
-        _logit = ctx.pedict(_logit, &mut n_curr, n_len as i32, token_callback)?;
+        let n_threads = ctx_params.n_threads() as usize;
+        Ok(Self {
+            ctx: Box::pin(model.model.new_context(&model.backend, ctx_params)?),
+            n_curr: 0,
+            logit: 0,
+            n_threads,
+            model,
+        })
+    }
+}
+
+impl Context for LlamaContext<'_> {
+    fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
+        self.logit = self.ctx.eval_string(
+            prompt,
+            512,
+            if add_bos {
+                AddBos::Always
+            } else {
+                AddBos::Never
+            },
+            &mut self.n_curr,
+        )?;
+        Ok(())
+    }
+    fn eval_image(&mut self, image: Vec<u8>) -> Result<()> {
+        let embedded_image = if let Some(clip_context) = &self.model.mmproj {
+            clip_context.embed_image(self.n_threads as usize, &image)?
+        } else {
+            return Err(crate::error::Error::MmprojNotDefined);
+        };
+        self.ctx
+            .eval_embed_image(embedded_image, 2048, &mut self.n_curr)?;
         Ok(())
     }
 
-    fn predict_with_image(
+    fn predict(&mut self, max_len: usize) -> Result<String> {
+        let res = Arc::new(Mutex::new("".to_string()));
+        let rres = res.clone();
+        self.predict_with_callback(
+            Box::new(move |token| {
+                rres.lock().unwrap().push_str(&token);
+                true
+            }),
+            max_len,
+        )?;
+        let rres = res.lock().unwrap();
+        Ok(rres.clone())
+    }
+
+    fn predict_with_callback(
         &mut self,
-        image: Vec<u8>,
-        prompt: &str,
-        options: PredictOptions,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
+        max_len: usize,
     ) -> Result<()> {
-        let n_len = options.n_len;
-        let ctx_params: LlamaContextParams = options.into();
-        let embedded_image = if let Some(clip_context) = &self.mmproj {
-            clip_context.embed_image(ctx_params.n_threads() as usize, &image)?
-        } else {
-            return Err(crate::error::Error::MmprojNotDefined);
-        };
-        let (system_prompt, user_prompt) = if let Some(s) = prompt.split_once("<image>") {
-            s
-        } else {
-            return Err(crate::error::Error::MmprojNotDefined);
-        };
-        eprintln!("{system_prompt}, {user_prompt}");
-        let mut ctx = self.model.new_context(&self.backend, ctx_params)?;
-        let mut n_curr = 0;
-        ctx.eval_string(system_prompt, 2048, AddBos::Always, &mut n_curr)?;
-        ctx.eval_embed_image(embedded_image, 2048, &mut n_curr)?;
-        let mut _logit = ctx.eval_string(user_prompt, 2048, AddBos::Always, &mut n_curr)?;
-        _logit = ctx.pedict(_logit, &mut n_curr, n_len as i32, token_callback)?;
+        self.logit =
+            self.ctx
+                .pedict(self.logit, &mut self.n_curr, max_len as i32, token_callback)?;
         Ok(())
     }
 }

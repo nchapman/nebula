@@ -213,7 +213,7 @@ impl<'model> LlamaContext<'model> {
         n_curr: &mut i32,
     ) -> Result<i32, DecodeError> {
         let tokens = self.model.str_to_token(string, add_bos)?;
-        tokens.chunks(batch).into_iter().try_fold(0, |acc, ch| {
+        tokens.chunks(batch).into_iter().try_fold(0, |_acc, ch| {
             let mut batch = LlamaBatch::new(batch, 1);
             let last_index = ch.len() - 1;
             ch.into_iter().enumerate().try_for_each(|(i, t)| {

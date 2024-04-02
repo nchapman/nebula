@@ -24,14 +24,13 @@ impl Default for ModelOptions {
     }
 }
 
-pub struct PredictOptions {
+pub struct ContextOptions {
     pub seed: u32,
     pub n_ctx: usize,
-    pub n_len: usize,
     pub n_threads: usize,
 }
 
-impl PredictOptions {
+impl ContextOptions {
     pub fn with_seed(mut self, seed: u32) -> Self {
         self.seed = seed;
         self
@@ -41,19 +40,13 @@ impl PredictOptions {
         self.n_ctx = n_ctx;
         self
     }
-
-    pub fn with_n_len(mut self, n_len: usize) -> Self {
-        self.n_len = n_len;
-        self
-    }
 }
 
-impl Default for PredictOptions {
+impl Default for ContextOptions {
     fn default() -> Self {
         Self {
             seed: 0,
             n_ctx: 2048,
-            n_len: 150,
             n_threads: 10,
         }
     }

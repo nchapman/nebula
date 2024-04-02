@@ -8,24 +8,29 @@ use nebula::{
 };
 
 fn main() {
-let args: Vec<String> = env::args().collect();
-    let model_options = ModelOptions::default().use_cpu();
-
-    let mut model =
-        Model::new("models/mistral-7b-instruct-v0.2.Q5_K_M.gguf", model_options).unwrap();
-
-    let predict_options = PredictOptions::default().with_n_len(150);
-
-    model
-        .predict(
-            "Write helloworld code in Rust.".into(),
-            predict_options,
-            Box::new(|token| {
-                print!("{}", token);
-                true
-            }),
-        )
-        .unwrap();
+    let args: Vec<String> = std::env::args().collect();
+    if args.len() < 3 {
+        println!(
+            "usage:\n\t{} <model_file_path> \"<promt>\" <n_len = 150>",
+            args[0]
+        );
+        return;
+    }
+    let model_file_name = args[1].clone();
+    let prompt = args[2].clone();
+    let mut n_len = 150;
+    if args.len() > 3 {
+        if let Ok(ss) = str::parse(&args[3]) {
+            n_len = ss;
+        }
+    }
+    let model_options = ModelOptions::default().with_n_gpu_layers(10);
+    let model = Model::new(model_file_name, model_options).unwrap();
+    let ctx_options = ContextOptions::default();
+    let mut ctx = model.context(ctx_options).unwrap();
+    ctx.eval_str(&prompt, true).unwrap();
+    let answer = ctx.predict(n_len).unwrap();
+    println!("{answer}");
     println!("");
 }
 #+END_SRC
@@ -165,7 +170,7 @@ fn main() {
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 4 {
         println!(
-            "usage:\n\t{} <model_file_path> <mmproj_model_file_path> <image_file_name> ["<promt = <image>\nUSER:\nProvide a full description.\nASSISTANT:\n>"] [<n_len = 4000>]",
+            "usage:\n\t{} <model_file_path> <mmproj_model_file_path> <image_file_name> \"<promt = Provide a full description.>\" <n_len = 6000>",
             args[0]
         );
         return;
@@ -176,36 +181,35 @@ fn main() {
     let prompt = if args.len() > 4 && !args[4].is_empty() {
         args[4].clone()
     } else {
-        "<image>\nUSER:\nProvide a full description.\nASSISTANT:\n".to_string()
+        "Provide a full description.".to_string()
     };
-    let mut n_len = 4000;
+    let mut n_len = 6000;
     if args.len() > 5 {
         if let Ok(ss) = str::parse(&args[5]) {
             n_len = ss;
         }
     }
     let model_options = ModelOptions::default().with_n_gpu_layers(10);
-
-    let mut model =
+    let model =
         Model::new_with_mmproj(model_file_name, mmproj_model_file_name, model_options).unwrap();
 
-    let predict_options = PredictOptions::default().with_n_len(n_len);
+    let context_options = ContextOptions::default().with_n_ctx(6000);
+    let mut ctx = model.context(context_options).unwrap();
+
     //read image
     let mut image_bytes = vec![];
     let mut f = std::fs::File::open(&image_file_name).unwrap();
     f.read_to_end(&mut image_bytes).unwrap();
 
-    model
-        .predict_with_image(
-            image_bytes,
-            &prompt,
-            predict_options,
-            Box::new(|token| {
-                print!("{}", token);
-                true
-            }),
-        )
-        .unwrap();
+    //eval data
+    ctx.eval_str(&"", true).unwrap();
+    ctx.eval_image(image_bytes).unwrap();
+    ctx.eval_str(&prompt, false).unwrap();
+
+    //generate predict
+
+    let answer = ctx.predict(n_len).unwrap();
+    println!("{answer}");
     println!("");
 }
 #+END_SRC
