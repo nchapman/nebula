@@ -41,11 +41,11 @@ impl Model {
     }
 }
 
-pub struct Context<'a> {
-    backend: Pin<Box<Mutex<dyn backend::Context + 'a>>>,
+pub struct Context {
+    backend: Pin<Box<Mutex<dyn backend::Context>>>,
 }
 
-impl Context<'_> {
+impl Context {
     pub fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
         self.backend.lock().unwrap().eval_str(prompt, add_bos)?;
         Ok(())

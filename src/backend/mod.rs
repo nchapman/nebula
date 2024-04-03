@@ -8,7 +8,7 @@ use crate::{
 #[cfg(feature = "llama")]
 pub mod llama;
 
-pub trait Context {
+pub trait Context: Send {
     fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()>;
     fn eval_image(&mut self, image: Vec<u8>) -> Result<()>;
     fn predict(&mut self, max_len: usize) -> Result<String>;
@@ -19,9 +19,9 @@ pub trait Context {
     ) -> Result<()>;
 }
 
-pub trait Model {
+pub trait Model: Send {
     fn with_mmproj(&mut self, mmproj: PathBuf) -> Result<()>;
-    fn new_context(&self, opions: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context + '_>>>>;
+    fn new_context(&self, opions: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context>>>>;
 }
 
 pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Model> {

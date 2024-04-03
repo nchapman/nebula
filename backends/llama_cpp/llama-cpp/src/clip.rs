@@ -1,4 +1,4 @@
-use std::{ffi::CString, path::Path, ptr::NonNull};
+use std::{ffi::CString, path::Path, ptr::NonNull, sync::Arc};
 
 use crate::ClipError;
 
@@ -13,8 +13,16 @@ impl Drop for ImageEmbed {
 }
 
 #[allow(clippy::module_name_repetitions)]
-pub struct ClipContext {
+pub struct ClipContextInternal {
     pub(crate) context: NonNull<llama_cpp_sys::clip_ctx>,
+}
+unsafe impl Send for ClipContextInternal {}
+unsafe impl Sync for ClipContextInternal {}
+
+#[derive(Clone)]
+#[allow(clippy::module_name_repetitions)]
+pub struct ClipContext {
+    pub(crate) context: Arc<ClipContextInternal>,
 }
 
 impl ClipContext {
@@ -33,13 +41,15 @@ impl ClipContext {
         let context = NonNull::new(clip).ok_or(ClipError::NullReturn)?;
 
         tracing::debug!(?path, "Loaded model");
-        Ok(Self { context })
+        Ok(Self {
+            context: Arc::new(ClipContextInternal { context }),
+        })
     }
 
     pub fn embed_image(&self, n_threads: usize, image: &[u8]) -> Result<ImageEmbed, ClipError> {
         let embed = unsafe {
             llama_cpp_sys::llava_image_embed_make_with_bytes(
-                self.context.as_ptr(),
+                self.context.context.as_ptr(),
                 n_threads as i32,
                 image.as_ptr(),
                 image.len() as i32,
@@ -50,7 +60,7 @@ impl ClipContext {
     }
 }
 
-impl Drop for ClipContext {
+impl Drop for ClipContextInternal {
     fn drop(&mut self) {
         unsafe { llama_cpp_sys::clip_free(self.context.as_ptr()) }
     }

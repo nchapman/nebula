@@ -139,7 +139,7 @@ impl LlamaTokenDataArray {
         penalty_freq: f32,
         penalty_present: f32,
     ) {
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         let penalty_last_n = min(penalty_last_n, last_tokens.len().saturating_sub(1));
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
@@ -187,7 +187,7 @@ impl LlamaTokenDataArray {
     /// ```
     pub fn sample_softmax(&mut self, ctx: Option<&mut LlamaContext>) {
         unsafe {
-            let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+            let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_softmax(ctx, c_llama_token_data_array);
             });
@@ -220,7 +220,7 @@ impl LlamaTokenDataArray {
         if temperature == 0.0 {
             return;
         }
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_temp(ctx, c_llama_token_data_array, temperature);
@@ -232,7 +232,10 @@ impl LlamaTokenDataArray {
     pub fn sample_token(&mut self, ctx: &mut LlamaContext) -> LlamaToken {
         let llama_token = unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
-                llama_cpp_sys::llama_sample_token(ctx.context.as_ptr(), c_llama_token_data_array)
+                llama_cpp_sys::llama_sample_token(
+                    ctx.context.context.as_ptr(),
+                    c_llama_token_data_array,
+                )
             })
         };
         LlamaToken(llama_token)
@@ -240,7 +243,7 @@ impl LlamaTokenDataArray {
 
     /// Top-K sampling described in academic paper [The Curious Case of Neural Text Degeneration](https://arxiv.org/abs/1904.09751)
     pub fn sample_top_k(&mut self, ctx: Option<&mut LlamaContext>, k: i32, min_keep: usize) {
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_top_k(ctx, c_llama_token_data_array, k, min_keep);
@@ -250,7 +253,7 @@ impl LlamaTokenDataArray {
 
     /// Tail Free Sampling described in [Tail-Free-Sampling](https://www.trentonbricken.com/Tail-Free-Sampling/).
     pub fn sample_tail_free(&mut self, ctx: Option<&mut LlamaContext>, z: f32, min_keep: usize) {
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_tail_free(ctx, c_llama_token_data_array, z, min_keep);
@@ -278,7 +281,7 @@ impl LlamaTokenDataArray {
     ///
     /// ```
     pub fn sample_typical(&mut self, ctx: Option<&mut LlamaContext>, p: f32, min_keep: usize) {
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_typical(ctx, c_llama_token_data_array, p, min_keep);
@@ -310,7 +313,7 @@ impl LlamaTokenDataArray {
     /// assert_eq!(candidates.data[1].id(), LlamaToken::new(1));
     /// ```
     pub fn sample_top_p(&mut self, ctx: Option<&mut LlamaContext>, p: f32, min_keep: usize) {
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_top_p(ctx, c_llama_token_data_array, p, min_keep);
@@ -337,7 +340,7 @@ impl LlamaTokenDataArray {
     /// candidates.sample_min_p(None, 0.05, 1);
     /// ```
     pub fn sample_min_p(&mut self, ctx: Option<&mut LlamaContext>, p: f32, min_keep: usize) {
-        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.as_ptr());
+        let ctx = ctx.map_or(ptr::null_mut(), |ctx| ctx.context.context.as_ptr());
         unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_min_p(ctx, c_llama_token_data_array, p, min_keep);
@@ -363,7 +366,7 @@ impl LlamaTokenDataArray {
         let token = unsafe {
             self.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_token_mirostat_v2(
-                    ctx.context.as_ptr(),
+                    ctx.context.context.as_ptr(),
                     c_llama_token_data_array,
                     tau,
                     eta,

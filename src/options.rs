@@ -1,5 +1,20 @@
+fn default_i32_minus1() -> i32 {
+    -1
+}
+
+fn default_usize_2048() -> usize {
+    2048
+}
+
+fn default_n_threads() -> usize {
+    num_cpus::get()
+}
+
+#[derive(serde::Deserialize)]
 pub struct ModelOptions {
+    #[serde(default)]
     pub cpu: bool,
+    #[serde(default = "default_i32_minus1")]
     pub n_gpu_layers: i32,
 }
 
@@ -19,14 +34,18 @@ impl Default for ModelOptions {
     fn default() -> Self {
         Self {
             cpu: false,
-            n_gpu_layers: -1,
+            n_gpu_layers: default_i32_minus1(),
         }
     }
 }
 
+#[derive(serde::Deserialize)]
 pub struct ContextOptions {
+    #[serde(default)]
     pub seed: u32,
+    #[serde(default = "default_usize_2048")]
     pub n_ctx: usize,
+    #[serde(default = "default_n_threads")]
     pub n_threads: usize,
 }
 
@@ -46,8 +65,8 @@ impl Default for ContextOptions {
     fn default() -> Self {
         Self {
             seed: 0,
-            n_ctx: 2048,
-            n_threads: 10,
+            n_ctx: default_usize_2048(),
+            n_threads: default_n_threads(),
         }
     }
 }

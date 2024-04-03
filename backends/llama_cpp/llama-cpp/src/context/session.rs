@@ -46,7 +46,7 @@ pub enum LoadSessionError {
     },
 }
 
-impl LlamaContext<'_> {
+impl LlamaContext {
     /// Save the current session to a file.
     ///
     /// # Parameters
@@ -71,7 +71,7 @@ impl LlamaContext<'_> {
 
         if unsafe {
             llama_cpp_sys::llama_save_session_file(
-                self.context.as_ptr(),
+                self.context.context.as_ptr(),
                 cstr.as_ptr(),
                 tokens.as_ptr().cast::<llama_cpp_sys::llama_token>(),
                 tokens.len(),
@@ -113,7 +113,7 @@ impl LlamaContext<'_> {
 
         let load_session_success = unsafe {
             llama_cpp_sys::llama_load_session_file(
-                self.context.as_ptr(),
+                self.context.context.as_ptr(),
                 cstr.as_ptr(),
                 tokens_out,
                 max_tokens,
@@ -138,7 +138,7 @@ impl LlamaContext<'_> {
     /// and `kv_cache`) - will often be smaller after compacting tokens
     #[must_use]
     pub fn get_state_size(&self) -> usize {
-        unsafe { llama_cpp_sys::llama_get_state_size(self.context.as_ptr()) }
+        unsafe { llama_cpp_sys::llama_get_state_size(self.context.context.as_ptr()) }
     }
 
     /// Copies the state to the specified destination address.
@@ -149,7 +149,7 @@ impl LlamaContext<'_> {
     ///
     /// Destination needs to have allocated enough memory.
     pub unsafe fn copy_state_data(&self, dest: *mut u8) -> usize {
-        unsafe { llama_cpp_sys::llama_copy_state_data(self.context.as_ptr(), dest) }
+        unsafe { llama_cpp_sys::llama_copy_state_data(self.context.context.as_ptr(), dest) }
     }
 
     /// Set the state reading from the specified address
@@ -159,6 +159,6 @@ impl LlamaContext<'_> {
     ///
     /// help wanted: not entirely sure what the safety requirements are here.
     pub unsafe fn set_state_data(&mut self, src: &[u8]) -> usize {
-        unsafe { llama_cpp_sys::llama_set_state_data(self.context.as_ptr(), src.as_ptr()) }
+        unsafe { llama_cpp_sys::llama_set_state_data(self.context.context.as_ptr(), src.as_ptr()) }
     }
 }

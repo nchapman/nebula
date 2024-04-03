@@ -37,15 +37,16 @@ impl From<ContextOptions> for LlamaContextParams {
     }
 }
 
+#[derive(Clone)]
 pub struct Llama {
-    backend: LlamaBackend,
+    backend: Arc<LlamaBackend>,
     model: LlamaModel,
     mmproj: Option<ClipContext>,
 }
 
 impl Llama {
     pub fn new(model: impl Into<PathBuf>, options: ModelOptions) -> Result<Self> {
-        let backend = LlamaBackend::init()?;
+        let backend = Arc::new(LlamaBackend::init()?);
         let model_params: Pin<Box<LlamaModelParams>> = Box::pin(options.into());
         let model = LlamaModel::load_from_file(&backend, Path::new(&model.into()), &model_params)?;
         Ok(Self {
@@ -62,20 +63,20 @@ impl Model for Llama {
         self.mmproj = Some(clip_context);
         Ok(())
     }
-    fn new_context(&self, options: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context + '_>>>> {
+    fn new_context(&self, options: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context>>>> {
         Ok(Box::pin(Mutex::new(LlamaContext::new(self, options)?)))
     }
 }
 
-pub struct LlamaContext<'a> {
+pub struct LlamaContext {
     logit: i32,
     n_curr: i32,
     n_threads: usize,
-    ctx: Pin<Box<llama_cpp::context::LlamaContext<'a>>>,
-    model: &'a Llama,
+    ctx: Pin<Box<llama_cpp::context::LlamaContext>>,
+    model: Arc<Llama>,
 }
 
-impl<'a> LlamaContext<'a> {
+impl<'a> LlamaContext {
     pub fn new(model: &'a Llama, options: ContextOptions) -> Result<Self> {
         let ctx_params: LlamaContextParams = options.into();
         let n_threads = ctx_params.n_threads() as usize;
@@ -84,12 +85,12 @@ impl<'a> LlamaContext<'a> {
             n_curr: 0,
             logit: 0,
             n_threads,
-            model,
+            model: Arc::new(model.clone()),
         })
     }
 }
 
-impl Context for LlamaContext<'_> {
+impl Context for LlamaContext {
     fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
         self.logit = self.ctx.eval_string(
             prompt,

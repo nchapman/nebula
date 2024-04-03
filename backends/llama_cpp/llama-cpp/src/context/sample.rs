@@ -8,12 +8,12 @@ use crate::token::LlamaToken;
 #[cfg(feature = "sampler")]
 pub mod sampler;
 
-impl LlamaContext<'_> {
+impl LlamaContext {
     /// Accept a token into the grammar.
     pub fn grammar_accept_token(&mut self, grammar: &mut LlamaGrammar, token: LlamaToken) {
         unsafe {
             llama_cpp_sys::llama_grammar_accept_token(
-                self.context.as_ptr(),
+                self.context.context.as_ptr(),
                 grammar.grammar.as_ptr(),
                 token.0,
             );
@@ -29,7 +29,7 @@ impl LlamaContext<'_> {
         unsafe {
             llama_token_data_array.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_grammar(
-                    self.context.as_ptr(),
+                    self.context.context.as_ptr(),
                     c_llama_token_data_array,
                     llama_grammar.grammar.as_ptr(),
                 );
@@ -62,7 +62,7 @@ impl LlamaContext<'_> {
         };
         let token = unsafe {
             llama_cpp_sys::llama_sample_token_greedy(
-                self.context.as_ptr(),
+                self.context.context.as_ptr(),
                 std::ptr::addr_of_mut!(data_arr),
             )
         };
@@ -101,7 +101,7 @@ impl LlamaContext<'_> {
         p: f32,
         min_keep: usize,
     ) {
-        let ctx = self.context.as_ptr();
+        let ctx = self.context.context.as_ptr();
         unsafe {
             llama_token_data.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
                 llama_cpp_sys::llama_sample_min_p(ctx, c_llama_token_data_array, p, min_keep);
