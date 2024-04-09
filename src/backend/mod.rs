@@ -11,11 +11,12 @@ pub mod llama;
 pub trait Context: Send {
     fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()>;
     fn eval_image(&mut self, image: Vec<u8>) -> Result<()>;
-    fn predict(&mut self, max_len: usize) -> Result<String>;
+    fn predict(&mut self, max_len: usize, stop_tokens: &[String]) -> Result<String>;
     fn predict_with_callback(
         &mut self,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
         max_len: usize,
+        stop_tokens: &[String],
     ) -> Result<()>;
 }
 

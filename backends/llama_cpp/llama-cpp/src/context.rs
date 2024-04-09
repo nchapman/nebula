@@ -2,6 +2,7 @@
 
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroI32;
+use std::path::is_separator;
 use std::ptr::NonNull;
 use std::slice;
 use std::sync::Arc;
@@ -272,10 +273,13 @@ impl LlamaContext {
         mut logit: i32,
         n_curr: &mut i32,
         n_len: i32,
+        stop_tokens: &[String],
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
     ) -> Result<i32, PredictError> {
+        let mut nstr = "".to_string();
         let mut batch = LlamaBatch::new(2048, 1);
-        while *n_curr <= n_len {
+        let mut dd = -1;
+        for _ in 0..n_len {
             {
                 let candidates = self.candidates_ith(logit);
                 let candidates_p =
@@ -284,8 +288,23 @@ impl LlamaContext {
                 if new_token_id == self.model.token_eos() {
                     break;
                 }
-                if !token_callback(self.model.token_to_str(new_token_id)?) {
+                let new_token_str = self.model.token_to_str(new_token_id)?;
+                eprintln!("{}", new_token_str);
+                nstr += &new_token_str;
+                if dd == -1 && stop_tokens.iter().any(|s| s.starts_with(&nstr)) {
+                    dd = *n_curr;
+                }
+                if stop_tokens.iter().any(|s| nstr.starts_with(s)) {
+                    *n_curr = dd;
                     break;
+                }
+                if dd == -1 {
+                    if !token_callback(nstr.clone()) {
+                        *n_curr = dd;
+                        break;
+                    }
+                    nstr = "".to_string();
+                    dd = -1;
                 }
                 batch.clear();
                 batch.add(new_token_id, *n_curr, &[0], true)?;

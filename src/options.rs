@@ -39,7 +39,22 @@ impl Default for ModelOptions {
     }
 }
 
-#[derive(serde::Deserialize)]
+fn default_conversaton_format() -> String {
+    "User:\n{prompt}\nAssistant:\n".to_string()
+}
+
+fn default_conversaton_with_image_format() -> String {
+    "{image}User:\n{prompt}\nAssistant:\n".to_string()
+}
+
+fn default_stop_tokens() -> Vec<String> {
+    vec!["User:", "Assistant:"]
+        .iter()
+        .map(|s| s.to_string())
+        .collect()
+}
+
+#[derive(Clone, serde::Deserialize)]
 pub struct ContextOptions {
     #[serde(default)]
     pub seed: u32,
@@ -47,6 +62,12 @@ pub struct ContextOptions {
     pub n_ctx: usize,
     #[serde(default = "default_n_threads")]
     pub n_threads: usize,
+    #[serde(default = "default_conversaton_format")]
+    pub format: String,
+    #[serde(default = "default_conversaton_with_image_format")]
+    pub format_with_image: String,
+    #[serde(default = "default_stop_tokens")]
+    pub stop_tokens: Vec<String>,
 }
 
 impl ContextOptions {
@@ -59,6 +80,21 @@ impl ContextOptions {
         self.n_ctx = n_ctx;
         self
     }
+
+    pub fn with_conversation_format(mut self, format: &str) -> Self {
+        self.format = format.into();
+        self
+    }
+
+    pub fn with_conversation_with_image_format(mut self, format: &str) -> Self {
+        self.format_with_image = format.into();
+        self
+    }
+
+    pub fn with_stop_tokens(mut self, tokens: &[&str]) -> Self {
+        self.stop_tokens = tokens.iter().map(|s| s.to_string()).collect();
+        self
+    }
 }
 
 impl Default for ContextOptions {
@@ -67,6 +103,9 @@ impl Default for ContextOptions {
             seed: 0,
             n_ctx: default_usize_2048(),
             n_threads: default_n_threads(),
+            format: default_conversaton_format(),
+            format_with_image: default_conversaton_with_image_format(),
+            stop_tokens: default_stop_tokens(),
         }
     }
 }

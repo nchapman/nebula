@@ -115,7 +115,7 @@ impl Context for LlamaContext {
         Ok(())
     }
 
-    fn predict(&mut self, max_len: usize) -> Result<String> {
+    fn predict(&mut self, max_len: usize, stop_tokens: &[String]) -> Result<String> {
         let res = Arc::new(Mutex::new("".to_string()));
         let rres = res.clone();
         self.predict_with_callback(
@@ -124,6 +124,7 @@ impl Context for LlamaContext {
                 true
             }),
             max_len,
+            stop_tokens,
         )?;
         let rres = res.lock().unwrap();
         Ok(rres.clone())
@@ -133,10 +134,15 @@ impl Context for LlamaContext {
         &mut self,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
         max_len: usize,
+        stop_tokens: &[String],
     ) -> Result<()> {
-        self.logit =
-            self.ctx
-                .pedict(self.logit, &mut self.n_curr, max_len as i32, token_callback)?;
+        self.logit = self.ctx.pedict(
+            self.logit,
+            &mut self.n_curr,
+            max_len as i32,
+            stop_tokens,
+            token_callback,
+        )?;
         Ok(())
     }
 }
