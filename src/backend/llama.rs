@@ -80,13 +80,14 @@ impl<'a> LlamaContext {
     pub fn new(model: &'a Llama, options: ContextOptions) -> Result<Self> {
         let ctx_params: LlamaContextParams = options.into();
         let n_threads = ctx_params.n_threads() as usize;
-        Ok(Self {
+        let ctx = Self {
             ctx: Box::pin(model.model.new_context(&model.backend, ctx_params)?),
             n_curr: 0,
             logit: 0,
             n_threads,
             model: Arc::new(model.clone()),
-        })
+        };
+        Ok(ctx)
     }
 }
 

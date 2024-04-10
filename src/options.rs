@@ -39,11 +39,19 @@ impl Default for ModelOptions {
     }
 }
 
-fn default_conversaton_format() -> String {
+fn default_conversation_user_format() -> String {
+    "User:\n{prompt}\n".to_string()
+}
+
+fn default_conversation_assistant_format() -> String {
+    "Assistant:\n{prompt}\n".to_string()
+}
+
+fn default_conversation_prompt_format() -> String {
     "User:\n{prompt}\nAssistant:\n".to_string()
 }
 
-fn default_conversaton_with_image_format() -> String {
+fn default_conversation_prompt_format_with_image() -> String {
     "{image}User:\n{prompt}\nAssistant:\n".to_string()
 }
 
@@ -55,6 +63,12 @@ fn default_stop_tokens() -> Vec<String> {
 }
 
 #[derive(Clone, serde::Deserialize)]
+pub struct Message {
+    pub message: String,
+    pub is_user: bool,
+}
+
+#[derive(Clone, serde::Deserialize)]
 pub struct ContextOptions {
     #[serde(default)]
     pub seed: u32,
@@ -62,12 +76,18 @@ pub struct ContextOptions {
     pub n_ctx: usize,
     #[serde(default = "default_n_threads")]
     pub n_threads: usize,
-    #[serde(default = "default_conversaton_format")]
-    pub format: String,
-    #[serde(default = "default_conversaton_with_image_format")]
-    pub format_with_image: String,
+    #[serde(default = "default_conversation_user_format")]
+    pub user_format: String,
+    #[serde(default = "default_conversation_assistant_format")]
+    pub assistant_format: String,
+    #[serde(default = "default_conversation_prompt_format")]
+    pub prompt_format: String,
+    #[serde(default = "default_conversation_prompt_format_with_image")]
+    pub prompt_format_with_image: String,
     #[serde(default = "default_stop_tokens")]
     pub stop_tokens: Vec<String>,
+    #[serde(default)]
+    pub ctx: Vec<Message>,
 }
 
 impl ContextOptions {
@@ -81,18 +101,33 @@ impl ContextOptions {
         self
     }
 
-    pub fn with_conversation_format(mut self, format: &str) -> Self {
-        self.format = format.into();
+    pub fn with_conversation_user_format(mut self, format: &str) -> Self {
+        self.user_format = format.into();
         self
     }
 
-    pub fn with_conversation_with_image_format(mut self, format: &str) -> Self {
-        self.format_with_image = format.into();
+    pub fn with_conversation_assistant_format(mut self, format: &str) -> Self {
+        self.assistant_format = format.into();
+        self
+    }
+
+    pub fn with_conversation_prompt_format(mut self, format: &str) -> Self {
+        self.prompt_format = format.into();
+        self
+    }
+
+    pub fn with_conversation_prompt_format_with_image(mut self, format: &str) -> Self {
+        self.prompt_format_with_image = format.into();
         self
     }
 
     pub fn with_stop_tokens(mut self, tokens: &[&str]) -> Self {
         self.stop_tokens = tokens.iter().map(|s| s.to_string()).collect();
+        self
+    }
+
+    pub fn with_ctx(mut self, messages: Vec<Message>) -> Self {
+        self.ctx = messages;
         self
     }
 }
@@ -103,9 +138,12 @@ impl Default for ContextOptions {
             seed: 0,
             n_ctx: default_usize_2048(),
             n_threads: default_n_threads(),
-            format: default_conversaton_format(),
-            format_with_image: default_conversaton_with_image_format(),
+            user_format: default_conversation_user_format(),
+            assistant_format: default_conversation_assistant_format(),
+            prompt_format: default_conversation_prompt_format(),
+            prompt_format_with_image: default_conversation_prompt_format_with_image(),
             stop_tokens: default_stop_tokens(),
+            ctx: vec![],
         }
     }
 }

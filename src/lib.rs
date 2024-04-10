@@ -37,10 +37,27 @@ impl Model {
     }
 
     pub fn context(&self, options: options::ContextOptions) -> Result<Context> {
-        Ok(Context {
+        let mut ctx = Context {
             options: options.clone(),
-            backend: self.backend.new_context(options)?,
-        })
+            backend: self.backend.new_context(options.clone())?,
+        };
+        options.ctx.into_iter().try_for_each(|m| {
+            let (prompt, bos) = match m.is_user {
+                true => {
+                    let mut vars = HashMap::new();
+                    vars.insert("prompt".to_string(), m.message);
+                    (strfmt(&options.user_format, &vars).unwrap(), true)
+                }
+                false => {
+                    let mut vars = HashMap::new();
+                    vars.insert("prompt".to_string(), m.message);
+                    (strfmt(&options.assistant_format, &vars).unwrap(), true)
+                }
+            };
+            ctx.eval_str(&prompt, bos)?;
+            Ok::<(), error::Error>(())
+        })?;
+        Ok(ctx)
     }
 }
 
@@ -53,17 +70,15 @@ impl Context {
     pub fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
         let mut vars = HashMap::new();
         vars.insert("prompt".to_string(), prompt);
-        self.backend
-            .lock()
-            .unwrap()
-            .eval_str(&strfmt(&self.options.format, &vars).unwrap(), add_bos)?;
+        let prompt = strfmt(&self.options.prompt_format, &vars).unwrap();
+        self.backend.lock().unwrap().eval_str(&prompt, add_bos)?;
         Ok(())
     }
 
     pub fn eval_image(&mut self, image: Vec<u8>, prompt: &str) -> Result<()> {
         let mut vars = HashMap::new();
         vars.insert("prompt".to_string(), prompt);
-        let prompt = strfmt(&self.options.format_with_image, &vars).unwrap();
+        let prompt = strfmt(&self.options.prompt_format_with_image, &vars).unwrap();
         if let Some((s1, s2)) = prompt.split_once("{image}") {
             let mut bb = self.backend.lock().unwrap();
             bb.eval_str(s1, false)?;

@@ -291,10 +291,10 @@ impl LlamaContext {
                 let new_token_str = self.model.token_to_str(new_token_id)?;
                 eprintln!("{}", new_token_str);
                 nstr += &new_token_str;
-                if dd == -1 && stop_tokens.iter().any(|s| s.starts_with(&nstr)) {
+                if dd == -1 && stop_tokens.iter().any(|s| s.starts_with(&nstr.trim())) {
                     dd = *n_curr;
                 }
-                if stop_tokens.iter().any(|s| nstr.starts_with(s)) {
+                if stop_tokens.iter().any(|s| nstr.trim().starts_with(s)) {
                     *n_curr = dd;
                     break;
                 }
