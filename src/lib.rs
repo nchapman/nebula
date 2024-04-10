@@ -54,6 +54,7 @@ impl Model {
                     (strfmt(&options.assistant_format, &vars).unwrap(), true)
                 }
             };
+            eprintln!("{}", prompt);
             ctx.eval_str(&prompt, bos)?;
             Ok::<(), error::Error>(())
         })?;
