@@ -39,7 +39,7 @@ jobs:
       - name: Test
         run: |
           #cd nebula
-          cargo test --all
+          cargo test
       - name: Build
         run: |
           #cd nebula
