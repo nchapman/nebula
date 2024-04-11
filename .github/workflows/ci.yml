@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  test_phaser:
+  test_nebula:
     runs-on: ${{ matrix.os }}
 
     strategy:
