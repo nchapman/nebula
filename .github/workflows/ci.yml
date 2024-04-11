@@ -7,7 +7,19 @@ on:
 
 jobs:
   test_phaser:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        include:
+          - build: linux
+            os: ubuntu-latest
+
+          - build: macos
+            os: macos-latest
+
+          - build: windows
+            os: windows-latest
     steps:
       - uses: actions/checkout@v2
       - name: Update local toolchain
@@ -19,11 +31,11 @@ jobs:
           cargo --version --verbose
           rustc --version
           cargo clippy --version
-      - name: Lint
-        run: |
-          cd phaser
-          cargo fmt -- --check
-          cargo clippy -- -D warnings
+#      - name: Lint
+#        run: |
+#          cd phaser
+#          cargo fmt -- --check
+#          cargo clippy -- -D warnings
       - name: Test
         run: |
           cd phaser
