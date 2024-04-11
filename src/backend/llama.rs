@@ -107,7 +107,7 @@ impl Context for LlamaContext {
     }
     fn eval_image(&mut self, image: Vec<u8>) -> Result<()> {
         let embedded_image = if let Some(clip_context) = &self.model.mmproj {
-            clip_context.embed_image(self.n_threads as usize, &image)?
+            clip_context.embed_image(self.n_threads, &image)?
         } else {
             return Err(crate::error::Error::MmprojNotDefined);
         };

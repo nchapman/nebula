@@ -2,7 +2,6 @@
 
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroI32;
-use std::path::is_separator;
 use std::ptr::NonNull;
 use std::slice;
 use std::sync::Arc;

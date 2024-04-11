@@ -56,7 +56,7 @@ fn default_conversation_prompt_format_with_image() -> String {
 }
 
 fn default_stop_tokens() -> Vec<String> {
-    vec!["\nUser:", "\nAssistant:"]
+    ["\nUser:", "\nAssistant:"]
         .iter()
         .map(|s| s.to_string())
         .collect()

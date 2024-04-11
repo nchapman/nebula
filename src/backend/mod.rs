@@ -27,5 +27,5 @@ pub trait Model: Send {
 
 pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Model> {
     #[cfg(feature = "llama")]
-    Ok(llama::Llama::new(model, options)?)
+    llama::Llama::new(model, options)
 }
