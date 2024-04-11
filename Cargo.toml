@@ -10,10 +10,10 @@ serde = { version = "1", features = [ "derive" ] }
 strfmt = "*"
 
 #candle feature
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.4.1", optional = true}
-candle-transformers = { git = "https://github.com/huggingface/candle.git", version = "0.4.1", optional = true }
-candle-nn = { git = "https://github.com/huggingface/candle.git", version = "0.4.1", optional = true }
-tokenizers = { version = "0.15.2", optional = true }
+#candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.4.1", optional = true}
+#candle-transformers = { git = "https://github.com/huggingface/candle.git", version = "0.4.1", optional = true }
+#candle-nn = { git = "https://github.com/huggingface/candle.git", version = "0.4.1", optional = true }
+#tokenizers = { version = "0.15.2", optional = true }
 
 #llama feature
 llama-cpp = { path="backends/llama_cpp/llama-cpp", optional = true }
@@ -28,7 +28,7 @@ log = "0.4.17"
 [features]
 default = ["llama"]
 llama = ["llama-cpp"]
-candle = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
+#candle = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
 cuda = ["llama-cpp?/cublas", "candle-core?/cuda", "candle-transformers?/cuda", "candle-nn?/cuda"]
 opencl = ["llama-cpp?/clblas"]
 openblas = ["llama-cpp?/openblas"]
