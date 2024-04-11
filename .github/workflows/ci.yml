@@ -31,17 +31,16 @@ jobs:
           cargo --version --verbose
           rustc --version
           cargo clippy --version
-#      - name: Lint
-#        run: |
-#          cd phaser
+      - name: Lint
+        run: |
+          cd nebula
 #          cargo fmt -- --check
-#          cargo clippy -- -D warnings
+          cargo clippy -- -D warnings
       - name: Test
         run: |
-          cd phaser
-          cargo check
+          cd nebula
           cargo test --all
       - name: Build
         run: |
-          cd phaser
+          cd nebula
           cargo build --release
