@@ -33,14 +33,14 @@ jobs:
           cargo clippy --version
       - name: Lint
         run: |
-          cd nebula
+          #cd nebula
           #cargo fmt -- --check
           cargo clippy -- -D warnings
       - name: Test
         run: |
-          cd nebula
+          #cd nebula
           cargo test --all
       - name: Build
         run: |
-          cd nebula
+          #cd nebula
           cargo build --release
