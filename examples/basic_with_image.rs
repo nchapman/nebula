@@ -42,8 +42,7 @@ fn main() {
 
     //eval data
     ctx.eval_str(&"", true).unwrap();
-    ctx.eval_image(image_bytes).unwrap();
-    ctx.eval_str(&prompt, false).unwrap();
+    ctx.eval_image(image_bytes, &prompt).unwrap();
 
     //generate predict
 
