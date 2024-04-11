@@ -34,7 +34,7 @@ jobs:
       - name: Lint
         run: |
           cd nebula
-#          cargo fmt -- --check
+          #cargo fmt -- --check
           cargo clippy -- -D warnings
       - name: Test
         run: |
