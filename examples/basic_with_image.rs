@@ -41,7 +41,6 @@ fn main() {
     f.read_to_end(&mut image_bytes).unwrap();
 
     //eval data
-    ctx.eval_str(&"", true).unwrap();
     ctx.eval_image(image_bytes, &prompt).unwrap();
 
     //generate predict

@@ -116,3 +116,135 @@ impl Context {
 impl Drop for Model {
     fn drop(&mut self) {}
 }
+
+#[cfg(test)]
+mod test {
+    use std::{io::Read, path::PathBuf};
+
+    struct TestModel {
+        pub repo: String,
+        pub filename: PathBuf,
+        pub mmproj: Option<PathBuf>,
+    }
+
+    impl TestModel {
+        pub fn new(repo: &str, model_file_name: &str) -> Self {
+            let api = hf_hub::api::sync::Api::new();
+            assert!(api.is_ok());
+            let api = api.unwrap();
+            let filename = api.model(repo.to_string()).get(model_file_name);
+            assert!(filename.is_ok());
+            let filename = filename.unwrap();
+            Self {
+                repo: repo.to_string(),
+                filename,
+                mmproj: None,
+            }
+        }
+
+        pub fn _with_mmproj(mut self, mmproj: &str) -> Self {
+            let api = hf_hub::api::sync::Api::new();
+            assert!(api.is_ok());
+            let api = api.unwrap();
+            let filename = api.model(self.repo.clone()).get(mmproj);
+            assert!(filename.is_ok());
+            let filename = filename.unwrap();
+            self.mmproj = Some(filename);
+            self
+        }
+    }
+
+    impl Drop for TestModel {
+        fn drop(&mut self) {
+            let res = std::fs::remove_file(&self.filename);
+            assert!(res.is_ok())
+        }
+    }
+
+    fn main_with_model(model_repo: &str, model_file_name: &str) {
+        let test_model = TestModel::new(model_repo, model_file_name);
+        let model_options = super::options::ModelOptions::default();
+        let prompt = "Write simple Rust programm.";
+        let model = super::Model::new(test_model.filename.clone(), model_options);
+        assert!(model.is_ok());
+        let model = model.unwrap();
+        let ctx_options = super::options::ContextOptions::default();
+        let ctx = model.context(ctx_options);
+        assert!(ctx.is_ok());
+        let mut ctx = ctx.unwrap();
+        let eval_res = ctx.eval_str(&prompt, true);
+        assert!(eval_res.is_ok());
+        let answer = ctx.predict(100);
+        assert!(answer.is_ok());
+        let answer = answer.unwrap();
+        println!("{answer}");
+    }
+
+    macro_rules! models_tests {
+        ($($name:ident: ($value:expr, $value2:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    main_with_model($value, $value2);
+                }
+            )*
+        }
+    }
+
+    models_tests! {
+    //        model_test_llava_1_6_mistral_7b_gguf:
+    //        ("cjpais/llava-1.6-mistral-7b-gguf",
+        //        "llava-v1.6-mistral-7b.Q4_K_M.gguf"),
+        test: ("stabilityai/stable-code-instruct-3b","stable-code-3b-q4_k_m.gguf"),
+        }
+
+    fn _main_with_model_and_mmproj(
+        model_repo: &str,
+        model_file_name: &str,
+        mmproj_file_name: &str,
+    ) {
+        let image_path = std::env::var("NEBULA_IMAGE").unwrap();
+        let model_options = super::options::ModelOptions::default();
+        let prompt = "Write simple Rust programm.";
+        let test_model = TestModel::new(model_repo, model_file_name)._with_mmproj(mmproj_file_name);
+        let model = super::Model::new_with_mmproj(
+            test_model.filename.clone(),
+            test_model.mmproj.clone().unwrap(),
+            model_options,
+        );
+        assert!(model.is_ok());
+        let model = model.unwrap();
+        let ctx_options = super::options::ContextOptions::default();
+        let ctx = model.context(ctx_options);
+        assert!(ctx.is_ok());
+        let mut ctx = ctx.unwrap();
+
+        let mut image_bytes = vec![];
+        let f = std::fs::File::open(&image_path);
+        assert!(f.is_ok());
+        let mut f = f.unwrap();
+        let read_res = f.read_to_end(&mut image_bytes);
+        assert!(read_res.is_ok());
+        let eval_res = ctx.eval_image(image_bytes, &prompt);
+        assert!(eval_res.is_ok());
+        let answer = ctx.predict(100);
+        assert!(answer.is_ok());
+        let answer = answer.unwrap();
+        println!("{answer}");
+    }
+
+    macro_rules! models_with_mmproj_tests {
+        ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    main_with_model_and_mmproj($value, $value2, $value3);
+                }
+            )*
+        }
+    }
+
+    models_with_mmproj_tests! {
+    //        model_test_llava_1_6_mistral_7b_gguf_with_mmproj: ("cjpais/llava-1.6-mistral-7b-gguf", "llava-v1.6-mistral-7b.Q4_K_M.gguf", "mmproj-model-f16.gguf"),
+        }
+}

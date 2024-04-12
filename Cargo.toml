@@ -25,6 +25,9 @@ tracing-chrome = "0.7.1"
 thiserror = "1"
 log = "0.4.17"
 
+[dev-dependencies]
+hf-hub = "0.3.2"
+
 [features]
 default = ["llama"]
 llama = ["llama-cpp"]
