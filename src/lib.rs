@@ -122,9 +122,9 @@ mod test {
     use std::{io::Read, path::PathBuf};
 
     struct TestModel {
-        pub repo: String,
+        pub _repo: String,
         pub filename: PathBuf,
-        pub mmproj: Option<PathBuf>,
+        pub _mmproj: Option<PathBuf>,
     }
 
     impl TestModel {
@@ -136,9 +136,9 @@ mod test {
             assert!(filename.is_ok());
             let filename = filename.unwrap();
             Self {
-                repo: repo.to_string(),
+                _repo: repo.to_string(),
                 filename,
-                mmproj: None,
+                _mmproj: None,
             }
         }
 
@@ -146,10 +146,10 @@ mod test {
             let api = hf_hub::api::sync::Api::new();
             assert!(api.is_ok());
             let api = api.unwrap();
-            let filename = api.model(self.repo.clone()).get(mmproj);
+            let filename = api.model(self._repo.clone()).get(mmproj);
             assert!(filename.is_ok());
             let filename = filename.unwrap();
-            self.mmproj = Some(filename);
+            self._mmproj = Some(filename);
             self
         }
     }
@@ -209,7 +209,7 @@ mod test {
         let test_model = TestModel::new(model_repo, model_file_name)._with_mmproj(mmproj_file_name);
         let model = super::Model::new_with_mmproj(
             test_model.filename.clone(),
-            test_model.mmproj.clone().unwrap(),
+            test_model._mmproj.clone().unwrap(),
             model_options,
         );
         assert!(model.is_ok());
