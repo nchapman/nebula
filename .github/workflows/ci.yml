@@ -15,8 +15,8 @@ jobs:
           - build: linux
             os: ubuntu-latest
 
-          - build: macos
-            os: macos-latest
+#          - build: macos
+#            os: macos-latest
 
           - build: windows
             os: windows-latest
