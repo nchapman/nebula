@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use nebula::{
     options::{ContextOptions, ModelOptions},
     Model,
@@ -30,8 +32,15 @@ fn main() {
 
     ctx.eval_str(&prompt, true).unwrap();
 
-    let answer = ctx.predict(n_len).unwrap();
+    ctx.predict_with_callback(
+        Box::new(|token| {
+            print!("{}", token);
+            std::io::stdout().flush().unwrap();
+            true
+        }),
+        n_len,
+    )
+    .unwrap();
 
-    println!("{answer}");
     println!("");
 }

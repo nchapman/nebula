@@ -2,6 +2,7 @@
 
 use std::fmt::{Debug, Formatter};
 use std::num::NonZeroI32;
+use std::ops::RangeBounds;
 use std::ptr::NonNull;
 use std::slice;
 use std::sync::Arc;
@@ -275,9 +276,10 @@ impl LlamaContext {
         stop_tokens: &[String],
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
     ) -> Result<i32, PredictError> {
-        let mut nstr = "".to_string();
         let mut batch = LlamaBatch::new(2048, 1);
-        let mut dd = -1;
+        let max_stop_len = stop_tokens.iter().map(|s| s.len()).max().unwrap();
+        //        eprintln!("{}", max_stop_len);
+        let mut buffer = TokenBuf::new();
         for _ in 0..n_len {
             {
                 let candidates = self.candidates_ith(logit);
@@ -287,27 +289,25 @@ impl LlamaContext {
                 if new_token_id == self.model.token_eos() {
                     break;
                 }
-                let new_token_str = self.model.token_to_str(new_token_id)?;
-                nstr += &new_token_str;
-                eprintln!("{:?}", nstr);
-                if stop_tokens.iter().any(|s| s.starts_with(&nstr)) {
-                    if dd == -1 {
-                        dd = *n_curr;
+                let ntr = self.model.token_to_str(new_token_id)?;
+                //                eprint!("{:?} ", ntr);
+                buffer.add(ntr, *n_curr);
+                if let Some(s) = buffer.find(stop_tokens) {
+                    for t in buffer.drain(..s).into_iter() {
+                        *n_curr = t.1;
+                        if !token_callback(t.0) {
+                            return Ok(0);
+                        }
                     }
-                } else {
-                    dd = -1;
+                    return Ok(0);
                 }
-                if stop_tokens.iter().any(|s| nstr.starts_with(s)) {
-                    *n_curr = dd;
-                    break;
-                }
-                if dd == -1 {
-                    if !token_callback(nstr.clone()) {
-                        *n_curr = dd;
-                        break;
+                if buffer.len() >= max_stop_len {
+                    for t in buffer.drain(..1).into_iter() {
+                        if !token_callback(t.0) {
+                            *n_curr = t.1;
+                            return Ok(0);
+                        }
                     }
-                    nstr = "".to_string();
-                    dd = -1;
                 }
                 batch.clear();
                 batch.add(new_token_id, *n_curr, &[0], true)?;
@@ -317,5 +317,49 @@ impl LlamaContext {
             logit = 0;
         }
         Ok(logit)
+    }
+}
+
+struct TokenBuf {
+    tokens: Vec<(String, i32)>,
+    len: usize,
+}
+
+impl TokenBuf {
+    pub fn new() -> Self {
+        Self {
+            tokens: vec![],
+            len: 0,
+        }
+    }
+
+    pub fn add(&mut self, token: String, n: i32) {
+        self.len += token.len();
+        self.tokens.push((token, n));
+    }
+
+    pub fn len(&self) -> usize {
+        self.len
+    }
+
+    pub fn find(&self, data: &[String]) -> Option<usize> {
+        let mut acc = "".to_string();
+        for i in (0..self.tokens.len()).rev() {
+            acc = self.tokens[i].0.clone() + &acc;
+            if data.iter().any(|d| acc.contains(d)) {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    pub fn drain(&mut self, range: impl RangeBounds<usize>) -> Vec<(String, i32)> {
+        let res: Vec<(String, i32)> = self.tokens.drain(range).collect();
+        let res_len = res.iter().fold(0, |mut acc, (s, _)| {
+            acc += s.len();
+            acc
+        });
+        self.len -= res_len;
+        res
     }
 }
