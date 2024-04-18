@@ -84,9 +84,9 @@ impl Context {
             let prompt = strfmt(s2, &vars).unwrap();
             let mut bb = self.backend.lock().unwrap();
             //            eprintln!("{prompt}");
-            bb.eval_str(s1, false)?;
+            bb.eval_str(s1, true)?;
             bb.eval_image(image)?;
-            bb.eval_str(&prompt, true)?;
+            bb.eval_str(&prompt, false)?;
         } else {
             let mut bb = self.backend.lock().unwrap();
             bb.eval_image(image)?;

@@ -226,5 +226,5 @@ usage:
     wget https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/llava-v1.6-mistral-7b.Q4_K_M.gguf
     wget https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/mmproj-model-f16.gguf
     cd -
-    cargo r --release --example llava_with_image -- models/llava-v1.6-mistral-7b.Q4_K_M.gguf models/mmproj-model-f16.gguf ~/red-fox-300x300.jpg
+    cargo r --release --example basic_with_image -- models/llava-v1.6-mistral-7b.Q4_K_M.gguf models/mmproj-model-f16.gguf ~/red-fox-300x300.jpg
 #+END_SRC
