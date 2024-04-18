@@ -95,7 +95,7 @@ impl Context for LlamaContext {
     fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
         self.logit = self.ctx.eval_string(
             prompt,
-            512,
+            2048,
             if add_bos {
                 AddBos::Always
             } else {

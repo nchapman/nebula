@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{Read, Write};
 
 use nebula::{
     options::{ContextOptions, ModelOptions},
@@ -52,6 +52,7 @@ fn main() {
     ctx.predict_with_callback(
         Box::new(|token| {
             print!("{}", token);
+            std::io::stdout().flush().unwrap();
             true
         }),
         n_len,
