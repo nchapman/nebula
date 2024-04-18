@@ -137,7 +137,6 @@ impl Context for LlamaContext {
         max_len: usize,
         stop_tokens: &[String],
     ) -> Result<()> {
-        eprintln!("asdasd");
         self.logit = self.ctx.pedict(
             self.logit,
             &mut self.n_curr,

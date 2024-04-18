@@ -107,7 +107,6 @@ impl Context {
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
         max_len: usize,
     ) -> Result<()> {
-        eprintln!("adasd");
         self.backend.lock().unwrap().predict_with_callback(
             token_callback,
             max_len,
