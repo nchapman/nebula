@@ -290,7 +290,7 @@ impl LlamaContext {
                     break;
                 }
                 let ntr = self.model.token_to_str(new_token_id)?;
-                //                eprint!("{:?} ", ntr);
+                eprint!("{:?} ", ntr);
                 buffer.add(ntr, *n_curr);
                 if let Some(s) = buffer.find(stop_tokens) {
                     for t in buffer.drain(..s).into_iter() {
