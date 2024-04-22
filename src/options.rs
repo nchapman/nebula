@@ -48,11 +48,11 @@ fn default_conversation_assistant_format() -> String {
 }
 
 fn default_conversation_prompt_format() -> String {
-    "User:\n{prompt}\nAssistant:\n".to_string()
+    "\nUser:\n{prompt}\nAssistant:\n".to_string()
 }
 
 fn default_conversation_prompt_format_with_image() -> String {
-    "{image}User:\n{prompt}\nAssistant:\n".to_string()
+    "{image}\nUser:\n{prompt}\nAssistant:\n".to_string()
 }
 
 fn default_stop_tokens() -> Vec<String> {

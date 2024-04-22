@@ -34,6 +34,8 @@ impl From<ContextOptions> for LlamaContextParams {
         Self::default()
             .with_n_ctx(NonZeroU32::new(val.n_ctx as u32))
             .with_seed(val.seed)
+            .with_n_threads(val.n_threads as u32)
+            .with_n_batch(2048)
     }
 }
 

@@ -78,15 +78,19 @@ impl Context {
 
     pub fn eval_image(&mut self, image: Vec<u8>, prompt: &str) -> Result<()> {
         if let Some((s1, s2)) = &self.options.prompt_format_with_image.split_once("{image}") {
-            //            eprintln!("{s1}: {s2}");
+            eprintln!("s1: {:?}", s1);
+            eprintln!("s2: {:?}", s2);
             let mut vars = HashMap::new();
             vars.insert("prompt".to_string(), prompt);
             let prompt = strfmt(s2, &vars).unwrap();
+            eprintln!("prompt: {:?}", prompt);
             let mut bb = self.backend.lock().unwrap();
-            //            eprintln!("{prompt}");
             bb.eval_str(s1, true)?;
+            eprintln!("complete eval");
             bb.eval_image(image)?;
+            eprintln!("complete eval");
             bb.eval_str(&prompt, false)?;
+            eprintln!("complete eval");
         } else {
             let mut bb = self.backend.lock().unwrap();
             bb.eval_image(image)?;
