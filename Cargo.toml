@@ -25,11 +25,17 @@ tracing-chrome = "0.7.1"
 thiserror = "1"
 log = "0.4.17"
 
+#whisper feature
+hound = { version = "3.5.0", optional = true }
+whisper-rs = { git = "https://github.com/tazz4843/whisper-rs", rev = "9861dfdb939d1923beb65adad20acea74afb7a78", optional = true }
+cpal = { version = "0.15.1", optional = true }
+anyhow = { version = "1.0.70", optional = true }
+rubato = { version = "0.15.0", optional = true }
+
 [dev-dependencies]
 hf-hub = "0.3.2"
 
 [features]
-default = ["llama"]
 llama = ["llama-cpp"]
 #candle = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
 cuda = ["llama-cpp?/cublas"] #, "candle-core?/cuda", "candle-transformers?/cuda", "candle-nn?/cuda"]
@@ -37,3 +43,4 @@ opencl = ["llama-cpp?/clblas"]
 openblas = ["llama-cpp?/openblas"]
 blis = ["llama-cpp?/blis"]
 hip = ["llama-cpp?/hipblas"]
+whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]

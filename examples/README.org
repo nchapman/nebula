@@ -37,7 +37,7 @@ fn main() {
 ** usage
 #+BEGIN_SRC bash
 usage:
-	cargo r --release --example basic -- <model_file_path> "<promt>" [<n_len = 150>]
+	cargo r --release --example basic --features llama -- <model_file_path> "<promt>" [<n_len = 150>]
 #+END_SRC
 ** models
 *** llava-1.6-mistral-7b-gguf
@@ -46,7 +46,7 @@ usage:
   cd models
   wget https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/llava-v1.6-mistral-7b.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** Mistral-7B-Instruct-v0.2-GGUF
 **** Q5_K_M
@@ -55,7 +55,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q5_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 
 **** Q4_K_M
@@ -64,7 +64,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.2-GGUF/resolve/main/mistral-7b-instruct-v0.2.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/mistral-7b-instruct-v0.2.Q5_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** Mixtral-8x7B-Instruct-v0.1-GGUF
 #+BEGIN_SRC bash
@@ -72,7 +72,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/Mixtral-8x7B-Instruct-v0.1-GGUF/resolve/main/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/mixtral-8x7b-instruct-v0.1.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** rocket-3B-GGUF
 #+BEGIN_SRC bash
@@ -80,7 +80,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/rocket-3B-GGUF/resolve/main/rocket-3b.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/rocket-3b.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/rocket-3b.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** zephyr-7B-beta-GGUF
 #+BEGIN_SRC bash
@@ -88,7 +88,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/zephyr-7B-beta-GGUF/resolve/main/zephyr-7b-beta.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/zephyr-7b-beta.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/zephyr-7b-beta.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** phi-2-GGUF
 #+BEGIN_SRC bash
@@ -96,7 +96,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/phi-2-GGUF/resolve/main/phi-2.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/phi-2.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/phi-2.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** Yi-34B-GGUF
 #+BEGIN_SRC bash
@@ -104,7 +104,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/Yi-34B-GGUF/resolve/main/yi-34b.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/yi-34b.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/yi-34b.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** Hermes-2-Pro-Mistral-7B-GGUF
 #+BEGIN_SRC bash
@@ -112,7 +112,7 @@ usage:
   cd models
   wget https://huggingface.co/NousResearch/Hermes-2-Pro-Mistral-7B-GGUF/resolve/main/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/Hermes-2-Pro-Mistral-7B.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** gemma-7b-it
 #+BEGIN_SRC bash
@@ -120,7 +120,7 @@ usage:
   cd models
   wget https://huggingface.co/google/gemma-7b-it/resolve/main/gemma-7b-it.gguf
   cd -
-  cargo r --release --example basic -- models/gemma-7b-it.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/gemma-7b-it.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** StarCoder2-15B-GGUF
 #+BEGIN_SRC bash
@@ -128,7 +128,7 @@ usage:
   cd models
   wget https://huggingface.co/second-state/StarCoder2-15B-GGUF/resolve/main/starcoder2-15b-Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/starcoder2-15b-Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/starcoder2-15b-Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** dolphin-2.6-mistral-7B-GGUF
 #+BEGIN_SRC bash
@@ -136,7 +136,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/dolphin-2.6-mistral-7B-GGUF/resolve/main/dolphin-2.6-mistral-7b.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/dolphin-2.6-mistral-7b.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/dolphin-2.6-mistral-7b.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** Nous-Hermes-2-SOLAR-10.7B-GGUF
 #+BEGIN_SRC bash
@@ -144,7 +144,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/Nous-Hermes-2-SOLAR-10.7B-GGUF/resolve/main/nous-hermes-2-solar-10.7b.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/nous-hermes-2-solar-10.7b.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/nous-hermes-2-solar-10.7b.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 *** Llama-2-7B-GGUF
 #+BEGIN_SRC bash
@@ -152,7 +152,7 @@ usage:
   cd models
   wget https://huggingface.co/TheBloke/Llama-2-7B-GGUF/raw/resolve/llama-2-7b.Q4_K_M.gguf
   cd -
-  cargo r --release --example basic -- models/llama-2-7b.Q4_K_M.gguf "Write helloworld code in Rust."
+  cargo r --release --example basic --features llama -- models/llama-2-7b.Q4_K_M.gguf "Write helloworld code in Rust."
 #+END_SRC
 
 
@@ -216,7 +216,7 @@ fn main() {
 ** usage
 #+BEGIN_SRC bash
 usage:
-	cargo r --release --example basic_with_image  -- <model_file_path> <mmproj_model_file_path> <image_file_name> ["<promt = <image>\nUSER:\nProvide a full description.\nASSISTANT:\n>"] [<n_len = 4000>]
+	cargo r --release --example basic_with_image --features llama  -- <model_file_path> <mmproj_model_file_path> <image_file_name> ["<promt = <image>\nUSER:\nProvide a full description.\nASSISTANT:\n>"] [<n_len = 4000>]
 #+END_SRC
 ** models
 *** llava-1.6-mistral-7b-gguf
@@ -226,5 +226,34 @@ usage:
     wget https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/llava-v1.6-mistral-7b.Q4_K_M.gguf
     wget https://huggingface.co/cjpais/llava-1.6-mistral-7b-gguf/resolve/main/mmproj-model-f16.gguf
     cd -
-    cargo r --release --example basic_with_image -- models/llava-v1.6-mistral-7b.Q4_K_M.gguf models/mmproj-model-f16.gguf ~/red-fox-300x300.jpg
+    cargo r --release --example basic_with_image --features llama -- models/llava-v1.6-mistral-7b.Q4_K_M.gguf models/mmproj-model-f16.gguf ~/red-fox-300x300.jpg
+#+END_SRC
+
+
+* [[https://github.com/nchapman/nebula/blob/main/examples/whisper_on_wav.rs][whisper_on_wav]]
+** usage
+#+BEGIN_SRC bash
+usage:
+	cargo r --release --example whisper_on_wav --features whisper
+#+END_SRC
+** models
+*** ggml-base.en.bin
+#+BEGIN_SRC bash
+    mkdir models
+    wget -O models/ggml-base.en.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin?download=true
+    cargo r --release --example whisper_on_wav --features whisper
+#+END_SRC
+
+* [[https://github.com/nchapman/nebula/blob/main/examples/whisper_stream.rs][whisper_stream]]
+** usage
+#+BEGIN_SRC bash
+usage:
+	cargo r --release --example whisper_stream --features whisper
+#+END_SRC
+** models
+*** ggml-base.en.bin
+#+BEGIN_SRC bash
+    mkdir models
+    wget -O models/ggml-base.en.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin?download=true
+    cargo r --release --example whisper_stream --features whisper
 #+END_SRC
