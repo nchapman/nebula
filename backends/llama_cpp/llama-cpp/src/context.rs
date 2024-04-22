@@ -287,7 +287,13 @@ impl LlamaContext {
                     crate::token::data_array::LlamaTokenDataArray::from_iter(candidates, false);
                 let new_token_id = self.sample_token_greedy(candidates_p);
                 if new_token_id == self.model.token_eos() {
-                    break;
+                    for t in buffer.drain(..s).into_iter() {
+                        *n_curr = t.1;
+                        if !token_callback(t.0) {
+                            return Ok(0);
+                        }
+                    }
+                    return Ok(0);
                 }
                 let ntr = self.model.token_to_str(new_token_id)?;
                 eprint!("{:?} ", ntr);
