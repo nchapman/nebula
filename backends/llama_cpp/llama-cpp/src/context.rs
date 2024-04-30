@@ -278,7 +278,7 @@ impl LlamaContext {
     ) -> Result<i32, PredictError> {
         let mut batch = LlamaBatch::new(2048, 1);
         let max_stop_len = stop_tokens.iter().map(|s| s.len()).max().unwrap();
-        //        eprintln!("{}", max_stop_len);
+        log::trace!("{}", max_stop_len);
         let mut buffer = TokenBuf::new();
         for _ in 0..n_len {
             {
@@ -296,7 +296,7 @@ impl LlamaContext {
                     return Ok(0);
                 }
                 let ntr = self.model.token_to_str(new_token_id)?;
-                eprint!("{:?} ", ntr);
+                log::trace!("{:?} ", ntr);
                 buffer.add(ntr, *n_curr);
                 if let Some(s) = buffer.find(stop_tokens) {
                     for t in buffer.drain(..s).into_iter() {

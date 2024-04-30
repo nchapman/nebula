@@ -7,9 +7,9 @@ edition = "2021"
 llama-cpp-sys = { path = "../llama-cpp-sys" }
 thiserror = "1"
 tracing = "0.1"
+log = "0.4.21"
 
 [dev-dependencies]
-
 hf-hub = "0.3.2"
 criterion = "0.5.1"
 pprof = { version = "0.13.0", features = ["criterion", "flamegraph"] }
