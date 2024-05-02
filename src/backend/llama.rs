@@ -113,6 +113,7 @@ impl Context for LlamaContext {
         } else {
             return Err(crate::error::Error::MmprojNotDefined);
         };
+        log::debug!("image embedding created: {} tokens", embedded_image.len());
         self.ctx
             .eval_embed_image(embedded_image, 2048, &mut self.n_curr)?;
         Ok(())

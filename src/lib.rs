@@ -80,19 +80,19 @@ impl Context {
 
     pub fn eval_image(&mut self, image: Vec<u8>, prompt: &str) -> Result<()> {
         if let Some((s1, s2)) = &self.options.prompt_format_with_image.split_once("{image}") {
-            eprintln!("s1: {:?}", s1);
-            eprintln!("s2: {:?}", s2);
+            log::debug!("s1: {:?}", s1);
+            log::debug!("s2: {:?}", s2);
             let mut vars = HashMap::new();
             vars.insert("prompt".to_string(), prompt);
             let prompt = strfmt(s2, &vars).unwrap();
-            eprintln!("prompt: {:?}", prompt);
+            log::debug!("prompt: {:?}", prompt);
             let mut bb = self.backend.lock().unwrap();
             bb.eval_str(s1, true)?;
-            eprintln!("complete eval");
+            log::debug!("complete eval \"{s1}\"");
             bb.eval_image(image)?;
-            eprintln!("complete eval");
+            log::debug!("complete eval image");
             bb.eval_str(&prompt, false)?;
-            eprintln!("complete eval");
+            log::debug!("complete eval \"{prompt}\"");
         } else {
             let mut bb = self.backend.lock().unwrap();
             bb.eval_image(image)?;
@@ -257,15 +257,14 @@ mod test {
         }
 }
 
+#[cfg(feature = "whisper")]
 pub struct AutomaticSpeechRecognitionModel {
     backend: Box<dyn backend::AutomaticSpeechRecognitionBackend>,
 }
 
 #[cfg(feature = "whisper")]
 impl AutomaticSpeechRecognitionModel {
-    pub fn new(
-        model: impl Into<PathBuf> + 'static
-    ) -> Result<Self> {
+    pub fn new(model: impl Into<PathBuf> + 'static) -> Result<Self> {
         let backend = backend::init_automatic_speech_recognition_backend(model)?;
         Ok(Self {
             backend: Box::new(backend),
@@ -279,8 +278,4 @@ impl AutomaticSpeechRecognitionModel {
     ) -> Result<String> {
         Ok(self.backend.predict(samples, options)?)
     }
-}
-
-impl Drop for AutomaticSpeechRecognitionModel {
-    fn drop(&mut self) {}
 }

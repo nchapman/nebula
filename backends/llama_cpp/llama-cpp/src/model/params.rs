@@ -96,7 +96,7 @@ impl LlamaModelParams {
                 key: [0; 128],
                 tag: 0,
                 __bindgen_anon_1: llama_cpp_sys::llama_model_kv_override__bindgen_ty_1 {
-                    int_value: 0,
+                    val_i64: 0,
                 },
             });
 
@@ -195,7 +195,7 @@ impl Default for LlamaModelParams {
                 key: [0; 128],
                 tag: 0,
                 __bindgen_anon_1: llama_cpp_sys::llama_model_kv_override__bindgen_ty_1 {
-                    int_value: 0,
+                    val_i64: 0,
                 },
             }],
         }

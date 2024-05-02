@@ -306,6 +306,34 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .replace(needle3, "#define LLAMA_LOG_ERROR(...) LOG(__VA_ARGS__)");
         std::fs::write(&PATCHED_LLAMACPP_PATH, patched_llamacpp_code)
             .expect("Attempted to write the patched llama.cpp file out to llama-patched.cpp");
+
+        const CLIP_PATH: &str = "llama.cpp/examples/llava/clip.cpp";
+        const PATCHED_CLIP_PATH: &str = "llama.cpp/examples/llava/clip-patched.cpp";
+        let clip_code =
+            std::fs::read_to_string(CLIP_PATH).expect("Could not read clip.cpp source file.");
+        let clip_needle1 = r#"#include "log.h""#;
+        if !clip_code.contains(clip_needle1) {
+            panic!("clip.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+        }
+        let patched_clip_code = clip_code.replace(clip_needle1, "#define LOG_TEE(...)");
+        std::fs::write(&PATCHED_CLIP_PATH, patched_clip_code)
+            .expect("Attempted to write the patched clip.cpp file out to llama-patched.cpp");
+
+        const LLAVA_PATH: &str = "llama.cpp/examples/llava/llava.cpp";
+        const PATCHED_LLAVA_PATH: &str = "llama.cpp/examples/llava/llava-patched.cpp";
+        let llava_code =
+            std::fs::read_to_string(LLAVA_PATH).expect("Could not read llava.cpp source file.");
+        let llava_needle1 = r#"#include "common.h""#;
+        if !llava_code.contains(llava_needle1) {
+            panic!("llava.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+        }
+        let patched_llava_code = llava_code.replace(
+            llava_needle1,
+            "#include \"common.h\"\n#undef LOG_TEE\n#define LOG_TEE(...)",
+        );
+        std::fs::write(&PATCHED_LLAVA_PATH, patched_llava_code)
+            .expect("Attempted to write the patched llava.cpp file out to llama-patched.cpp");
+
         cxx.shared_flag(true)
             .file("./llama.cpp/common/common.cpp")
             .file("./llama.cpp/unicode.cpp")
@@ -313,11 +341,13 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .file("./llama.cpp/common/sampling.cpp")
             .file("./llama.cpp/common/grammar-parser.cpp")
             .file("./llama.cpp/llama-patched.cpp")
-            .file("./llama.cpp/examples/llava/clip.cpp")
-            .file("./llama.cpp/examples/llava/llava.cpp")
+            .file("./llama.cpp/examples/llava/clip-patched.cpp")
+            .file("./llama.cpp/examples/llava/llava-patched.cpp")
             .cpp(true)
             .compile("binding");
         let _ = std::fs::remove_file(&PATCHED_LLAMACPP_PATH);
+        let _ = std::fs::remove_file(&PATCHED_CLIP_PATH);
+        let _ = std::fs::remove_file(&PATCHED_LLAVA_PATH);
     } else {
         cxx.shared_flag(true)
             .file("./llama.cpp/common/common.cpp")
@@ -364,8 +394,8 @@ fn main() {
     let mut cxx_flags = String::from("");
 
     if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
-        cx_flags.push_str(" -std=c11 -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -pthread");
-        cxx_flags.push_str(" -std=c++11 -Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -fPIC -pthread -march=native -mtune=native -Ofast");
+        cx_flags.push_str(" -std=c11 -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -Wno-unused-variable -Wno-unused-parameter -Wno-cast-qual -Wno-unused-function -Wno-unused-but-set-variable -pthread");
+        cxx_flags.push_str(" -std=c++11 -Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -Wno-unused-variable -Wno-unused-parameter -Wno-cast-qual -Wno-unused-function -Wno-unused-but-set-variable -fPIC -pthread -march=native -mtune=native -Ofast");
         if cfg!(target_arch = "x86_64") || cfg!(target_arch = "x86") {
             cx_flags.push_str(" -march=native -mtune=native -Ofast");
             cxx_flags.push_str(" -march=native -mtune=native -Ofast");

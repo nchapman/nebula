@@ -250,7 +250,7 @@ impl LlamaModel {
         let len = c_int::try_from(len).expect("length fits into c_int");
         let buf = string.into_raw();
         let size = unsafe {
-            llama_cpp_sys::llama_token_to_piece(self.model.model.as_ptr(), token.0, buf, len)
+            llama_cpp_sys::llama_token_to_piece(self.model.model.as_ptr(), token.0, buf, len, false)
         };
 
         match size {

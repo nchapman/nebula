@@ -6,6 +6,12 @@ pub struct ImageEmbed {
     pub(crate) embed: NonNull<llama_cpp_sys::llava_image_embed>,
 }
 
+impl ImageEmbed {
+    pub fn len(&self) -> usize {
+        unsafe { self.embed.as_ref().n_image_pos as usize }
+    }
+}
+
 impl Drop for ImageEmbed {
     fn drop(&mut self) {
         unsafe { llama_cpp_sys::llava_image_embed_free(self.embed.as_ptr()) }
