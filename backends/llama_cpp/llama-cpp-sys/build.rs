@@ -280,87 +280,87 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .file("./llama.cpp/common/build-info.cpp");
     }
 
-    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
-        const LLAMACPP_PATH: &str = "llama.cpp/llama.cpp";
-        const PATCHED_LLAMACPP_PATH: &str = "llama.cpp/llama-patched.cpp";
-        let llamacpp_code =
-            std::fs::read_to_string(LLAMACPP_PATH).expect("Could not read llama.cpp source file.");
-        let needle1 =
-            r#"#define LLAMA_LOG_INFO(...)  llama_log_internal(GGML_LOG_LEVEL_INFO , __VA_ARGS__)"#;
-        let needle2 =
-            r#"#define LLAMA_LOG_WARN(...)  llama_log_internal(GGML_LOG_LEVEL_WARN , __VA_ARGS__)"#;
-        let needle3 =
-            r#"#define LLAMA_LOG_ERROR(...) llama_log_internal(GGML_LOG_LEVEL_ERROR, __VA_ARGS__)"#;
-        if !llamacpp_code.contains(needle1)
-            || !llamacpp_code.contains(needle2)
-            || !llamacpp_code.contains(needle3)
-        {
-            panic!("llama.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
-        }
-        let patched_llamacpp_code = llamacpp_code
-            .replace(
-                needle1,
-                "#include \"log.h\"\n#define LLAMA_LOG_INFO(...)  LOG(__VA_ARGS__)",
-            )
-            .replace(needle2, "#define LLAMA_LOG_WARN(...)  LOG(__VA_ARGS__)")
-            .replace(needle3, "#define LLAMA_LOG_ERROR(...) LOG(__VA_ARGS__)");
-        std::fs::write(&PATCHED_LLAMACPP_PATH, patched_llamacpp_code)
-            .expect("Attempted to write the patched llama.cpp file out to llama-patched.cpp");
-
-        const CLIP_PATH: &str = "llama.cpp/examples/llava/clip.cpp";
-        const PATCHED_CLIP_PATH: &str = "llama.cpp/examples/llava/clip-patched.cpp";
-        let clip_code =
-            std::fs::read_to_string(CLIP_PATH).expect("Could not read clip.cpp source file.");
-        let clip_needle1 = r#"#include "log.h""#;
-        if !clip_code.contains(clip_needle1) {
-            panic!("clip.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
-        }
-        let patched_clip_code = clip_code.replace(clip_needle1, "#define LOG_TEE(...)");
-        std::fs::write(&PATCHED_CLIP_PATH, patched_clip_code)
-            .expect("Attempted to write the patched clip.cpp file out to llama-patched.cpp");
-
-        const LLAVA_PATH: &str = "llama.cpp/examples/llava/llava.cpp";
-        const PATCHED_LLAVA_PATH: &str = "llama.cpp/examples/llava/llava-patched.cpp";
-        let llava_code =
-            std::fs::read_to_string(LLAVA_PATH).expect("Could not read llava.cpp source file.");
-        let llava_needle1 = r#"#include "common.h""#;
-        if !llava_code.contains(llava_needle1) {
-            panic!("llava.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
-        }
-        let patched_llava_code = llava_code.replace(
-            llava_needle1,
-            "#include \"common.h\"\n#undef LOG_TEE\n#define LOG_TEE(...)",
-        );
-        std::fs::write(&PATCHED_LLAVA_PATH, patched_llava_code)
-            .expect("Attempted to write the patched llava.cpp file out to llama-patched.cpp");
-
-        cxx.shared_flag(true)
-            .file("./llama.cpp/common/common.cpp")
-            .file("./llama.cpp/unicode.cpp")
-            .file("./llama.cpp/unicode-data.cpp")
-            .file("./llama.cpp/common/sampling.cpp")
-            .file("./llama.cpp/common/grammar-parser.cpp")
-            .file("./llama.cpp/llama-patched.cpp")
-            .file("./llama.cpp/examples/llava/clip-patched.cpp")
-            .file("./llama.cpp/examples/llava/llava-patched.cpp")
-            .cpp(true)
-            .compile("binding");
-        let _ = std::fs::remove_file(&PATCHED_LLAMACPP_PATH);
-        let _ = std::fs::remove_file(&PATCHED_CLIP_PATH);
-        let _ = std::fs::remove_file(&PATCHED_LLAVA_PATH);
-    } else {
-        cxx.shared_flag(true)
-            .file("./llama.cpp/common/common.cpp")
-            .file("./llama.cpp/unicode.cpp")
-            .file("./llama.cpp/common/sampling.cpp")
-            .file("./llama.cpp/unicode-data.cpp")
-            .file("./llama.cpp/common/grammar-parser.cpp")
-            .file("./llama.cpp/llama.cpp")
-            .file("./llama.cpp/examples/llava/clip.cpp")
-            .file("./llama.cpp/examples/llava/llava.cpp")
-            .cpp(true)
-            .compile("binding");
+    //    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
+    const LLAMACPP_PATH: &str = "llama.cpp/llama.cpp";
+    const PATCHED_LLAMACPP_PATH: &str = "llama.cpp/llama-patched.cpp";
+    let llamacpp_code =
+        std::fs::read_to_string(LLAMACPP_PATH).expect("Could not read llama.cpp source file.");
+    let needle1 =
+        r#"#define LLAMA_LOG_INFO(...)  llama_log_internal(GGML_LOG_LEVEL_INFO , __VA_ARGS__)"#;
+    let needle2 =
+        r#"#define LLAMA_LOG_WARN(...)  llama_log_internal(GGML_LOG_LEVEL_WARN , __VA_ARGS__)"#;
+    let needle3 =
+        r#"#define LLAMA_LOG_ERROR(...) llama_log_internal(GGML_LOG_LEVEL_ERROR, __VA_ARGS__)"#;
+    if !llamacpp_code.contains(needle1)
+        || !llamacpp_code.contains(needle2)
+        || !llamacpp_code.contains(needle3)
+    {
+        panic!("llama.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
     }
+    let patched_llamacpp_code = llamacpp_code
+        .replace(
+            needle1,
+            "#include \"log.h\"\n#define LLAMA_LOG_INFO(...)  LOG(__VA_ARGS__)",
+        )
+        .replace(needle2, "#define LLAMA_LOG_WARN(...)  LOG(__VA_ARGS__)")
+        .replace(needle3, "#define LLAMA_LOG_ERROR(...) LOG(__VA_ARGS__)");
+    std::fs::write(&PATCHED_LLAMACPP_PATH, patched_llamacpp_code)
+        .expect("Attempted to write the patched llama.cpp file out to llama-patched.cpp");
+
+    const CLIP_PATH: &str = "llama.cpp/examples/llava/clip.cpp";
+    const PATCHED_CLIP_PATH: &str = "llama.cpp/examples/llava/clip-patched.cpp";
+    let clip_code =
+        std::fs::read_to_string(CLIP_PATH).expect("Could not read clip.cpp source file.");
+    let clip_needle1 = r#"#include "log.h""#;
+    if !clip_code.contains(clip_needle1) {
+        panic!("clip.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+    }
+    let patched_clip_code = clip_code.replace(clip_needle1, "#define LOG_TEE(...)");
+    std::fs::write(&PATCHED_CLIP_PATH, patched_clip_code)
+        .expect("Attempted to write the patched clip.cpp file out to llama-patched.cpp");
+
+    const LLAVA_PATH: &str = "llama.cpp/examples/llava/llava.cpp";
+    const PATCHED_LLAVA_PATH: &str = "llama.cpp/examples/llava/llava-patched.cpp";
+    let llava_code =
+        std::fs::read_to_string(LLAVA_PATH).expect("Could not read llava.cpp source file.");
+    let llava_needle1 = r#"#include "common.h""#;
+    if !llava_code.contains(llava_needle1) {
+        panic!("llava.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+    }
+    let patched_llava_code = llava_code.replace(
+        llava_needle1,
+        "#include \"common.h\"\n#undef LOG_TEE\n#define LOG_TEE(...)",
+    );
+    std::fs::write(&PATCHED_LLAVA_PATH, patched_llava_code)
+        .expect("Attempted to write the patched llava.cpp file out to llama-patched.cpp");
+
+    cxx.shared_flag(true)
+        .file("./llama.cpp/common/common.cpp")
+        .file("./llama.cpp/unicode.cpp")
+        .file("./llama.cpp/unicode-data.cpp")
+        .file("./llama.cpp/common/sampling.cpp")
+        .file("./llama.cpp/common/grammar-parser.cpp")
+        .file("./llama.cpp/llama-patched.cpp")
+        .file("./llama.cpp/examples/llava/clip-patched.cpp")
+        .file("./llama.cpp/examples/llava/llava-patched.cpp")
+        .cpp(true)
+        .compile("binding");
+    let _ = std::fs::remove_file(&PATCHED_LLAMACPP_PATH);
+    let _ = std::fs::remove_file(&PATCHED_CLIP_PATH);
+    let _ = std::fs::remove_file(&PATCHED_LLAVA_PATH);
+    //    } else {
+    // cxx.shared_flag(true)
+    //     .file("./llama.cpp/common/common.cpp")
+    //     .file("./llama.cpp/unicode.cpp")
+    //     .file("./llama.cpp/common/sampling.cpp")
+    //     .file("./llama.cpp/unicode-data.cpp")
+    //     .file("./llama.cpp/common/grammar-parser.cpp")
+    //     .file("./llama.cpp/llama.cpp")
+    //     .file("./llama.cpp/examples/llava/clip.cpp")
+    //     .file("./llama.cpp/examples/llava/llava.cpp")
+    //     .cpp(true)
+    //     .compile("binding");
+    //    }
 }
 
 fn main() {
@@ -400,10 +400,10 @@ fn main() {
             cx_flags.push_str(" -march=native -mtune=native -Ofast");
             cxx_flags.push_str(" -march=native -mtune=native -Ofast");
         }
-        if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
-            cx_flags.push_str(" -DNDEBUG");
-            cxx_flags.push_str(" -DNDEBUG");
-        }
+        //        if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
+        cx_flags.push_str(" -DNDEBUG");
+        cxx_flags.push_str(" -DNDEBUG");
+    //        }
     } else if cfg!(target_os = "windows") {
         cx_flags.push_str(" /W4 /Wall /wd4820 /wd4710 /wd4711 /wd4820 /wd4514");
         cxx_flags.push_str(" /W4 /Wall /wd4820 /wd4710 /wd4711 /wd4820 /wd4514");
