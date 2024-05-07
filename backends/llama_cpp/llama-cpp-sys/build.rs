@@ -280,7 +280,6 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
             .file("./llama.cpp/common/build-info.cpp");
     }
 
-    //    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
     const LLAMACPP_PATH: &str = "llama.cpp/llama.cpp";
     const PATCHED_LLAMACPP_PATH: &str = "llama.cpp/llama-patched.cpp";
     let llamacpp_code =
@@ -334,33 +333,56 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
     std::fs::write(&PATCHED_LLAVA_PATH, patched_llava_code)
         .expect("Attempted to write the patched llava.cpp file out to llama-patched.cpp");
 
-    cxx.shared_flag(true)
-        .file("./llama.cpp/common/common.cpp")
-        .file("./llama.cpp/unicode.cpp")
-        .file("./llama.cpp/unicode-data.cpp")
-        .file("./llama.cpp/common/sampling.cpp")
-        .file("./llama.cpp/common/grammar-parser.cpp")
-        .file("./llama.cpp/llama-patched.cpp")
-        .file("./llama.cpp/examples/llava/clip-patched.cpp")
-        .file("./llama.cpp/examples/llava/llava-patched.cpp")
-        .cpp(true)
-        .compile("binding");
+    if cfg!(feature = "sycl") {
+        if let Err(_) = std::env::var("ONEAPI_ROOT") {
+            panic!("Not detect ENV {{ONEAPI_ROOT}}, please install oneAPI & source it, like: source /opt/intel/oneapi/setvars.sh!");
+        }
+        cxx.flag(&format!(
+            "-L${}/lib",
+            std::env::var("MKLROOT").expect("$MKLROOT suoulf be defined")
+        ));
+        cxx.flag("-DGGML_USE_SYCL");
+        cxx.flag("-fsycl");
+        cxx.flag("-lOpenCL");
+        cxx.flag("-lmkl_core pthread");
+        cxx.flag("-lm");
+        cxx.flag("-ldl");
+        cxx.flag("-lmkl_sycl_blas");
+        cxx.flag("-lmkl_intel_ilp64");
+        cxx.flag("-lmkl_tbb_thread");
+        cxx.include(
+            std::env::var("SYCL_INCLUDE_DIR").expect("$SYCL_INCLUDE_DIR suoulf be defined"),
+        );
+
+        cxx.shared_flag(true)
+            .compiler("icpx")
+            .file("./llama.cpp/common/common.cpp")
+            .file("./llama.cpp/unicode.cpp")
+            .file("./llama.cpp/unicode-data.cpp")
+            .file("./llama.cpp/common/sampling.cpp")
+            .file("./llama.cpp/common/grammar-parser.cpp")
+            .file("./llama.cpp/llama-patched.cpp")
+            .file("./llama.cpp/examples/llava/clip-patched.cpp")
+            .file("./llama.cpp/examples/llava/llava-patched.cpp")
+            .file("./llama.cpp/ggml-sycl.cpp")
+            .cpp(true)
+            .compile("binding");
+    } else {
+        cxx.shared_flag(true)
+            .file("./llama.cpp/common/common.cpp")
+            .file("./llama.cpp/unicode.cpp")
+            .file("./llama.cpp/unicode-data.cpp")
+            .file("./llama.cpp/common/sampling.cpp")
+            .file("./llama.cpp/common/grammar-parser.cpp")
+            .file("./llama.cpp/llama-patched.cpp")
+            .file("./llama.cpp/examples/llava/clip-patched.cpp")
+            .file("./llama.cpp/examples/llava/llava-patched.cpp")
+            .cpp(true)
+            .compile("binding");
+    }
     let _ = std::fs::remove_file(&PATCHED_LLAMACPP_PATH);
     let _ = std::fs::remove_file(&PATCHED_CLIP_PATH);
     let _ = std::fs::remove_file(&PATCHED_LLAVA_PATH);
-    //    } else {
-    // cxx.shared_flag(true)
-    //     .file("./llama.cpp/common/common.cpp")
-    //     .file("./llama.cpp/unicode.cpp")
-    //     .file("./llama.cpp/common/sampling.cpp")
-    //     .file("./llama.cpp/unicode-data.cpp")
-    //     .file("./llama.cpp/common/grammar-parser.cpp")
-    //     .file("./llama.cpp/llama.cpp")
-    //     .file("./llama.cpp/examples/llava/clip.cpp")
-    //     .file("./llama.cpp/examples/llava/llava.cpp")
-    //     .cpp(true)
-    //     .compile("binding");
-    //    }
 }
 
 fn main() {
