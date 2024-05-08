@@ -28,4 +28,28 @@ GPU
 This provides BLAS acceleration on HIP-supported AMD GPUs.
 - Windows, Linux
   -  [[https://rocm.docs.amd.com/en/latest/deploy/linux/quick_start.html][ROCm]]
+
+***** Intel GPU
+The llama.cpp SYCL backend is designed to support Intel GPU. Based on
+the cross-platform feature of SYCL, it could support other vendor
+GPUs: Nvidia GPU (AMD GPU coming).
+When targeting Intel CPU, it is recommended to use Intel oneMKL
+backend.
+
+- Linux, Windows
+  - Install GPU drivers
+
+    Intel data center GPUs drivers installation guide and download
+    page can be found here: [[https://dgpu-docs.intel.com/driver/installation.html#ubuntu-install-steps][Get intel dGPU
+    Drivers]]
+    For client GPUs (iGPU & Arc A-Series), please refer to the client
+    [[https://dgpu-docs.intel.com/driver/client/overview.html][iGPU
+    driver installation]].
+
+  - The base toolkit can be obtained from the official
+    [[https://www.intel.com/content/www/us/en/developer/tools/oneapi/base-toolkit.html#gs.8i8gub][Intel®
+    oneAPI Base Toolkit page]].
+
+
+
 * [[https://github.com/nchapman/nebula/tree/main/examples][examples]]
