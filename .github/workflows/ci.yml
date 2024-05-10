@@ -27,7 +27,7 @@ jobs:
 
       - name: Update local toolchain
         run: |
-          rustup update
+          rustup update --no-self-update
           rustup component add clippy
       - name: Toolchain info
         run: |
