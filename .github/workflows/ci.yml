@@ -42,7 +42,7 @@ jobs:
       - name: Test
         run: |
           #cd nebula
-          cargo test --features llama
+          cargo test --features llama no-metal
       - name: Build with llama
         run: |
           #cd nebula

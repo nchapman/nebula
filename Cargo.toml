@@ -38,6 +38,7 @@ hf-hub = "0.3.2"
 [features]
 #default = ["llama"]
 llama = ["llama-cpp"]
+no-metal = ["llama-cpp?/no-metal"]
 #candle = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
 cuda = ["llama-cpp?/cublas"] #, "candle-core?/cuda", "candle-transformers?/cuda", "candle-nn?/cuda"]
 opencl = ["llama-cpp?/clblas"]
