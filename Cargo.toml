@@ -34,6 +34,9 @@ rubato = { version = "0.15.0", optional = true }
 
 [dev-dependencies]
 hf-hub = "0.3.2"
+cpal = "*"
+hound = "*"
+rubato = "*"
 
 [features]
 #default = ["llama"]
@@ -45,3 +48,20 @@ openblas = ["llama-cpp?/openblas"]
 blis = ["llama-cpp?/blis"]
 hip = ["llama-cpp?/hipblas"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
+
+
+[[example]]
+name = "basic"
+required-features = ["llama"]
+
+[[example]]
+name = "basic_with_image"
+required-features = ["llama"]
+
+[[example]]
+name = "whisper_on_wav"
+required-features = ["whisper"]
+
+[[example]]
+name = "whisper_stream"
+required-features = ["whisper"]
