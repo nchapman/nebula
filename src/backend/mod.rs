@@ -1,7 +1,11 @@
 use std::{path::PathBuf, pin::Pin, sync::Mutex};
 
+#[cfg(feature = "whisper")]
+use crate::{options::AutomaticSpeechRecognitionOptions, Result};
+
+#[cfg(feature = "llama")]
 use crate::{
-    options::{ContextOptions, ModelOptions, AutomaticSpeechRecognitionOptions},
+    options::{ContextOptions, ModelOptions},
     Result,
 };
 
@@ -11,6 +15,7 @@ pub mod llama;
 #[cfg(feature = "whisper")]
 pub mod whisper;
 
+#[cfg(feature = "llama")]
 pub trait Context: Send {
     fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()>;
     fn eval_image(&mut self, image: Vec<u8>) -> Result<()>;
@@ -23,7 +28,7 @@ pub trait Context: Send {
     ) -> Result<()>;
 }
 
-
+#[cfg(feature = "llama")]
 pub trait Model: Send {
     fn with_mmproj(&mut self, mmproj: PathBuf) -> Result<()>;
     fn new_context(&self, opions: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context>>>>;
@@ -31,9 +36,10 @@ pub trait Model: Send {
 
 #[cfg(feature = "llama")]
 pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Model> {
-    Ok(llama::Llama::new(model, options)?)
+    llama::Llama::new(model, options)
 }
 
+#[cfg(feature = "whisper")]
 pub trait AutomaticSpeechRecognitionBackend {
     fn predict(
         &mut self,
@@ -43,6 +49,8 @@ pub trait AutomaticSpeechRecognitionBackend {
 }
 
 #[cfg(feature = "whisper")]
-pub fn init_automatic_speech_recognition_backend(model: impl Into<PathBuf>) -> Result<impl AutomaticSpeechRecognitionBackend> {
+pub fn init_automatic_speech_recognition_backend(
+    model: impl Into<PathBuf>,
+) -> Result<impl AutomaticSpeechRecognitionBackend> {
     Ok(whisper::Whisper::new(model)?)
 }

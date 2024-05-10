@@ -148,7 +148,6 @@ impl Default for ContextOptions {
     }
 }
 
-
 pub struct NebulaOptions {
     pub seed: i32,
     pub n_threads: i32,
@@ -363,7 +362,7 @@ impl Default for NebulaOptions {
     }
 }
 
-
+#[cfg(feature = "whisper")]
 pub struct AutomaticSpeechRecognitionOptions<'a> {
     pub n_threads: i32,
     pub translate: bool,
@@ -374,6 +373,7 @@ pub struct AutomaticSpeechRecognitionOptions<'a> {
     pub print_timestamps: bool,
 }
 
+#[cfg(feature = "whisper")]
 impl<'a> AutomaticSpeechRecognitionOptions<'a> {
     pub fn with_n_threads(mut self, n_threads: i32) -> Self {
         self.n_threads = n_threads;
@@ -411,6 +411,7 @@ impl<'a> AutomaticSpeechRecognitionOptions<'a> {
     }
 }
 
+#[cfg(feature = "whisper")]
 impl<'a> Default for AutomaticSpeechRecognitionOptions<'a> {
     fn default() -> Self {
         Self {

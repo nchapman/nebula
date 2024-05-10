@@ -15,8 +15,8 @@ jobs:
           - build: linux
             os: ubuntu-latest
 
-#          - build: macos
-#            os: macos-latest
+          - build: macos
+            os: macos-latest
 
           - build: windows
             os: windows-latest
@@ -43,7 +43,7 @@ jobs:
         run: |
           #cd nebula
           cargo test
-      - name: Build
+      - name: Build with llama
         run: |
           #cd nebula
-          cargo build --release
+          cargo build --release --features llama

@@ -1,6 +1,8 @@
 use strfmt::strfmt;
 
+#[cfg(feature = "llama")]
 use crate::backend::Model as _;
+
 use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 
 pub mod error;
@@ -10,6 +12,7 @@ pub mod utils;
 
 mod backend;
 
+#[cfg(feature = "llama")]
 pub struct Model {
     backend: Pin<Box<dyn backend::Model>>,
 }
@@ -64,11 +67,13 @@ impl Model {
     }
 }
 
+#[cfg(feature = "llama")]
 pub struct Context {
     options: options::ContextOptions,
     backend: Pin<Box<Mutex<dyn backend::Context>>>,
 }
 
+#[cfg(feature = "llama")]
 impl Context {
     pub fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
         let mut vars = HashMap::new();
@@ -96,7 +101,7 @@ impl Context {
         } else {
             let mut bb = self.backend.lock().unwrap();
             bb.eval_image(image)?;
-            bb.eval_str(&prompt, true)?;
+            bb.eval_str(prompt, true)?;
         };
         Ok(())
     }
@@ -121,6 +126,7 @@ impl Context {
     }
 }
 
+#[cfg(feature = "llama")]
 impl Drop for Model {
     fn drop(&mut self) {}
 }
