@@ -38,11 +38,11 @@ jobs:
         run: |
           #cd nebula
           #cargo fmt -- --check
-          cargo clippy -- -D warnings
+          cargo clippy --features llama -- -D warnings
       - name: Test
         run: |
           #cd nebula
-          cargo test
+          cargo test --features llama
       - name: Build with llama
         run: |
           #cd nebula
