@@ -169,13 +169,6 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) -> Result<(), c
         cx.flag("-DGGML_USE_METAL")
             .flag("-DGGML_METAL_EMBED_LIBRARY");
     }
-    cxx.flag("-DGGML_USE_METAL")
-        .flag("-DGGML_METAL_EMBED_LIBRARY");
-
-    println!("cargo:rustc-link-lib=framework=Metal");
-    println!("cargo:rustc-link-lib=framework=Foundation");
-    println!("cargo:rustc-link-lib=framework=MetalPerformanceShaders");
-    println!("cargo:rustc-link-lib=framework=MetalKit");
 
     const GGML_METAL_METAL_PATH: &str = "llama.cpp/ggml-metal.metal";
     const GGML_METAL_PATH: &str = "llama.cpp/ggml-metal.m";
@@ -449,6 +442,12 @@ fn main() {
     } else if !cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
         if let Ok(_) = compile_metal(&mut cx, &mut cxx, &out_path) {
             ggml_type = "metal".to_string();
+            cxx.flag("-DGGML_USE_METAL")
+                .flag("-DGGML_METAL_EMBED_LIBRARY");
+            println!("cargo:rustc-link-lib=framework=Metal");
+            println!("cargo:rustc-link-lib=framework=Foundation");
+            println!("cargo:rustc-link-lib=framework=MetalPerformanceShaders");
+            println!("cargo:rustc-link-lib=framework=MetalKit");
         }
     }
 
