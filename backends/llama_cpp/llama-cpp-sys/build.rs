@@ -160,7 +160,7 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .compile("ggml");
 }
 
-fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) {
+fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) -> Result<(), cc::Error> {
     if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
         cx.flag("-DGGML_USE_METAL")
             .flag("-DGGML_METAL_NDEBUG")
@@ -237,7 +237,7 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) {
     cx.file(GGML_METAL_PATH);
     cx.file(metal_embed_asm)
         .flag("-c")
-        .compile("ggml-metal-embed.o");
+        .try_compile("ggml-metal-embed.o")
 }
 
 fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
@@ -447,8 +447,9 @@ fn main() {
     } else if cfg!(feature = "blis") {
         compile_blis(&mut cx);
     } else if !cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
-        compile_metal(&mut cx, &mut cxx, &out_path);
-        ggml_type = "metal".to_string();
+        if let Ok(_) = compile_metal(&mut cx, &mut cxx, &out_path) {
+            ggml_type = "metal".to_string();
+        }
     }
 
     if cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
