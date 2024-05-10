@@ -442,6 +442,7 @@ fn main() {
         compile_blis(&mut cx);
     } else if !cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
         if let Ok(cc) = compile_metal(cx.clone(), &out_path) {
+            eprintln!("with metal");
             ggml_type = "metal".to_string();
             cxx.flag("-DGGML_USE_METAL")
                 .flag("-DGGML_METAL_EMBED_LIBRARY");
