@@ -160,7 +160,7 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
         .compile("ggml");
 }
 
-fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) -> Result<(), cc::Error> {
+fn compile_metal(mut cx: Build, out: &PathBuf) -> Result<Build, cc::Error> {
     if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
         cx.flag("-DGGML_USE_METAL")
             .flag("-DGGML_METAL_NDEBUG")
@@ -230,7 +230,8 @@ fn compile_metal(cx: &mut Build, cxx: &mut Build, out: &PathBuf) -> Result<(), c
     cx.file(GGML_METAL_PATH);
     cx.file(metal_embed_asm)
         .flag("-c")
-        .try_compile("ggml-metal-embed.o")
+        .try_compile("ggml-metal-embed.o")?;
+    Ok(cx)
 }
 
 fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type: &str) {
@@ -440,7 +441,7 @@ fn main() {
     } else if cfg!(feature = "blis") {
         compile_blis(&mut cx);
     } else if !cfg!(feature = "no-metal") && cfg!(target_os = "macos") {
-        if let Ok(_) = compile_metal(&mut cx, &mut cxx, &out_path) {
+        if let Ok(cc) = compile_metal(cx.clone(), &out_path) {
             ggml_type = "metal".to_string();
             cxx.flag("-DGGML_USE_METAL")
                 .flag("-DGGML_METAL_EMBED_LIBRARY");
@@ -448,6 +449,10 @@ fn main() {
             println!("cargo:rustc-link-lib=framework=Foundation");
             println!("cargo:rustc-link-lib=framework=MetalPerformanceShaders");
             println!("cargo:rustc-link-lib=framework=MetalKit");
+            cx = cc;
+        } else {
+            println!("cargo:rustc-link-lib=framework=Accelerate");
+            cx.define("GGML_USE_ACCELERATE", None);
         }
     }
 
