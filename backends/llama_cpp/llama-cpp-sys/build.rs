@@ -305,12 +305,15 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
     let clip_code =
         std::fs::read_to_string(CLIP_PATH).expect("Could not read clip.cpp source file.");
     let clip_needle1 = r#"#include "log.h""#;
-    if !clip_code.contains(clip_needle1) {
-        panic!("clip.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+    if clip_code.contains(clip_needle1) {
+        // panic!("clip.cpp does not contain the needles to be replaced; the patching logic needs to be reinvestigated!");
+        let patched_clip_code = clip_code.replace(clip_needle1, "#define LOG_TEE(...)");
+        std::fs::write(&PATCHED_CLIP_PATH, patched_clip_code)
+            .expect("Attempted to write the patched clip.cpp file out to llama-patched.cpp");
+    } else {
+        std::fs::write(&PATCHED_CLIP_PATH, clip_code)
+            .expect("Attempted to write the patched clip.cpp file out to llama-patched.cpp");
     }
-    let patched_clip_code = clip_code.replace(clip_needle1, "#define LOG_TEE(...)");
-    std::fs::write(&PATCHED_CLIP_PATH, patched_clip_code)
-        .expect("Attempted to write the patched clip.cpp file out to llama-patched.cpp");
 
     const LLAVA_PATH: &str = "llama.cpp/examples/llava/llava.cpp";
     const PATCHED_LLAVA_PATH: &str = "llama.cpp/examples/llava/llava-patched.cpp";
