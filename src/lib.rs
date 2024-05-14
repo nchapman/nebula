@@ -106,21 +106,21 @@ impl Context {
         Ok(())
     }
 
-    pub fn predict(&mut self, max_len: usize) -> Result<String> {
+    pub fn predict(&mut self, max_len: impl Into<Option<usize>> + Clone) -> Result<String> {
         self.backend
             .lock()
             .unwrap()
-            .predict(max_len, &self.options.stop_tokens)
+            .predict(max_len.into(), &self.options.stop_tokens)
     }
 
     pub fn predict_with_callback(
         &mut self,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
-        max_len: usize,
+        max_len: impl Into<Option<usize>> + Clone,
     ) -> Result<()> {
         self.backend.lock().unwrap().predict_with_callback(
             token_callback,
-            max_len,
+            max_len.into(),
             &self.options.stop_tokens,
         )
     }

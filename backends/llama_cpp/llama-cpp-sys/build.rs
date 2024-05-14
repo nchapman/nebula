@@ -338,18 +338,18 @@ fn compile_llama(cxx: &mut Build, cxx_flags: &str, out_path: &PathBuf, ggml_type
         cxx.flag("-DGGML_USE_SYCL");
         cxx.flag("-fsycl");
         cxx.flag("-lOpenCL");
-        cxx.flag("-lmkl_core pthread");
+        cxx.flag("-lmkl_core");
         cxx.flag("-lm");
         cxx.flag("-ldl");
         cxx.flag("-lmkl_sycl_blas");
         cxx.flag("-lmkl_intel_ilp64");
         cxx.flag("-lmkl_tbb_thread");
         cxx.include(
-            std::env::var("SYCL_INCLUDE_DIR").expect("$SYCL_INCLUDE_DIR suoulf be defined"),
+            std::env::var("SYCL_INCLUDE_DIR").expect("$SYCL_INCLUDE_DIR suould be defined"),
         );
 
         cxx.shared_flag(true)
-            .compiler("icpx")
+            //            .compiler("icpx")
             .file("./llama.cpp/common/common.cpp")
             .file("./llama.cpp/unicode.cpp")
             .file("./llama.cpp/unicode-data.cpp")
@@ -411,7 +411,7 @@ fn main() {
 
     if cfg!(target_os = "linux") || cfg!(target_os = "macos") {
         cx_flags.push_str(" -std=c11 -Wall -Wextra -Wpedantic -Wcast-qual -Wdouble-promotion -Wshadow -Wstrict-prototypes -Wpointer-arith -Wno-unused-variable -Wno-unused-parameter -Wno-cast-qual -Wno-unused-function -Wno-unused-but-set-variable -pthread");
-        cxx_flags.push_str(" -std=c++11 -Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -Wno-unused-variable -Wno-unused-parameter -Wno-cast-qual -Wno-unused-function -Wno-unused-but-set-variable -fPIC -pthread -march=native -mtune=native -Ofast");
+        cxx_flags.push_str(" -std=c++17 -Wall -Wdeprecated-declarations -Wunused-but-set-variable -Wextra -Wpedantic -Wcast-qual -Wno-unused-function -Wno-multichar -Wno-unused-variable -Wno-unused-parameter -Wno-cast-qual -Wno-unused-function -Wno-unused-but-set-variable -fPIC -pthread -march=native -mtune=native -Ofast");
         if cfg!(target_arch = "x86_64") || cfg!(target_arch = "x86") {
             cx_flags.push_str(" -march=native -mtune=native -Ofast");
             cxx_flags.push_str(" -march=native -mtune=native -Ofast");

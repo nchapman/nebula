@@ -16,10 +16,10 @@ fn main() {
     }
     let model_file_name = args[1].clone();
     let prompt = args[2].clone();
-    let mut n_len = 150;
+    let mut n_len = None;
     if args.len() > 3 {
         if let Ok(ss) = str::parse(&args[3]) {
-            n_len = ss;
+            n_len = Some(ss);
         }
     }
     let model_options = ModelOptions::default().with_n_gpu_layers(10);

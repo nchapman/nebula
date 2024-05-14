@@ -45,6 +45,7 @@ opencl = ["llama-cpp?/clblas"]
 openblas = ["llama-cpp?/openblas"]
 blis = ["llama-cpp?/blis"]
 hip = ["llama-cpp?/hipblas"]
+sycl = ["llama-cpp?/sycl"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 
 

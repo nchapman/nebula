@@ -272,7 +272,7 @@ impl LlamaContext {
         &mut self,
         mut logit: i32,
         n_curr: &mut i32,
-        n_len: i32,
+        n_len: Option<usize>,
         stop_tokens: &[String],
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
     ) -> Result<i32, PredictError> {
@@ -280,7 +280,13 @@ impl LlamaContext {
         let max_stop_len = stop_tokens.iter().map(|s| s.len()).max().unwrap();
         log::trace!("{}", max_stop_len);
         let mut buffer = TokenBuf::new();
-        for _ in 0..n_len {
+        let mut count = 0;
+        loop {
+            if let Some(nn_len) = n_len {
+                if count >= nn_len {
+                    break;
+                }
+            }
             {
                 let candidates = self.candidates_ith(logit);
                 let candidates_p =
@@ -321,6 +327,7 @@ impl LlamaContext {
             *n_curr += 1;
             self.decode(&mut batch)?;
             logit = 0;
+            count += 1;
         }
         Ok(logit)
     }
