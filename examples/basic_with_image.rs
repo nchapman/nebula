@@ -40,8 +40,10 @@ fn main() {
     let mut f = std::fs::File::open(&image_file_name).unwrap();
     f.read_to_end(&mut image_bytes).unwrap();
 
+    let iimage = image_bytes.clone();
     //eval data
-    ctx.eval_image(image_bytes, &prompt).unwrap();
+    ctx.eval_image(image_bytes, "tell me about this photo")
+        .unwrap();
 
     //generate predict
 
@@ -49,6 +51,21 @@ fn main() {
     //    println!("{answer}");
 
     //or
+    ctx.predict_with_callback(
+        Box::new(|token| {
+            print!("{}", token);
+            std::io::stdout().flush().unwrap();
+            true
+        }),
+        n_len,
+    )
+    .unwrap();
+    println!("");
+    println!("");
+    println!("");
+
+    ctx.eval_image(iimage, "descripe this picture").unwrap();
+
     ctx.predict_with_callback(
         Box::new(|token| {
             print!("{}", token);
