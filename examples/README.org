@@ -2,8 +2,10 @@
 
 ** code
 #+BEGIN_SRC Rust
+use std::io::Write;
+
 use nebula::{
-    options::{ModelOptions, PredictOptions},
+    options::{ContextOptions, ModelOptions},
     Model,
 };
 
@@ -18,19 +20,35 @@ fn main() {
     }
     let model_file_name = args[1].clone();
     let prompt = args[2].clone();
-    let mut n_len = 150;
+    let mut n_len = None;
     if args.len() > 3 {
         if let Ok(ss) = str::parse(&args[3]) {
-            n_len = ss;
+            n_len = Some(ss);
         }
     }
     let model_options = ModelOptions::default().with_n_gpu_layers(10);
+
     let model = Model::new(model_file_name, model_options).unwrap();
+
     let ctx_options = ContextOptions::default();
+
     let mut ctx = model.context(ctx_options).unwrap();
+
     ctx.eval_str(&prompt, true).unwrap();
-    let answer = ctx.predict(n_len).unwrap();
-    println!("{answer}");
+
+    let mut p = ctx
+        .predict()
+        .with_token_callback(Box::new(|token| {
+            print!("{}", token);
+            std::io::stdout().flush().unwrap();
+            true
+        }))
+        .with_temp(0.8);
+    if let Some(n_len) = n_len {
+        p = p.with_max_len(n_len);
+    }
+    p.predict().unwrap();
+
     println!("");
 }
 #+END_SRC
@@ -159,10 +177,10 @@ usage:
 * [[https://github.com/nchapman/nebula/blob/main/examples/basic_with_image.rs][basic_with_image]]
 ** code
 #+BEGIN_SRC
-  use std::io::Read;
+use std::io::{Read, Write};
 
 use nebula::{
-    options::{ModelOptions, PredictOptions},
+    options::{ContextOptions, ModelOptions},
     Model,
 };
 
@@ -202,14 +220,23 @@ fn main() {
     f.read_to_end(&mut image_bytes).unwrap();
 
     //eval data
-    ctx.eval_str(&"", true).unwrap();
-    ctx.eval_image(image_bytes).unwrap();
-    ctx.eval_str(&prompt, false).unwrap();
+    ctx.eval_image(image_bytes, &prompt).unwrap();
 
     //generate predict
 
-    let answer = ctx.predict(n_len).unwrap();
-    println!("{answer}");
+    //    let answer = ctx.predict(n_len).unwrap();
+    //    println!("{answer}");
+
+    //or
+    ctx.predict()
+        .with_token_callback(Box::new(|token| {
+            print!("{}", token);
+            std::io::stdout().flush().unwrap();
+            true
+        }))
+        .with_max_len(n_len)
+        .predict()
+        .unwrap();
     println!("");
 }
 #+END_SRC

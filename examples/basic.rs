@@ -32,16 +32,18 @@ fn main() {
 
     ctx.eval_str(&prompt, true).unwrap();
 
-    ctx.predict_with_callback(
-        Box::new(|token| {
+    let mut p = ctx
+        .predict()
+        .with_token_callback(Box::new(|token| {
             print!("{}", token);
             std::io::stdout().flush().unwrap();
             true
-        }),
-        n_len,
-        0.9,
-    )
-    .unwrap();
+        }))
+        .with_temp(0.8);
+    if let Some(n_len) = n_len {
+        p = p.with_max_len(n_len);
+    }
+    p.predict().unwrap();
 
     println!("");
 }

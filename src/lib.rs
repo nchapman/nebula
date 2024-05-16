@@ -194,25 +194,6 @@ impl Context {
     pub fn predict<'a>(&mut self) -> Predict {
         Predict::new(self)
     }
-
-    pub fn predict_with_callback(
-        &mut self,
-        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
-        max_len: impl Into<Option<usize>> + Clone,
-        temp: impl Into<Option<f32>> + Clone,
-    ) -> Result<()> {
-        let mut p = self.predict().with_token_callback(token_callback);
-        let n_len: Option<usize> = max_len.into();
-        if let Some(n_len) = n_len {
-            p = p.with_max_len(n_len);
-        }
-        let temp: Option<f32> = temp.into();
-        if let Some(temp) = temp {
-            p = p.with_temp(temp);
-        }
-        p.predict()?;
-        Ok(())
-    }
 }
 
 #[cfg(feature = "llama")]
