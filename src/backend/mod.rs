@@ -1,3 +1,4 @@
+#![allow(clippy::too_many_arguments)]
 #[cfg(feature = "llama")]
 use std::{path::PathBuf, pin::Pin, sync::Mutex};
 

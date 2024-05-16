@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::arc_with_non_send_sync)]
 #[cfg(feature = "llama")]
 use strfmt::strfmt;
 
@@ -191,7 +193,7 @@ impl Context {
         Ok(())
     }
 
-    pub fn predict<'a>(&mut self) -> Predict {
+    pub fn predict(&mut self) -> Predict {
         Predict::new(self)
     }
 }
