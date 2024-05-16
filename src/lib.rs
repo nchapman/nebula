@@ -1,8 +1,10 @@
+#[cfg(feature = "llama")]
 use strfmt::strfmt;
 
 #[cfg(feature = "llama")]
 use crate::backend::Model as _;
 
+#[cfg(feature = "llama")]
 use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 
 pub mod error;
@@ -74,6 +76,89 @@ pub struct Context {
 }
 
 #[cfg(feature = "llama")]
+pub struct Predict<'a> {
+    context: &'a Context,
+    max_len: Option<usize>,
+    top_k: Option<i32>,
+    top_p: Option<f32>,
+    min_p: Option<f32>,
+    temperature: Option<f32>,
+    token_callback: Option<std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>>,
+}
+
+#[cfg(feature = "llama")]
+impl<'a> Predict<'a> {
+    pub fn new(context: &Context) -> Predict {
+        Predict {
+            context,
+            max_len: None,
+            top_k: None,
+            top_p: None,
+            min_p: None,
+            temperature: None,
+            token_callback: None,
+        }
+    }
+
+    pub fn with_top_k(mut self, top_k: i32) -> Self {
+        self.top_k = Some(top_k);
+        self
+    }
+
+    pub fn with_max_len(mut self, max_len: usize) -> Self {
+        self.max_len = Some(max_len);
+        self
+    }
+
+    pub fn with_top_p(mut self, top_p: f32) -> Self {
+        self.top_p = Some(top_p);
+        self
+    }
+
+    pub fn with_min_p(mut self, min_p: f32) -> Self {
+        self.min_p = Some(min_p);
+        self
+    }
+
+    pub fn with_temp(mut self, temp: f32) -> Self {
+        self.temperature = Some(temp);
+        self
+    }
+
+    pub fn with_token_callback(
+        mut self,
+        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
+    ) -> Self {
+        self.token_callback = Some(std::sync::Arc::new(token_callback));
+        self
+    }
+
+    pub fn predict(&mut self) -> Result<String> {
+        if let Some(callback) = self.token_callback.clone() {
+            self.context.backend.lock().unwrap().predict_with_callback(
+                callback,
+                self.max_len,
+                self.top_k,
+                self.top_p,
+                self.min_p,
+                self.temperature,
+                &self.context.options.stop_tokens,
+            )?;
+            Ok("".to_string())
+        } else {
+            self.context.backend.lock().unwrap().predict(
+                self.max_len,
+                self.top_k,
+                self.top_p,
+                self.min_p,
+                self.temperature,
+                &self.context.options.stop_tokens,
+            )
+        }
+    }
+}
+
+#[cfg(feature = "llama")]
 impl Context {
     pub fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
         let mut vars = HashMap::new();
@@ -106,23 +191,27 @@ impl Context {
         Ok(())
     }
 
-    pub fn predict(&mut self, max_len: impl Into<Option<usize>> + Clone) -> Result<String> {
-        self.backend
-            .lock()
-            .unwrap()
-            .predict(max_len.into(), &self.options.stop_tokens)
+    pub fn predict<'a>(&mut self) -> Predict {
+        Predict::new(self)
     }
 
     pub fn predict_with_callback(
         &mut self,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
         max_len: impl Into<Option<usize>> + Clone,
+        temp: impl Into<Option<f32>> + Clone,
     ) -> Result<()> {
-        self.backend.lock().unwrap().predict_with_callback(
-            token_callback,
-            max_len.into(),
-            &self.options.stop_tokens,
-        )
+        let mut p = self.predict().with_token_callback(token_callback);
+        let n_len: Option<usize> = max_len.into();
+        if let Some(n_len) = n_len {
+            p = p.with_max_len(n_len);
+        }
+        let temp: Option<f32> = temp.into();
+        if let Some(temp) = temp {
+            p = p.with_temp(temp);
+        }
+        p.predict()?;
+        Ok(())
     }
 }
 

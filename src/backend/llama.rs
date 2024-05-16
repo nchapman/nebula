@@ -119,15 +119,27 @@ impl Context for LlamaContext {
         Ok(())
     }
 
-    fn predict(&mut self, max_len: Option<usize>, stop_tokens: &[String]) -> Result<String> {
+    fn predict(
+        &mut self,
+        max_len: Option<usize>,
+        top_k: Option<i32>,
+        top_p: Option<f32>,
+        min_p: Option<f32>,
+        temperature: Option<f32>,
+        stop_tokens: &[String],
+    ) -> Result<String> {
         let res = Arc::new(Mutex::new("".to_string()));
         let rres = res.clone();
         self.predict_with_callback(
-            Box::new(move |token| {
+            std::sync::Arc::new(Box::new(move |token| {
                 rres.lock().unwrap().push_str(&token);
                 true
-            }),
+            })),
             max_len,
+            top_k,
+            top_p,
+            min_p,
+            temperature,
             stop_tokens,
         )?;
         let rres = res.lock().unwrap();
@@ -136,14 +148,22 @@ impl Context for LlamaContext {
 
     fn predict_with_callback(
         &mut self,
-        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
+        token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
         max_len: Option<usize>,
+        top_k: Option<i32>,
+        top_p: Option<f32>,
+        min_p: Option<f32>,
+        temperature: Option<f32>,
         stop_tokens: &[String],
     ) -> Result<()> {
         self.logit = self.ctx.pedict(
             self.logit,
             &mut self.n_curr,
             max_len,
+            top_k,
+            top_p,
+            min_p,
+            temperature,
             stop_tokens,
             token_callback,
         )?;

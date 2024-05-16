@@ -273,8 +273,12 @@ impl LlamaContext {
         mut logit: i32,
         n_curr: &mut i32,
         n_len: Option<usize>,
+        top_k: Option<i32>,
+        top_p: Option<f32>,
+        min_p: Option<f32>,
+        temperature: Option<f32>,
         stop_tokens: &[String],
-        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
+        token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
     ) -> Result<i32, PredictError> {
         let mut batch = LlamaBatch::new(2048, 1);
         let max_stop_len = stop_tokens.iter().map(|s| s.len()).max().unwrap();
@@ -289,9 +293,28 @@ impl LlamaContext {
             }
             {
                 let candidates = self.candidates_ith(logit);
-                let candidates_p =
+                let mut candidates_p =
                     crate::token::data_array::LlamaTokenDataArray::from_iter(candidates, false);
-                let new_token_id = self.sample_token_greedy(candidates_p);
+
+                let new_token_id = if let Some(temperature) = temperature {
+                    if let Some(top_k) = top_k {
+                        self.sample_top_k(&mut candidates_p, top_k, 1);
+                    } else {
+                        self.sample_top_k(&mut candidates_p, 40, 1);
+                    }
+                    if let Some(top_p) = top_p {
+                        self.sample_top_p(&mut candidates_p, top_p, 1);
+                    } else {
+                        self.sample_top_p(&mut candidates_p, 0.9, 1);
+                    }
+                    if let Some(min_p) = min_p {
+                        self.sample_min_p(&mut candidates_p, min_p, 1);
+                    }
+                    self.sample_temp(&mut candidates_p, temperature);
+                    self.sample_token(candidates_p)
+                } else {
+                    self.sample_token_greedy(candidates_p)
+                };
                 if new_token_id == self.model.token_eos() {
                     for t in buffer.drain(..).into_iter() {
                         *n_curr = t.1;

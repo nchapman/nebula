@@ -69,6 +69,26 @@ impl LlamaContext {
         LlamaToken(token)
     }
 
+    #[must_use]
+    pub fn sample_token(&mut self, mut token_data: LlamaTokenDataArray) -> LlamaToken {
+        assert!(!token_data.data.is_empty(), "no tokens");
+        let mut data_arr = llama_cpp_sys::llama_token_data_array {
+            data: token_data
+                .data
+                .as_mut_ptr()
+                .cast::<llama_cpp_sys::llama_token_data>(),
+            size: token_data.data.len(),
+            sorted: token_data.sorted,
+        };
+        let token = unsafe {
+            llama_cpp_sys::llama_sample_token(
+                self.context.context.as_ptr(),
+                std::ptr::addr_of_mut!(data_arr),
+            )
+        };
+        LlamaToken(token)
+    }
+
     /// See [`LlamaTokenDataArray::sample_tail_free`]
     pub fn sample_tail_free(
         &mut self,
