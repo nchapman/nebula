@@ -260,7 +260,7 @@ mod test {
         let mut ctx = ctx.unwrap();
         let eval_res = ctx.eval_str(&prompt, true);
         assert!(eval_res.is_ok());
-        let answer = ctx.predict(100);
+        let answer = ctx.predict().predict();
         assert!(answer.is_ok());
         let answer = answer.unwrap();
         println!("{answer}");
@@ -313,7 +313,7 @@ mod test {
         assert!(read_res.is_ok());
         let eval_res = ctx.eval_image(image_bytes, &prompt);
         assert!(eval_res.is_ok());
-        let answer = ctx.predict(100);
+        let answer = ctx.predict().predict();
         assert!(answer.is_ok());
         let answer = answer.unwrap();
         println!("{answer}");
