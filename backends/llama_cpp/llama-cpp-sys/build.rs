@@ -420,8 +420,8 @@ fn main() {
             cxx_flags.push_str(" -march=native -mtune=native -Ofast");
         }
         //        if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
-        cx_flags.push_str(" -DNDEBUG");
-        cxx_flags.push_str(" -DNDEBUG");
+        cx_flags.push_str(" -DNDEBUG -DGGML_METAL_NDEBUG");
+        cxx_flags.push_str(" -DNDEBUG -DGGML_METAL_NDEBUG");
     //        }
     } else if cfg!(target_os = "windows") {
         cx_flags.push_str(" /W4 /Wall /wd4820 /wd4710 /wd4711 /wd4820 /wd4514");
