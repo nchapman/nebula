@@ -161,14 +161,14 @@ fn compile_ggml(cx: &mut Build, cx_flags: &str) {
 }
 
 fn compile_metal(mut cx: Build, out: &PathBuf) -> Result<Build, cc::Error> {
-    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
-        cx.flag("-DGGML_USE_METAL")
-            .flag("-DGGML_METAL_NDEBUG")
-            .flag("-DGGML_METAL_EMBED_LIBRARY");
-    } else {
-        cx.flag("-DGGML_USE_METAL")
-            .flag("-DGGML_METAL_EMBED_LIBRARY");
-    }
+    //    if env::var("PROFILE").unwrap_or("debug".to_string()) == "release" {
+    cx.flag("-DGGML_USE_METAL")
+        .flag("-DGGML_METAL_NDEBUG")
+        .flag("-DGGML_METAL_EMBED_LIBRARY");
+    //    } else {
+    //        cx.flag("-DGGML_USE_METAL")
+    //            .flag("-DGGML_METAL_EMBED_LIBRARY");
+    //    }
 
     const GGML_METAL_METAL_PATH: &str = "llama.cpp/ggml-metal.metal";
     const GGML_METAL_PATH: &str = "llama.cpp/ggml-metal.m";
