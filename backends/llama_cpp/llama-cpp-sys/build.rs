@@ -448,6 +448,7 @@ fn main() {
             eprintln!("with metal");
             ggml_type = "metal".to_string();
             cxx.flag("-DGGML_USE_METAL")
+                .flag("-DGGML_METAL_NDEBUG")
                 .flag("-DGGML_METAL_EMBED_LIBRARY");
             println!("cargo:rustc-link-lib=framework=Metal");
             println!("cargo:rustc-link-lib=framework=Foundation");
