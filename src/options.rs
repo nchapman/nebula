@@ -1,6 +1,3 @@
-use candle_core::op::Op;
-use clap::builder::Str;
-
 fn default_i32_minus1() -> i32 {
     -1
 }
