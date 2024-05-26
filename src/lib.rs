@@ -9,6 +9,9 @@ use crate::backend::Model as _;
 #[cfg(feature = "llama")]
 use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 
+#[cfg(feature = "whisper")]
+use std::path::PathBuf;
+
 pub mod error;
 pub mod options;
 pub type Result<T> = std::result::Result<T, error::Error>;
