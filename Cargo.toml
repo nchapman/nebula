@@ -46,7 +46,7 @@ blis = ["llama-cpp?/blis"]
 hip = ["llama-cpp?/hipblas"]
 sycl = ["llama-cpp?/sycl"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
-embeddings = ["candle-core", "candle-transformers", "candle-nn", "tokenizers"]
+embeddings = ["candle-core", "candle-transformers", "candle-nn", "tokenizers", "anyhow"]
 
 
 [[example]]
