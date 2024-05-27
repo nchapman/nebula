@@ -360,3 +360,21 @@ impl AutomaticSpeechRecognitionModel {
         Ok(self.backend.predict(samples, options)?)
     }
 }
+
+#[cfg(feature = "embeddings")]
+pub struct EmbeddingsModel {
+    backend: Box<dyn backend::EmbeddingsBackend>,
+}
+
+impl EmbeddingsModel {
+    pub fn new(options: options::EmbeddingsOptions) -> Result<Self> {
+        let backend = backend::init_embeddings_backend(options)?;
+        Ok(Self {
+            backend: Box::new(backend),
+        })
+    }
+
+    pub fn predict(&mut self, text: String) -> Result<Vec<f32>> {
+        Ok(self.backend.predict(text)?)
+    }
+}

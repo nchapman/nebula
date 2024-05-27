@@ -12,11 +12,20 @@ use crate::{
     Result,
 };
 
+#[cfg(feature = "embeddings")]
+use crate::{
+    options::{EmbeddingsOptions, EmbeddingsModelType},
+    Result
+};
+
 #[cfg(feature = "llama")]
 pub mod llama;
 
 #[cfg(feature = "whisper")]
 pub mod whisper;
+
+#[cfg(feature = "embeddings")]
+pub mod embeddings;
 
 #[cfg(feature = "llama")]
 pub trait Context: Send {
@@ -68,4 +77,27 @@ pub fn init_automatic_speech_recognition_backend(
     model: impl Into<PathBuf>,
 ) -> Result<impl AutomaticSpeechRecognitionBackend> {
     Ok(whisper::Whisper::new(model)?)
+}
+
+
+#[cfg(feature = "embeddings")]
+pub trait EmbeddingsBackend {
+    fn predict(
+        &mut self,
+        text: String
+    ) -> Result<Vec<f32>>;
+}
+
+#[cfg(feature = "embeddings")]
+pub fn init_embeddings_backend(
+    options: EmbeddingsOptions,
+) -> Result<impl EmbeddingsBackend> {
+    match options.model_type {
+        EmbeddingsModelType::JinaBert => {
+            Ok(embeddings::JinaBertBackend::new(options)?)
+        },
+        _ => {
+            panic!("This model type is not implemented yet!")
+        }
+    }
 }
