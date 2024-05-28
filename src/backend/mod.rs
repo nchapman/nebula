@@ -4,6 +4,7 @@ use std::{path::PathBuf, pin::Pin, sync::Mutex};
 
 #[cfg(feature = "whisper")]
 use crate::{options::AutomaticSpeechRecognitionOptions, Result};
+#[cfg(feature = "whisper")]
 use std::path::PathBuf;
 
 #[cfg(feature = "llama")]
