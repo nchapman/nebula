@@ -377,3 +377,24 @@ impl EmbeddingsModel {
         Ok(self.backend.predict(text)?)
     }
 }
+
+#[cfg(feature = "tts")]
+pub struct TextToSpeechModel {
+    backend: Box<dyn backend::TextToSpeechBackend>,
+}
+
+#[cfg(feature = "tts")]
+impl TextToSpeechModel {
+    pub fn new(options: options::TTSOptions) -> anyhow::Result<Self> {
+        let backend = backend::init_text_to_speech_backend(options)?;
+        anyhow::Ok(Self { backend: Box::new(backend) })
+    }
+
+    pub fn predict(
+        &mut self,
+        ref_samples: Vec<f32>,
+        text: String,
+    ) -> anyhow::Result<Vec<f32>> {
+        anyhow::Ok(self.backend.predict(ref_samples, text)?)
+    }
+}
