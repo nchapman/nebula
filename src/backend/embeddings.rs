@@ -5,13 +5,16 @@ use super::EmbeddingsBackend;
 use anyhow::Error as E;
 use std::path::{Path, PathBuf};
 use hf_hub::{api::sync::Api, Repo, RepoType};
-use candle_transformers::models::jina_bert::{BertModel, Config};
+use candle_transformers::models::jina_bert::{BertModel, Config as JinaBertConfig};
+use candle_transformers::models::t5::{T5EncoderModel, Config as T5Config};
 use candle_core::{DType, Device, Tensor, Result as CandleResult};
 use candle_nn::{Module, VarBuilder};
+use candle_examples::hub_load_safetensors;
+use tokenizers::Tokenizer;
 
 pub struct JinaBertBackend {
     model: BertModel,
-    tokenizer: tokenizers::Tokenizer,
+    tokenizer: Tokenizer,
     device: Device,
 }
 
@@ -22,11 +25,11 @@ impl JinaBertBackend {
                 if Path::new(&model_string).exists() {
                     PathBuf::from(model_string)
                 } else {
-                    get_model_source_from_hugging_face_repo(model_string)
+                    get_jina_bert_model_source_from_hugging_face_repo(model_string)
                 }
             },
             None => {
-                get_model_source_from_hugging_face_repo(
+                get_jina_bert_model_source_from_hugging_face_repo(
                     "jinaai/jina-embeddings-v2-base-en".to_string()
                 )
             }
@@ -36,11 +39,11 @@ impl JinaBertBackend {
                 if Path::new(&tokenizer_string).exists() {
                     PathBuf::from(tokenizer_string)
                 } else {
-                    get_tokenizer_source_from_hugging_face_repo(tokenizer_string)
+                    get_jina_bert_tokenizer_source_from_hugging_face_repo(tokenizer_string)
                 }
              },
              None => {
-                get_tokenizer_source_from_hugging_face_repo(
+                get_jina_bert_tokenizer_source_from_hugging_face_repo(
                     "sentence-transformers/all-MiniLM-L6-v2".to_string()
                 )
              }
@@ -50,8 +53,8 @@ impl JinaBertBackend {
         } else {
             Device::cuda_if_available(0).unwrap()
         };
-        let config = Config::v2_base();
-        let tokenizer = tokenizers::Tokenizer::from_file(tokenizer_source)
+        let config = JinaBertConfig::v2_base();
+        let tokenizer = Tokenizer::from_file(tokenizer_source)
             .map_err(E::msg)
             .unwrap();
         let vb = unsafe {
@@ -64,7 +67,7 @@ impl JinaBertBackend {
     }
 }
 
-fn get_model_source_from_hugging_face_repo(key: String) -> PathBuf {
+fn get_jina_bert_model_source_from_hugging_face_repo(key: String) -> PathBuf {
     let model_source = Api::new()
         .unwrap()
         .repo(Repo::new(
@@ -76,7 +79,7 @@ fn get_model_source_from_hugging_face_repo(key: String) -> PathBuf {
     model_source
 }
 
-fn get_tokenizer_source_from_hugging_face_repo(key: String) -> PathBuf {
+fn get_jina_bert_tokenizer_source_from_hugging_face_repo(key: String) -> PathBuf {
     let tokenizer_source = Api::new()
         .unwrap()
         .repo(Repo::new(
@@ -143,4 +146,129 @@ impl EmbeddingsBackend for JinaBertBackend {
         }
         Ok(embedding_vec)
     }
+}
+
+pub struct T5Backend {
+    model: T5EncoderModel,
+    tokenizer: Tokenizer,
+    device: Device,
+}
+
+impl T5Backend {
+    pub fn new(options: EmbeddingsOptions) -> Result<Self> {
+        let revision = match options.revision {
+            Some(user_revision) => user_revision,
+            None => "main".to_string()
+        };
+        let model_id = match options.model {
+            Some(model_string) => model_string.clone(),
+            None => "t5-small".to_string()
+        };
+        let revision = match options.model {
+            Some(_m) => revision,
+            None => "refs/pr/15".to_string()
+        };
+        let model_source = match options.model {
+            Some(model_string) => {
+                if Path::new(&model_string).exists() {
+                    model_string.split(',').map(|v| v.into()).collect::<Vec<_>>()
+                } else {
+                    get_t5_model_source_from_hugging_face_repo(model_string, revision)
+                }
+            },
+            None => {
+                get_t5_model_source_from_hugging_face_repo(
+                    model_id, revision
+                )
+            }
+        };
+        let tokenizer_source = match options.tokenizer {
+            Some(tokenizer_string) => {
+                if Path::new(&tokenizer_string).exists() {
+                    PathBuf::from(tokenizer_string)
+                } else {
+                    get_t5_tokenizer_source_from_hugging_face_repo(tokenizer_string, revision)
+                }
+            }
+            None => {
+                get_t5_tokenizer_source_from_hugging_face_repo(
+                    model_id, revision
+                )
+            }
+        };
+        let config_source = match options.config {
+            Some(config_string) => {
+                if Path::new(&config_string).exists() {
+                    PathBuf::from(config_string)
+                } else {
+                    get_t5_config_source_from_hugging_face_repo(config_string, revision)
+                }
+            },
+            None => {
+                get_t5_config_source_from_hugging_face_repo(model_id, revision)
+            }
+        };
+        let config = std::fs::read_to_string(config_source).unwrap();
+        let mut config: T5Config = serde_json::from_str(&config).unwrap();
+        let tokenizer = Tokenizer::from_file(tokenizer_source)
+            .map_err(E::msg)
+            .unwrap();
+        let device = if options.cpu {
+            Device::Cpu
+        } else {
+            Device::cuda_if_available(0).unwrap()
+        };
+        let vb = unsafe {
+            VarBuilder::from_mmaped_safetensors(&model_source, DType::F32, &device).unwrap()
+        };
+        Ok(
+            Self {
+                model: T5EncoderModel::load(vb, &config).unwrap(),
+                tokenizer: tokenizer,
+                device: device
+            }
+        )
+    }
+}
+
+fn get_t5_model_source_from_hugging_face_repo(key: String, revision: String) -> Vec<PathBuf> {
+    let repo = Repo::with_revision(key.clone(), RepoType::Model, revision);
+    let api = Api::new().unwrap();
+    let repo = api.repo(repo);
+    if key == "google/flan-t5-xxl".to_string() || key == "google/flan-ul2".to_string() {
+        hub_load_safetensors(&repo, "model.safetensors.index.json").unwrap()
+    } else {
+        vec![repo.get("model.safetensors").unwrap()]
+    }
+}
+
+fn get_t5_tokenizer_source_from_hugging_face_repo(key: String, revision: String) -> PathBuf {
+    let repo = Repo::with_revision(key.clone(), RepoType::Model, revision);
+    let api = Api::new().unwrap();
+    let repo = api.repo(repo);
+    if key == "google/mt5-base".to_string() {
+        api
+            .model("lmz/mt5-tokenizers".into())
+            .get("mt5-base.tokenizer.json")
+            .unwrap()
+    } else if key == "google/mt5-small".to_string() {
+        api
+            .model("lmz/mt5-tokenizers".into())
+            .get("mt5-small.tokenizer.json")
+            .unwrap()
+    } else if key == "google/mt5-large".to_string() {
+        api
+            .model("lmz/mt5-tokenizers".into())
+            .get("mt5-large.tokenizer.json")
+            .unwrap()
+    } else {
+        repo.get("tokenizer.json").unwrap()
+    }
+}
+
+fn get_t5_config_source_from_hugging_face_repo(key: String, revision: String) -> PathBuf {
+    let repo = Repo::with_revision(key.clone(), RepoType::Model, revision);
+    let api = Api::new().unwrap();
+    let repo = api.repo(repo);
+    repo.get("config.json").unwrap()
 }

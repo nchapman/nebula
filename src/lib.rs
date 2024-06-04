@@ -366,6 +366,7 @@ pub struct EmbeddingsModel {
     backend: Box<dyn backend::EmbeddingsBackend>,
 }
 
+#[cfg(feature = "embeddings")]
 impl EmbeddingsModel {
     pub fn new(options: options::EmbeddingsOptions) -> Result<Self> {
         let backend = backend::init_embeddings_backend(options)?;
