@@ -370,9 +370,7 @@ pub struct EmbeddingsModel {
 impl EmbeddingsModel {
     pub fn new(options: options::EmbeddingsOptions) -> Result<Self> {
         let backend = backend::init_embeddings_backend(options)?;
-        Ok(Self {
-            backend: Box::new(backend),
-        })
+        Ok(Self { backend: backend })
     }
 
     pub fn predict(&mut self, text: String) -> Result<Vec<f32>> {

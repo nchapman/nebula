@@ -124,7 +124,8 @@ impl EmbeddingsBackend for JinaBertBackend {
         let embedding = self.model.forward(&token_ids).unwrap();
         println!("generated embeddings {:?}", embedding.shape());
         // Apply some avg-pooling by taking the mean embedding value for all tokens (including padding)
-        let (_n_sentence, n_tokens, _hidden_size) = embedding.dims3()
+        let (_n_sentence, n_tokens, _hidden_size) = embedding
+            .dims3()
             .unwrap();
         let embedding = (embedding.sum(1).unwrap() / (n_tokens as f64))
             .unwrap();
@@ -156,60 +157,72 @@ pub struct T5Backend {
 
 impl T5Backend {
     pub fn new(options: EmbeddingsOptions) -> Result<Self> {
-        let revision = match options.revision {
+        let revision = match &options.revision {
             Some(user_revision) => user_revision,
-            None => "main".to_string()
+            None => "main"
         };
-        let model_id = match options.model {
-            Some(model_string) => model_string.clone(),
-            None => "t5-small".to_string()
+        let model_id = match &options.model {
+            Some(model_string) => model_string,
+            None => "t5-small"
         };
-        let revision = match options.model {
+        let revision = match &options.model {
             Some(_m) => revision,
-            None => "refs/pr/15".to_string()
+            None => "refs/pr/15"
         };
-        let model_source = match options.model {
+        let model_source = match &options.model {
             Some(model_string) => {
-                if Path::new(&model_string).exists() {
-                    model_string.split(',').map(|v| v.into()).collect::<Vec<_>>()
+                if Path::new(model_string).exists() {
+                    model_string
+                        .to_string()
+                        .split(',')
+                        .map(|v| v.into())
+                        .collect::<Vec<_>>()
                 } else {
-                    get_t5_model_source_from_hugging_face_repo(model_string, revision)
+                    get_t5_model_source_from_hugging_face_repo(
+                        model_string.to_string(), revision.to_string()
+                    )
                 }
             },
             None => {
                 get_t5_model_source_from_hugging_face_repo(
-                    model_id, revision
+                    model_id.to_string(), revision.to_string()
                 )
             }
         };
-        let tokenizer_source = match options.tokenizer {
+        let tokenizer_source = match &options.tokenizer {
             Some(tokenizer_string) => {
-                if Path::new(&tokenizer_string).exists() {
+                if Path::new(tokenizer_string).exists() {
                     PathBuf::from(tokenizer_string)
                 } else {
-                    get_t5_tokenizer_source_from_hugging_face_repo(tokenizer_string, revision)
+                    get_t5_tokenizer_source_from_hugging_face_repo(
+                        tokenizer_string.to_string(), revision.to_string()
+                    )
                 }
             }
             None => {
                 get_t5_tokenizer_source_from_hugging_face_repo(
-                    model_id, revision
+                    model_id.to_string(), revision.to_string()
                 )
             }
         };
-        let config_source = match options.config {
+        let config_source = match &options.config {
             Some(config_string) => {
-                if Path::new(&config_string).exists() {
+                if Path::new(config_string).exists() {
                     PathBuf::from(config_string)
                 } else {
-                    get_t5_config_source_from_hugging_face_repo(config_string, revision)
+                    get_t5_config_source_from_hugging_face_repo(
+                        config_string.to_string(), revision.to_string()
+                    )
                 }
             },
             None => {
-                get_t5_config_source_from_hugging_face_repo(model_id, revision)
+                get_t5_config_source_from_hugging_face_repo(
+                    model_id.to_string(), revision.to_string()
+                )
             }
         };
         let config = std::fs::read_to_string(config_source).unwrap();
-        let mut config: T5Config = serde_json::from_str(&config).unwrap();
+        let config: T5Config = serde_json::from_str(&config).unwrap();
         let tokenizer = Tokenizer::from_file(tokenizer_source)
             .map_err(E::msg)
             .unwrap();
@@ -271,4 +284,51 @@ fn get_t5_config_source_from_hugging_face_repo(key: String, revision: String) ->
     let api = Api::new().unwrap();
     let repo = api.repo(repo);
     repo.get("config.json").unwrap()
+}
+
+impl EmbeddingsBackend for T5Backend {
+    fn predict(
+            &mut self,
+            text: String
+    ) -> Result<Vec<f32>> {
+        let tokenizer = self.tokenizer
+            .with_padding(None)
+            .with_truncation(None)
+            .map_err(E::msg)
+            .unwrap();
+        let tokens = tokenizer
+            .encode(text, true)
+            .map_err(E::msg)
+            .unwrap()
+            .get_ids()
+            .to_vec();
+        let token_ids = Tensor::new(&tokens[..], &self.device)
+            .unwrap()
+            .unsqueeze(0)
+            .unwrap();
+        let embedding = self.model
+            .forward(&token_ids)
+            .unwrap();
+        let (_n_sentence, n_tokens, _hidden_size) = embedding
+            .dims3()
+            .unwrap();
+        let embedding = (embedding.sum(1).unwrap() / (n_tokens as f64))
+            .unwrap();
+
+        let flat_embedding = embedding.flatten_all().unwrap();
+        let embedding_size = flat_embedding.dims()[0];
+
+        let mut embedding_vec: Vec<f32> = Vec::new();
+        for i in 0..embedding_size {
+            embedding_vec.push(
+                flat_embedding
+                    .get(i)
+                    .unwrap()
+                    .to_scalar::<f32>()
+                    .unwrap()
+                    as f32
+            )
+        }
+        Ok(embedding_vec)
+    }
 }

@@ -92,10 +92,13 @@ pub trait EmbeddingsBackend {
 #[cfg(feature = "embeddings")]
 pub fn init_embeddings_backend(
     options: EmbeddingsOptions,
-) -> Result<impl EmbeddingsBackend> {
+) -> Result<Box<dyn EmbeddingsBackend>> {
     match options.model_type {
         EmbeddingsModelType::JinaBert => {
-            Ok(embeddings::JinaBertBackend::new(options)?)
+            Ok(Box::new(embeddings::JinaBertBackend::new(options)?))
+        },
+        EmbeddingsModelType::T5 => {
+            Ok(Box::new(embeddings::T5Backend::new(options)?))
         },
         _ => {
             panic!("This model type is not implemented yet!")
