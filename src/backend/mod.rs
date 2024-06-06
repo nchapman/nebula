@@ -100,6 +100,9 @@ pub fn init_embeddings_backend(
         EmbeddingsModelType::T5 => {
             Ok(Box::new(embeddings::T5Backend::new(options)?))
         },
+        EmbeddingsModelType::Bert => {
+            Ok(Box::new(embeddings::BertBackend::new(options)?))
+        }
         _ => {
             panic!("This model type is not implemented yet!")
         }
