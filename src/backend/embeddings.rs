@@ -280,6 +280,9 @@ fn get_t5_tokenizer_source_from_hugging_face_repo(key: String, revision: String)
 }
 
 fn get_t5_config_source_from_hugging_face_repo(key: String, revision: String) -> PathBuf {
+    println!("Config...");
+    println!("Key: {}", key);
+    println!("Revision: {}", revision);
     let repo = Repo::with_revision(key.clone(), RepoType::Model, revision);
     let api = Api::new().unwrap();
     let repo = api.repo(repo);

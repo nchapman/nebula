@@ -427,6 +427,7 @@ impl<'a> Default for AutomaticSpeechRecognitionOptions<'a> {
 }
 
 #[cfg(feature = "embeddings")]
+#[derive(Debug)]
 pub enum EmbeddingsModelType {
     T5,
     JinaBert,
@@ -482,8 +483,8 @@ impl Default for EmbeddingsOptions {
         Self {
             cpu: true,
             model_type: EmbeddingsModelType::JinaBert,
-            tokenizer: Some("sentence-transformers/all-MiniLM-L6-v2".to_string()),
-            model: Some("jinaai/jina-embeddings-v2-base-en".to_string()),
+            tokenizer: None,
+            model: None,
             revision: None,
             config: None
         }

@@ -8,13 +8,18 @@ use itertools::Itertools;
 
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    let model_type = args[1].clone();
+    let model_type = if args.len() < 2 {
+        "".to_string()
+    } else {
+        args[1].clone()
+    };
     let model_type = match model_type.as_str() {
         "jina" => EmbeddingsModelType::JinaBert,
         "t5" => EmbeddingsModelType::T5,
         "bert" => EmbeddingsModelType::Bert,
         _ => EmbeddingsModelType::JinaBert,
     };
+    println!("Model type: {:?}", model_type);
 
     let options = EmbeddingsOptions::default().with_model_type(model_type);
     let mut model = EmbeddingsModel::new(options)?;
