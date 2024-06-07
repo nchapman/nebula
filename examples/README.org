@@ -284,3 +284,23 @@ usage:
     wget -O models/ggml-base.en.bin https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-base.en.bin?download=true
     cargo r --release --example whisper_stream --features whisper
 #+END_SRC
+
+* [[https://github.com/nchapman/nebula/blob/PUL-122-embeddings-to-nebula/examples/embeddings.rs][embeddings]]
+** usage
+#+BEGIN_SRC bash
+usage:
+	cargo r --release --example embeddings --features embeddings -- <model_type>
+#+END_SRC
+** models
+*** jina
+#+BEGIN_SRC bash
+    cargo r --release --example embeddings --features embeddings -- jina
+#+END_SRC
+*** t5
+#+BEGIN_SRC bash
+    cargo r --release --example embeddings --features embeddings -- t5
+#+END_SRC
+*** bert
+#+BEGIN_SRC bash
+    cargo r --release --example embeddings --features embeddings -- bert
+#+END_SRC
