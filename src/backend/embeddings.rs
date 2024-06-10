@@ -95,7 +95,7 @@ fn get_jina_bert_tokenizer_source_from_hugging_face_repo(key: String) -> PathBuf
 }
 
 impl EmbeddingsBackend for JinaBertBackend {
-    fn predict(
+    fn encode(
         &mut self,
         text: String
     ) -> Result<Vec<f32>> {
@@ -293,7 +293,7 @@ fn get_t5_config_source_from_hugging_face_repo(key: String, revision: String) ->
 }
 
 impl EmbeddingsBackend for T5Backend {
-    fn predict(
+    fn encode(
             &mut self,
             text: String
     ) -> Result<Vec<f32>> {
@@ -457,7 +457,7 @@ fn get_bert_config_from_hugging_face_repo(key: String, revision: String) -> Path
 }
 
 impl EmbeddingsBackend for BertBackend {
-    fn predict(
+    fn encode(
             &mut self,
             text: String
     ) -> Result<Vec<f32>> {

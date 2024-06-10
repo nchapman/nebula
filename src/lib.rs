@@ -373,7 +373,7 @@ impl EmbeddingsModel {
         Ok(Self { backend: backend })
     }
 
-    pub fn predict(&mut self, text: String) -> Result<Vec<f32>> {
-        Ok(self.backend.predict(text)?)
+    pub fn encode(&mut self, text: String) -> Result<Vec<f32>> {
+        Ok(self.backend.encode(text)?)
     }
 }
