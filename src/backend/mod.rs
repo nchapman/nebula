@@ -83,7 +83,7 @@ pub fn init_automatic_speech_recognition_backend(
 
 #[cfg(feature = "embeddings")]
 pub trait EmbeddingsBackend {
-    fn predict(
+    fn encode(
         &mut self,
         text: String
     ) -> Result<Vec<f32>>;

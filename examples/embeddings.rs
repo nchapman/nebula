@@ -27,7 +27,7 @@ fn main() -> Result<()> {
     let text = "Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?";
     let text = text.to_string();
 
-    let out = model.predict(text)?;
+    let out = model.encode(text)?;
     println!(
         "Calculated embedding: {}",
         out[..10].iter().join(", ") + " ... " + &out.last().unwrap().to_string()
