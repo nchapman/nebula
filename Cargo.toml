@@ -27,10 +27,10 @@ anyhow = { version = "1.0.70", optional = true }
 rubato = { version = "0.15.0", optional = true }
 
 #embeddings feature
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
-candle-transformers = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
-candle-nn = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
-candle-examples = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
+candle-core = { version = "0.5.1", optional = true }
+candle-transformers = { version = "0.5.1", optional = true }
+candle-nn = { version = "0.5.1", optional = true }
+candle-examples = { version = "0.5.1", optional = true }
 serde_json = { version = "1.0.117", optional = true }
 tokenizers = { version = "0.19.1", optional = true }
 itertools = { version = "0.13.0", optional = true }
