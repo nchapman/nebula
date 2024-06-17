@@ -116,9 +116,13 @@ pub fn init_embeddings_backend(
 
 #[cfg(feature = "tts")]
 pub trait TextToSpeechBackend {
-    fn predict(
+    fn train(
         &mut self,
         ref_samples: Vec<f32>,
+    ) -> anyhow::Result<()>;
+
+    fn predict(
+        &mut self,
         text: String,
     ) -> anyhow::Result<Vec<f32>>;
 }

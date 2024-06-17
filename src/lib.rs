@@ -390,11 +390,17 @@ impl TextToSpeechModel {
         anyhow::Ok(Self { backend: Box::new(backend) })
     }
 
-    pub fn predict(
+    pub fn train(
         &mut self,
         ref_samples: Vec<f32>,
+    ) -> anyhow::Result<()> {
+        anyhow::Ok(self.backend.train(ref_samples)?)
+    }
+
+    pub fn predict(
+        &mut self,
         text: String,
     ) -> anyhow::Result<Vec<f32>> {
-        anyhow::Ok(self.backend.predict(ref_samples, text)?)
+        anyhow::Ok(self.backend.predict(text)?)
     }
 }

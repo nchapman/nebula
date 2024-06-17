@@ -25,6 +25,7 @@ const MU: f64 = 0.7;
 
 pub struct StyleTTSBackend {
     device: tch::Device,
+    style_ref: tch::Tensor,
 }
 
 impl StyleTTSBackend {
@@ -33,21 +34,30 @@ impl StyleTTSBackend {
             TTSDevice::Cpu => tch::Device::Cpu,
             TTSDevice::Cuda => tch::Device::Cuda(0)
         };
-        Ok(Self { device })
+        let style_ref = Tensor::new();
+        Ok(Self { device, style_ref })
     }
     
 }
 
 impl TextToSpeechBackend for StyleTTSBackend {
+    fn train(
+        &mut self,
+        ref_samples: Vec<f32>,
+    ) -> anyhow::Result<()> {
+        self.style_ref = self.compute_style(ref_samples)?;
+        Ok(())
+    }
 
     fn predict(
         &mut self,
-        ref_samples: Vec<f32>,
         text: String,
     ) -> anyhow::Result<Vec<f32>> {
-        let s_ref = self.compute_style(ref_samples)?;
-        let mut sentences: Vec<String> = self.split_by_any_sep(text);
+        if self.style_ref.size().len() == 1 && self.style_ref.size()[0] == 0 {
+            panic!("Error: reference style is not initialized! Run train before running predict!");
+        }
 
+        let mut sentences: Vec<String> = self.split_by_any_sep(text);
 
         let mut i: i32 = 0;
         while i < sentences.len() as i32 - 1 {
@@ -65,8 +75,8 @@ impl TextToSpeechBackend for StyleTTSBackend {
         let mut all_out_vecs: Vec<Vec<f32>> = Vec::new();
         let mut s_prev: Option<Tensor> = None;
         for sent in sentences {
-            let mut s_ref_1 = tch::Tensor::ones(s_ref.size(), (s_ref.kind(), s_ref.device()));
-            s_ref_1.copy_(&s_ref);
+            let mut s_ref_1 = tch::Tensor::ones(self.style_ref.size(), (self.style_ref.kind(), self.style_ref.device()));
+            s_ref_1.copy_(&self.style_ref);
 
             let mut single_text = sent.trim().to_string();
             single_text = single_text.replace("\"", "");
@@ -127,7 +137,7 @@ impl TextToSpeechBackend for StyleTTSBackend {
             }
 
             let mut s = s_pred.i((.., 128..));
-            s = BETA * s + (1.0 - BETA) * s_ref.i((.., 128..));
+            s = BETA * s + (1.0 - BETA) * self.style_ref.i((.., 128..));
             let mut s_1 = tch::Tensor::ones(s.size(), (s.kind(), s.device()));
             s_1.copy_(&s);
             let mut s_vec_1: Vec<tch::Tensor> = Vec::new();
@@ -141,7 +151,7 @@ impl TextToSpeechBackend for StyleTTSBackend {
             s_vec_1.reverse();
             s_vec_2.reverse();
             let mut ref_ = s_pred.i((.., ..128));
-            ref_ = ALPHA * ref_ + (1.0 - ALPHA) * s_ref.i((.., ..128));
+            ref_ = ALPHA * ref_ + (1.0 - ALPHA) * self.style_ref.i((.., ..128));
             let mut ref_1 = tch::Tensor::ones(ref_.size(), (ref_.kind(), ref_.device()));
             ref_1.copy_(&ref_);
 
