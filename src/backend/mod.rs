@@ -7,6 +7,9 @@ use crate::{options::AutomaticSpeechRecognitionOptions, Result};
 #[cfg(feature = "whisper")]
 use std::path::PathBuf;
 
+#[cfg(feature = "tts")]
+use crate::options::TTSOptions;
+
 #[cfg(feature = "llama")]
 use crate::{
     options::{ContextOptions, ModelOptions},
@@ -27,6 +30,9 @@ pub mod whisper;
 
 #[cfg(feature = "embeddings")]
 pub mod embeddings;
+
+#[cfg(feature = "tts")]
+pub mod tts;
 
 #[cfg(feature = "llama")]
 pub trait Context: Send {
@@ -80,7 +86,6 @@ pub fn init_automatic_speech_recognition_backend(
     Ok(whisper::Whisper::new(model)?)
 }
 
-
 #[cfg(feature = "embeddings")]
 pub trait EmbeddingsBackend {
     fn encode(
@@ -107,4 +112,24 @@ pub fn init_embeddings_backend(
             panic!("This model type is not implemented yet!")
         }
     }
+}
+
+#[cfg(feature = "tts")]
+pub trait TextToSpeechBackend {
+    fn train(
+        &mut self,
+        ref_samples: Vec<f32>,
+    ) -> anyhow::Result<()>;
+
+    fn predict(
+        &mut self,
+        text: String,
+    ) -> anyhow::Result<Vec<f32>>;
+}
+
+#[cfg(feature = "tts")]
+pub fn init_text_to_speech_backend(
+    options: TTSOptions,
+) -> anyhow::Result<impl TextToSpeechBackend> {
+    anyhow::Ok(tts::StyleTTSBackend::new(options)?)
 }

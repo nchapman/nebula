@@ -477,6 +477,25 @@ impl EmbeddingsOptions {
     }
 }
 
+#[cfg(feature = "tts")]
+pub enum TTSDevice {
+    Cpu,
+    Cuda,
+}
+
+#[cfg(feature = "tts")]
+pub struct TTSOptions {
+    pub device: TTSDevice,
+}
+
+#[cfg(feature = "tts")]
+impl TTSOptions {
+    pub fn with_device(mut self, device: TTSDevice) -> Self {
+        self.device = device;
+        self
+    }
+}
+
 #[cfg(feature = "embeddings")]
 impl Default for EmbeddingsOptions {
     fn default() -> Self {
@@ -487,6 +506,15 @@ impl Default for EmbeddingsOptions {
             model: None,
             revision: None,
             config: None
+        }
+    }
+}
+
+#[cfg(feature = "tts")]
+impl Default for TTSOptions {
+    fn default() -> Self {
+        Self {
+            device: TTSDevice::Cpu,
         }
     }
 }

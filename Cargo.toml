@@ -27,13 +27,22 @@ anyhow = { version = "1.0.70", optional = true }
 rubato = { version = "0.15.0", optional = true }
 
 #embeddings feature
-candle-core = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
-candle-transformers = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
-candle-nn = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
-candle-examples = { git = "https://github.com/huggingface/candle.git", version = "0.5.1", optional = true }
+candle-core = { version = "0.5.1", optional = true }
+candle-transformers = { version = "0.5.1", optional = true }
+candle-nn = { version = "0.5.1", optional = true }
+candle-examples = { version = "0.5.1", optional = true }
 serde_json = { version = "1.0.117", optional = true }
 tokenizers = { version = "0.19.1", optional = true }
 itertools = { version = "0.13.0", optional = true }
+
+#TTS feature
+espeakng-sys = { version = "0.2.0", optional = true }
+fancy-regex = { version = "0.13.0", optional = true }
+ffi-support = { version = "0.4.4", optional = true }
+once_cell = { version = "1.19.0", optional = true }
+punkt = { version = "1.0.5", optional = true }
+regex = { version = "1.10.4", optional = true }
+tch = { version = "0.12.0", optional = true }
 
 [dev-dependencies]
 hf-hub = "0.3.2"
@@ -50,6 +59,7 @@ hip = ["llama-cpp?/hipblas"]
 sycl = ["llama-cpp?/sycl"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 embeddings = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow", "itertools", "serde_json"]
+tts = ["anyhow", "espeakng-sys", "fancy-regex", "ffi-support", "hound", "once_cell", "punkt", "regex", "rubato", "tch"]
 
 
 [[example]]
