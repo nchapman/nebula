@@ -210,12 +210,14 @@ impl Drop for Model {
 mod test {
     use std::{io::Read, path::PathBuf};
 
+    #[cfg(feature = "llama")]
     struct TestModel {
         pub _repo: String,
         pub filename: PathBuf,
         pub _mmproj: Option<PathBuf>,
     }
 
+    #[cfg(feature = "llama")]
     impl TestModel {
         pub fn new(repo: &str, model_file_name: &str) -> Self {
             let api = hf_hub::api::sync::Api::new();
@@ -243,6 +245,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     impl Drop for TestModel {
         fn drop(&mut self) {
             let res = std::fs::remove_file(&self.filename);
@@ -250,6 +253,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     fn main_with_model(model_repo: &str, model_file_name: &str) {
         let test_model = TestModel::new(model_repo, model_file_name);
         let model_options = super::options::ModelOptions::default();
@@ -269,6 +273,7 @@ mod test {
         println!("{answer}");
     }
 
+    #[cfg(feature = "llama")]
     macro_rules! models_tests {
         ($($name:ident: ($value:expr, $value2:expr),)*) => {
             $(
@@ -280,13 +285,15 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     models_tests! {
     //        model_test_llava_1_6_mistral_7b_gguf:
     //        ("cjpais/llava-1.6-mistral-7b-gguf",
         //        "llava-v1.6-mistral-7b.Q4_K_M.gguf"),
         test: ("stabilityai/stable-code-instruct-3b","stable-code-3b-q4_k_m.gguf"),
-        }
+    }
 
+    #[cfg(feature = "llama")]
     fn _main_with_model_and_mmproj(
         model_repo: &str,
         model_file_name: &str,
@@ -322,6 +329,7 @@ mod test {
         println!("{answer}");
     }
 
+    #[cfg(feature = "llama")]
     macro_rules! models_with_mmproj_tests {
         ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
             $(
@@ -333,9 +341,10 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     models_with_mmproj_tests! {
     //        model_test_llava_1_6_mistral_7b_gguf_with_mmproj: ("cjpais/llava-1.6-mistral-7b-gguf", "llava-v1.6-mistral-7b.Q4_K_M.gguf", "mmproj-model-f16.gguf"),
-        }
+    }
 }
 
 #[cfg(feature = "whisper")]
