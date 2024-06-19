@@ -272,6 +272,7 @@ mod windows {
                 )
             {
                 if let Ok(path) = entry {
+                    println!("{path}");
                     let path = path.into_os_string().into_string().unwrap();
                     powershell_script::run(&format!("cp {path} {dist_dir}-{}\\", *ARCH))
                         .expect("sign error");
