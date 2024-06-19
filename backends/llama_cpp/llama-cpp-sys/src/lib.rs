@@ -31,7 +31,7 @@ impl CudaHandles {
                 (0, None)
             }
         };
-        let (device_count, cudart) = match cuda::cudart::CudartHandle::new() {
+        let (device_count1, cudart) = match cuda::cudart::CudartHandle::new() {
             Ok((d, h)) => (d, Some(h)),
             Err(e) => {
                 log::warn!("{e}");
@@ -40,7 +40,11 @@ impl CudaHandles {
         };
         Ok(Self {
             nvml,
-            device_count,
+            device_count: if device_count == 0 {
+                device_count1
+            } else {
+                device_count
+            },
             nvcuda,
             cudart,
             llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
@@ -117,6 +121,10 @@ pub enum Error {
     NvMlLoad,
     #[error("{0}")]
     NvMlInit_v2(i32),
+    #[error("{0}")]
+    NvCudaCall(&'static str, i32),
+    #[error("nvcuda load")]
+    NvCudaLoad,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

@@ -13,8 +13,15 @@ pub struct NvMlHandle {
     path: std::path::PathBuf,
 }
 
+#[cfg(windows)]
 const NVML_GLOBS: &'static [&'static str] = &["c:\\Windows\\System32\\nvml.dll"];
+#[cfg(unix)]
+const NVML_GLOBS: &'static [&'static str] = &[];
+
+#[cfg(windows)]
 const NVML_MGMT_NAME: &'static str = "nvml.dll";
+#[cfg(unix)]
+const NVML_MGMT_NAME: &'static str = "";
 
 impl NvMlHandle {
     pub fn new() -> crate::Result<Self> {
