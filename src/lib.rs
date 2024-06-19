@@ -387,7 +387,11 @@ mod test {
     }
 
     #[cfg(feature = "embeddings")]
-    fn test_embeddings_model(model_type: super::options::EmbeddingsModelType, text: String) {
+    fn test_embeddings_model(
+            model_type: super::options::EmbeddingsModelType,
+            text: String,
+            expected_size: usize
+    ) {
         let options = super::options::EmbeddingsOptions::default().with_model_type(model_type);
         let model = super::EmbeddingsModel::new(options);
         assert!(model.is_ok());
@@ -395,16 +399,16 @@ mod test {
         let embedding = model.encode(text);
         assert!(embedding.is_ok());
         let embedding = embedding.unwrap();
-        println!("{:?}", embedding.len());
+        assert_eq!(expected_size, embedding.len());
     }
 
     #[cfg(feature = "embeddings")]
     macro_rules! embeddings_tests {
-        ($($name:ident: ($value:expr, $value2:expr),)*) => {
+        ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
             $(
                 #[test]
                 fn $name() {
-                    test_embeddings_model($value, $value2);
+                    test_embeddings_model($value, $value2, $value3);
                 }
             )*
         }
@@ -412,9 +416,9 @@ mod test {
 
     #[cfg(feature = "embeddings")]
     embeddings_tests! {
-        test_jina: (super::options::EmbeddingsModelType::JinaBert, "Hello world!".to_string()),
-        test_t5: (super::options::EmbeddingsModelType::T5, "Hello world!".to_string()),
-        test_bert: (super::options::EmbeddingsModelType::Bert, "Hello world!".to_string()),
+        test_jina: (super::options::EmbeddingsModelType::JinaBert, "Hello world!".to_string(), 768),
+        test_t5: (super::options::EmbeddingsModelType::T5, "Hello world!".to_string(), 512),
+        test_bert: (super::options::EmbeddingsModelType::Bert, "Hello world!".to_string(), 384),
     }
 
 }
