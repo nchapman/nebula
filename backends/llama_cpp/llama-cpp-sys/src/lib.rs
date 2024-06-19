@@ -113,6 +113,10 @@ pub enum Error {
     LIbLoading(#[from] libloading::Error),
     #[error("unimplemented: file: {0}, line: {1}")]
     Unimplemented(&'static str, u32),
+    #[error("")]
+    NvMlLoad,
+    #[error("{0}")]
+    NvMlInit_v2(i32),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
