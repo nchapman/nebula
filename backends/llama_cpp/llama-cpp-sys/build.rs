@@ -82,7 +82,7 @@ mod windows {
         build_dir: &str,
         cmake_defs: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
-    ) {
+    ) -> std::path::PathBuf {
         println!("build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
         let mut dst = cmake::Config::new(src_dir);
         let mut dd = &mut dst;
@@ -97,7 +97,7 @@ mod windows {
         for t in targets {
             dd = dd.target(t);
         }
-        dd.build();
+        dd.build()
     }
 
     fn sign(build_dir: &str) {
@@ -160,7 +160,6 @@ mod windows {
             .collect();
         println!("Building LCD CPU");
         let build_dir = format!("target/windows/{}/cpu", *ARCH);
-        build(src_dir, &build_dir, &cmake_defs, targets);
         sign(&build_dir);
         install(&build_dir, &format!("{dist_dir}/cpu"));
     }
@@ -256,9 +255,13 @@ mod windows {
                 .map(|(k, v)| (*k, *v))
                 .collect();
             println!("Building CUDA GPU");
-            build(src_dir, &build_dir, &cmake_defs, targets);
+            let bb = build(src_dir, &build_dir, &cmake_defs, targets)
+                .into_os_string()
+                .into_string()
+                .unwrap();
             sign(&build_dir);
             install(&build_dir, &disst_dir);
+            println!("{bb}");
             println!("copying CUDA dependencies to {dist_dir}-{}", *ARCH);
             for entry in glob::glob(&format!("{cuda_lib_dir}/cudart64_*.dll"))
                 .expect("Failed to read glob pattern")
