@@ -25,7 +25,7 @@ const CUDART_GLOBS: &'static [&'static str] = &[
 ];
 
 #[cfg(windows)]
-const CUDAART_MGMT_NAME: &'static str = "cudart64_*.dll";
+const CUDART_MGMT_NAME: &'static str = "cudart64_*.dll";
 #[cfg(unix)]
 const CUDART_MGMT_NAME: &'static str = "libcudart.so*";
 
