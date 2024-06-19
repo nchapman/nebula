@@ -119,7 +119,7 @@ mod windows {
     }
 
     fn install(build_dir: &str, dist_dir: &str) {
-        let pp = if let Ok(profile) = env::var("PROFILE") {
+        let pp = if let Ok(profile) = ::std::env::var("PROFILE") {
             profile
         } else {
             "Debug".to_string()
