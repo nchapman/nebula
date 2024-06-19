@@ -284,7 +284,7 @@ mod windows {
                     powershell_script::run(&format!(
                         "copy-item -Path {path} -Destination {dist_dir} -Force"
                     ))
-                    .expect("sign error")
+                    .expect("sign error");
                 }
             }
         }
