@@ -37,7 +37,7 @@ pub mod token_type;
 pub type Result<T> = std::result::Result<T, LLamaCppError>;
 
 /// All errors that can occur in the llama-cpp crate.
-#[derive(Debug, Eq, PartialEq, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum LLamaCppError {
     /// The backend was already initialized. This can generally be ignored as initializing the backend
     /// is idempotent.
@@ -58,12 +58,13 @@ pub enum LLamaCppError {
     /// see [`EmbeddingsError`]
     #[error(transparent)]
     EmbeddingError(#[from] EmbeddingsError),
-
     #[error["{0}"]]
     ClipError(#[from] ClipError),
+    #[error("{0}")]
+    Sys(#[from] llama_cpp_sys::Error),
 }
 
-#[derive(Debug, Eq, PartialEq, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum ClipError {
     #[error("{0}")]
     PathToStrError(PathBuf),
@@ -71,6 +72,8 @@ pub enum ClipError {
     NullReturn,
     #[error("null byte in string {0}")]
     NullError(#[from] NulError),
+    #[error("{0}")]
+    Sys(#[from] llama_cpp_sys::Error),
 }
 
 /// Failed to Load context
@@ -138,7 +141,7 @@ impl From<NonZeroI32> for DecodeError {
 }
 
 /// An error that can occur when loading a model.
-#[derive(Debug, Eq, PartialEq, thiserror::Error)]
+#[derive(Debug, thiserror::Error)]
 pub enum LlamaModelLoadError {
     /// There was a null byte in a provided string and thus it could not be converted to a C string.
     #[error("null byte in string {0}")]
@@ -149,6 +152,8 @@ pub enum LlamaModelLoadError {
     /// Failed to convert the path to a rust str. This means the path was not valid unicode
     #[error("failed to convert path {0} to str")]
     PathToStrError(PathBuf),
+    #[error("{0}")]
+    Sys(#[from] llama_cpp_sys::Error),
 }
 
 /// get the time (in microseconds) according to llama.cpp

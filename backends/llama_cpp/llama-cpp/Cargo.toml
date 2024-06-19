@@ -21,12 +21,3 @@ harness = false
 [[bench]]
 name = "generate"
 harness = false
-
-[features]
-cublas = ["llama-cpp-sys/cublas"]
-clblas = ["llama-cpp-sys/clblas"]
-openblas = ["llama-cpp-sys/openblas"]
-blis = ["llama-cpp-sys/blis"]
-hipblas = ["llama-cpp-sys/hipblas"]
-no-metal = ["llama-cpp-sys/no-metal"]
-sycl = ["llama-cpp-sys/sycl"]
