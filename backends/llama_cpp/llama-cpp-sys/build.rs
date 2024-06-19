@@ -127,12 +127,8 @@ mod windows {
         println!("Installing binaries to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
         println!("{build_dir}/bin/{pp}/*.exe");
-        for entry in glob::glob(&format!("{build_dir}/bin/{pp}/*.exe"))
+        for entry in glob::glob(&format!("{build_dir}/build/bin/{pp}/*.dll"))
             .expect("Failed to read glob pattern")
-            .chain(
-                glob::glob(&format!("{build_dir}/bin/{pp}/*.dll"))
-                    .expect("Failed to read glob pattern"),
-            )
         {
             if let Ok(path) = entry {
                 let path = path.into_os_string().into_string().unwrap();
