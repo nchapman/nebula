@@ -126,6 +126,7 @@ mod windows {
         };
         println!("Installing binaries to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
+        println!("{build_dir}/bin/{pp}/*.exe");
         for entry in glob::glob(&format!("{build_dir}/bin/{pp}/*.exe"))
             .expect("Failed to read glob pattern")
             .chain(
@@ -135,6 +136,7 @@ mod windows {
         {
             if let Ok(path) = entry {
                 let path = path.into_os_string().into_string().unwrap();
+                println("{path}");
                 powershell_script::run(&format!(
                     "copy-item -Path {path} -Destination {dist_dir} -Force"
                 ))
