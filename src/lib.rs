@@ -421,6 +421,39 @@ mod test {
         test_bert: (super::options::EmbeddingsModelType::Bert, "Hello world!".to_string(), 384),
     }
 
+    #[cfg(feature = "tts")]
+    fn test_tts_model(reference_audio_path: PathBuf, text: String) {
+        let ref_samples = super::utils::get_tts_samples_from_audio_path(
+            reference_audio_path
+        );
+        assert!(ref_samples.is_ok());
+        let ref_samples = ref_samples.unwrap();
+        let tts_options = super::options::TTSOptions::default();
+        let model = super::TextToSpeechModel::new(tts_options);
+        assert!(model.is_ok());
+        let mut model = model.unwrap();
+        let train_result = model.train(ref_samples);
+        assert!(train_result.is_ok());
+        let generated_audio_sample = model.predict(text);
+        assert!(generated_audio_sample.is_ok());
+    }
+
+    #[cfg(feature = "tts")]
+    macro_rules! tts_tests {
+        ($($name:ident: ($value:expr, $value2:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    test_tts_model($value, $value2);
+                }
+            )*
+        }
+    }
+
+    #[cfg(feature = "tts")]
+    tts_tests! {
+        test_tts: (Path::new("samples").join("resampled_ref.wav"), "Hello world!".to_string()),
+    }
 }
 
 #[cfg(feature = "whisper")]
