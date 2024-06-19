@@ -281,7 +281,10 @@ mod windows {
                     println!("{}", path.display());
                     let path = path.into_os_string().into_string().unwrap();
                     println!("{}", path);
-                    powershell_script::run(&format!("cp {path} {dist_dir}")).expect("sign error");
+                    powershell_script::run(&format!(
+                        "copy-item -Path {path} -Destination {dist_dir} -Force"
+                    ))
+                    .expect("sign error")
                 }
             }
         }
