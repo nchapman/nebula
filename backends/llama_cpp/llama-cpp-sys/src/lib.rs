@@ -125,6 +125,10 @@ pub enum Error {
     NvCudaCall(&'static str, i32),
     #[error("nvcuda load")]
     NvCudaLoad,
+    #[error("{0}")]
+    CudartCall(&'static str, i32),
+    #[error("cudart load")]
+    CudartLoad,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;

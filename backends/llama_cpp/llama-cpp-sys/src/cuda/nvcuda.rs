@@ -30,7 +30,7 @@ impl NvCudaHandle {
         let pp = super::find_libs(NVCUDA_MGMT_NAME, NVCUDA_GLOBS);
         for p in pp.iter() {
             if let Ok((dc, m)) = Self::load(p) {
-                log::debug!("nvidia-ml loaded {}", p.display());
+                log::debug!("nvidia-cuda loaded {}", p.display());
                 return Ok((
                     dc,
                     Self {
