@@ -233,7 +233,8 @@ mod windows {
             let cuda_version = powershell_script::run(&format!(
                 "(get-item (\"{nvcc}\" | split-path | split-path)).Basename"
             ))
-            .expect("can`t get cuda version");
+            .expect("can`t get cuda version")
+            .trim();
             let build_dir = format!("target/windows/{}/cuda_{cuda_version}", *ARCH);
             let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
             let cmake_defs = maplit::hashmap! {
