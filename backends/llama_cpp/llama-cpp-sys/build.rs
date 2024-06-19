@@ -231,7 +231,7 @@ mod windows {
             nvcc.push("nvcc.exe");
             let nvcc = nvcc.into_os_string().into_string().unwrap();
             let cuda_version = powershell_script::run(&format!(
-                "(get-item ({nvcc} | split-path | split-path)).Basename"
+                "(get-item (\"{nvcc}\" | split-path | split-path)).Basename"
             ))
             .expect("can`t get cuda version");
             let build_dir = format!("target/windows/{}/cuda_{cuda_version}", *ARCH);
