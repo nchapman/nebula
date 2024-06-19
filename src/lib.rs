@@ -385,6 +385,38 @@ mod test {
             "And so my fellow Americans, ask not what your country can do for you, ask what you can do for your country.".to_string()
         ),
     }
+
+    #[cfg(feature = "embeddings")]
+    fn test_embeddings_model(model_type: super::options::EmbeddingsModelType, text: String) {
+        let options = super::options::EmbeddingsOptions::default().with_model_type(model_type);
+        let model = super::EmbeddingsModel::new(options);
+        assert!(model.is_ok());
+        let mut model = model.unwrap();
+        let embedding = model.encode(text);
+        assert!(embedding.is_ok());
+        let embedding = embedding.unwrap();
+        println!("{:?}", embedding.len());
+    }
+
+    #[cfg(feature = "embeddings")]
+    macro_rules! embeddings_tests {
+        ($($name:ident: ($value:expr, $value2:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    test_embeddings_model($value, $value2);
+                }
+            )*
+        }
+    }
+
+    #[cfg(feature = "embeddings")]
+    embeddings_tests! {
+        test_jina: (super::options::EmbeddingsModelType::JinaBert, "Hello world!".to_string()),
+        test_t5: (super::options::EmbeddingsModelType::T5, "Hello world!".to_string()),
+        test_bert: (super::options::EmbeddingsModelType::Bert, "Hello world!".to_string()),
+    }
+
 }
 
 #[cfg(feature = "whisper")]
