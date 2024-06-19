@@ -119,12 +119,18 @@ mod windows {
     }
 
     fn install(build_dir: &str, dist_dir: &str) {
+        let pp = if let Ok(profile) = env::var("PROFILE") {
+            profile
+        } else {
+            "Debug".to_string()
+        };
         println!("Installing binaries to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
-        for entry in glob::glob(&format!("{build_dir}/bin/*.exe"))
+        for entry in glob::glob(&format!("{build_dir}/bin/{pp}/*.exe"))
             .expect("Failed to read glob pattern")
             .chain(
-                glob::glob(&format!("{build_dir}/bin/*.dll")).expect("Failed to read glob pattern"),
+                glob::glob(&format!("{build_dir}/bin/{pp}/*.dll"))
+                    .expect("Failed to read glob pattern"),
             )
         {
             if let Ok(path) = entry {
@@ -255,14 +261,13 @@ mod windows {
                 .map(|(k, v)| (*k, *v))
                 .collect();
             println!("Building CUDA GPU");
-            let bb = build(src_dir, &build_dir, &cmake_defs, targets)
+            build(src_dir, &build_dir, &cmake_defs, targets)
                 .into_os_string()
                 .into_string()
                 .unwrap();
             sign(&build_dir);
             install(&build_dir, &disst_dir);
-            println!("{bb}");
-            println!("copying CUDA dependencies to {dist_dir}-{}", *ARCH);
+            println!("copying CUDA dependencies to {dist_dir}");
             for entry in glob::glob(&format!("{cuda_lib_dir}/cudart64_*.dll"))
                 .expect("Failed to read glob pattern")
                 .chain(
@@ -278,8 +283,7 @@ mod windows {
                     println!("{}", path.display());
                     let path = path.into_os_string().into_string().unwrap();
                     println!("{}", path);
-                    powershell_script::run(&format!("cp {path} {dist_dir}-{}\\", *ARCH))
-                        .expect("sign error");
+                    powershell_script::run(&format!("cp {path} {dist_dir}")).expect("sign error");
                 }
             }
         }
