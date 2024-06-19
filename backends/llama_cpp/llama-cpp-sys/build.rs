@@ -136,7 +136,7 @@ mod windows {
         {
             if let Ok(path) = entry {
                 let path = path.into_os_string().into_string().unwrap();
-                println("{path}");
+                println!("{path}");
                 powershell_script::run(&format!(
                     "copy-item -Path {path} -Destination {dist_dir} -Force"
                 ))
