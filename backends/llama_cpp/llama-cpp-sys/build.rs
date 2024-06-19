@@ -234,6 +234,8 @@ mod windows {
                 "(get-item (\"{nvcc}\" | split-path | split-path)).Basename"
             ))
             .expect("can`t get cuda version")
+            .stdout()
+            .unwrap()
             .trim();
             let build_dir = format!("target/windows/{}/cuda_{cuda_version}", *ARCH);
             let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
