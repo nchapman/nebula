@@ -134,7 +134,7 @@ mod windows {
                 let path = path.into_os_string().into_string().unwrap();
                 println!("{path}");
                 powershell_script::run(&format!(
-                    "copy-item -Path {path} -Destination {dist_dir} -Force"
+                    "copy-item -Path \"{path}\" -Destination \"{dist_dir}\" -Force"
                 ))
                 .expect("install error");
             }
@@ -282,7 +282,7 @@ mod windows {
                     let path = path.into_os_string().into_string().unwrap();
                     println!("{}", path);
                     powershell_script::run(&format!(
-                        "copy-item -Path {path} -Destination {dist_dir} -Force"
+                        "copy-item -Path \"{path}\" -Destination \"{dist_dir}\" -Force"
                     ))
                     .expect("sign error");
                 }
