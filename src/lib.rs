@@ -208,7 +208,7 @@ impl Drop for Model {
 
 #[cfg(test)]
 mod test {
-    use std::{io::Read, path::PathBuf};
+    use std::{io::Read, path::{PathBuf, Path}};
 
     #[cfg(feature = "llama")]
     struct TestModel {
@@ -344,6 +344,46 @@ mod test {
     #[cfg(feature = "llama")]
     models_with_mmproj_tests! {
     //        model_test_llava_1_6_mistral_7b_gguf_with_mmproj: ("cjpais/llava-1.6-mistral-7b-gguf", "llava-v1.6-mistral-7b.Q4_K_M.gguf", "mmproj-model-f16.gguf"),
+    }
+
+    #[cfg(feature = "whisper")]
+    fn test_whisper_on_wav(model_path: PathBuf, wav_file_path: PathBuf, expected_text: String) {
+        let model = super::AutomaticSpeechRecognitionModel::new(
+            model_path
+        );
+        assert!(model.is_ok());
+        let mut model = model.unwrap();
+        let samples = super::utils::convert_wav_to_samples(
+            wav_file_path.as_path().to_str().unwrap()
+        );
+
+        let options = super::options::AutomaticSpeechRecognitionOptions::default().with_n_threads(1);
+        let out = model.predict(&samples[..], options);
+        assert!(out.is_ok());
+        let out = out.unwrap();
+        let out = out.trim().to_string();
+        assert_eq!(expected_text, out);
+    }
+
+    #[cfg(feature = "whisper")]
+    macro_rules! whisper_tests {
+        ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    test_whisper_on_wav($value, $value2, $value3);
+                }
+            )*
+        }
+    }
+
+    #[cfg(feature = "whisper")]
+    whisper_tests! {
+        test: (
+            Path::new("models").join("ggml-base.en.bin"),
+            Path::new("samples").join("jfk.wav"),
+            "And so my fellow Americans, ask not what your country can do for you, ask what you can do for your country.".to_string()
+        ),
     }
 }
 
