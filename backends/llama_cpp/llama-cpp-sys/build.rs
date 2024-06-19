@@ -19,6 +19,7 @@ mod windows {
         static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "BUILD_SHARED_LIBS" => "on",
             "LLAMA_NATIVE" => "off",
+            "LLAMA_OPENMP" => "off",
             "LLAMA_SERVER_VERBOSE" => "off",
             "CMAKE_BUILD_TYPE" => "Release"
         };
@@ -239,14 +240,21 @@ mod windows {
             let cuda_version = cuda_version.trim();
             let build_dir = format!("target/windows/{}/cuda_{cuda_version}", *ARCH);
             let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
-            let cmake_defs = maplit::hashmap! {
-                "LLAMA_CUDA" => "ON",
-                "LLAMA_AVX" => "on",
-                "LLAMA_AVX2" => "off",
-                "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
-                "CMAKE_CUDA_FLAGS" => "-t8",
-                "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES
-            };
+            let cmake_defs: std::collections::HashMap<&str, &str> = CMAKE_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap! {
+                        "LLAMA_CUDA" => "ON",
+                        "LLAMA_AVX" => "on",
+                        "LLAMA_AVX2" => "off",
+                        "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
+                        "CMAKE_CUDA_FLAGS" => "-t8",
+                        "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES
+                    }
+                    .iter(),
+                )
+                .map(|(k, v)| (*k, *v))
+                .collect();
             println!("Building CUDA GPU");
             build(src_dir, &build_dir, &cmake_defs, targets);
             sign(&build_dir);
