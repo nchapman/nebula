@@ -235,8 +235,8 @@ mod windows {
             ))
             .expect("can`t get cuda version")
             .stdout()
-            .unwrap()
-            .trim();
+            .unwrap();
+            let cuda_version = cuda_version.trim();
             let build_dir = format!("target/windows/{}/cuda_{cuda_version}", *ARCH);
             let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
             let cmake_defs = maplit::hashmap! {
