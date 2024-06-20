@@ -213,7 +213,7 @@ impl Into<crate::GpuInfo> for CudaDeviceProp {
             memInfo: crate::MemInfo::default(),
             library: "cuda",
             variant: crate::CPUCapability::None,
-            minimum_memory: 0,
+            minimum_memory: 457*1024*1024,
             dependency_path: None,
             env_workarounds: vec![],
             id: format!("GPU-{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
@@ -237,11 +237,8 @@ impl Into<crate::GpuInfo> for CudaDeviceProp {
             name: String::from_utf8_lossy(&self.name[..])
                 .trim_end_matches('\0')
                 .to_string(),
-            compute: "".to_string(),
-            driver_version: crate::DriverVersion {
-                major: self.major,
-                minor: self.minor,
-            },
+            compute: format!("{}.{}", self.major, self.minor),
+            driver_version: crate::DriverVersion::default(),
         }
     }
 }
@@ -288,11 +285,28 @@ impl CudartHandle {
         }
     }
 
+    pub fn get_mem_info(&self) -> crate::Result<(usize, usize)> {
+        let mut mem_free = 0;
+        let mut mem_total = 0;
+        let get_mem_info: libloading::Symbol<
+            unsafe extern "C" fn(*mut usize, *mut usize) -> c_int,
+        > = unsafe { self.handler.get(b"cudaMemGetInfo").unwrap() };
+        let res = unsafe { get_mem_info(&mut mem_free, &mut mem_total) };
+        if res != 0 {
+            Err(crate::Error::CudartCall("cudaGetDeviceProperties)", res))
+        } else {
+            Ok((mem_free, mem_total))
+        }
+    }
+
     pub fn bootstrap(&self, device: usize) -> crate::Result<crate::GpuInfo> {
         self.set_device(device)?;
         let props = self.get_device_properties(device)?;
-        println!("{props:?}");
-        Ok(props.into())
+        let mut props: crate::GpuInfo = props.into();
+        let (mem_free, mem_total) = self.get_mem_info()?;
+        props.memInfo.free = mem_free as u64;
+        props.memInfo.total = mem_total as u64;
+        Ok(props)
     }
 
     pub fn load(path: &std::path::PathBuf) -> crate::Result<(usize, libloading::Library)> {
