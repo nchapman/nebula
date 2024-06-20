@@ -1,4 +1,4 @@
-use std::ffi::{c_char, c_int, c_uchar, c_uint};
+use std::ffi::{c_int, c_uchar, c_uint};
 
 pub struct CudartHandle {
     handler: libloading::Library,
@@ -38,9 +38,9 @@ struct CudaUUID {
 #[repr(C)]
 #[derive(Debug)]
 struct CudaDeviceProp {
-    name: [c_char; 256],
+    name: [char; 256],
     uuid: CudaUUID,
-    luid: [c_char; 8],
+    luid: [char; 8],
     luid_device_node_mask: c_uint,
     total_global_mem: usize,
     shared_mem_per_block: usize,
@@ -123,9 +123,9 @@ struct CudaDeviceProp {
 impl Default for CudaDeviceProp {
     fn default() -> Self {
         Self {
-            name: [0; 256],
+            name: ['\0'; 256],
             uuid: CudaUUID::default(),
-            luid: [0; 8],
+            luid: ['\0'; 8],
             luid_device_node_mask: 0,
             total_global_mem: 0,
             shared_mem_per_block: 0,
@@ -217,7 +217,7 @@ impl Into<crate::GpuInfo> for CudaDeviceProp {
             dependency_path: None,
             env_workarounds: vec![],
             id: "".to_string(),
-            name: "".to_string(),
+            name: String::from_utf8_lossy(self.name),
             compute: "".to_string(),
             driver_version: crate::DriverVersion {
                 major: self.major,
