@@ -159,7 +159,11 @@ impl Handlers {
     pub fn llama_cpp(&self) -> &libloading::Library {
         match self {
             Self::Cpu(h) => &h.llamacpp,
-            Self::Cuda(h) => &h.llamacpp,
+            Self::Cuda(h) => {
+                let gpu_info = h.get_gpu_info();
+                println!("{gpu_info:?}");
+                &h.llamacpp
+            }
         }
     }
 }
