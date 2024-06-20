@@ -50,8 +50,6 @@ struct CudaHandles {
     cudart: Option<cuda::cudart::CudartHandle>,
     nvcuda: Option<cuda::nvcuda::NvCudaHandle>,
     nvml: Option<cuda::nvml::NvMlHandle>,
-    pub llamacpp: libloading::Library,
-    llava: libloading::Library,
 }
 
 impl CudaHandles {
@@ -87,8 +85,8 @@ impl CudaHandles {
             device_count,
             nvcuda,
             cudart,
-            llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
-            llava: unsafe { libloading::Library::new("libllamacpp.so")? },
+            //            llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
+            //            llava: unsafe { libloading::Library::new("libllamacpp.so")? },
         })
     }
     pub fn get_gpu_info(&self) -> Vec<(usize, GpuInfo)> {
@@ -162,7 +160,8 @@ impl Handlers {
             Self::Cuda(h) => {
                 let gpu_info = h.get_gpu_info();
                 println!("{gpu_info:?}");
-                &h.llamacpp
+                unimplemented!()
+                //&h.llamacpp
             }
         }
     }
