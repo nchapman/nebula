@@ -43,6 +43,10 @@ impl NvCudaHandle {
         Err(crate::Error::NvCudaLoad)
     }
 
+    pub fn bootstrap(&self, _device: usize) -> crate::Result<crate::GpuInfo> {
+        Err(crate::Error::Unimplemented(file!(), line!()))
+    }
+
     pub fn load(path: &std::path::PathBuf) -> crate::Result<(usize, libloading::Library)> {
         let lib = unsafe { libloading::Library::new(path.clone())? };
         if [

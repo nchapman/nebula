@@ -164,6 +164,7 @@ mod windows {
             .collect();
         println!("Building LCD CPU");
         let build_dir = format!("target/windows/{}/cpu", *ARCH);
+        build(src_dir, &build_dir, &cmake_defs, targets);
         sign(&build_dir);
         install(&build_dir, &format!("{dist_dir}/cpu"));
     }

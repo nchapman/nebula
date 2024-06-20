@@ -6,6 +6,45 @@ use std::fmt::{Debug, Formatter};
 
 mod cuda;
 
+#[derive(Default, Debug)]
+pub struct MemInfo {
+    total: u64,
+    free: u64,
+}
+
+#[derive(Debug)]
+pub enum CPUCapability {
+    None,
+    Avx,
+    Avx2,
+}
+
+impl Default for CPUCapability {
+    fn default() -> Self {
+        Self::None
+    }
+}
+
+#[derive(Default, Debug)]
+pub struct GpuInfo {
+    memInfo: MemInfo,
+    library: &'static str,
+    variant: CPUCapability,
+    minimum_memory: u64,
+    dependency_path: Option<String>,
+    env_workarounds: Vec<(String, String)>,
+    id: String,
+    name: String,
+    compute: String,
+    driver_version: DriverVersion,
+}
+
+#[derive(Default, Debug)]
+pub struct DriverVersion {
+    major: i32,
+    minor: i32,
+}
+
 struct CudaHandles {
     device_count: usize,
     cudart: Option<cuda::cudart::CudartHandle>,
@@ -38,18 +77,40 @@ impl CudaHandles {
                 (0, None)
             }
         };
+        let device_count = if device_count == 0 {
+            device_count1
+        } else {
+            device_count
+        };
         Ok(Self {
             nvml,
-            device_count: if device_count == 0 {
-                device_count1
-            } else {
-                device_count
-            },
+            device_count,
             nvcuda,
             cudart,
             llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
             llava: unsafe { libloading::Library::new("libllamacpp.so")? },
         })
+    }
+    pub fn get_gpu_info(&self) -> Vec<(usize, GpuInfo)> {
+        let mut res = vec![];
+        for device in 0..self.device_count {
+            let _meminfo = if let Some(cudart) = &self.cudart {
+                if let Ok(mm) = cudart.bootstrap(device) {
+                    res.push((device, mm));
+                } else {
+                    continue;
+                }
+            } else if let Some(nvcuda) = &self.nvcuda {
+                if let Ok(mm) = nvcuda.bootstrap(device) {
+                    res.push((device, mm));
+                } else {
+                    continue;
+                }
+            } else {
+                continue;
+            };
+        }
+        res
     }
 }
 
