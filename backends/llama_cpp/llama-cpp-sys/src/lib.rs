@@ -95,19 +95,21 @@ impl CudaHandles {
         let mut res = vec![];
         for device in 0..self.device_count {
             let _meminfo = if let Some(cudart) = &self.cudart {
-                if let Ok(mm) = cudart.bootstrap(device) {
-                    res.push((device, mm));
-                } else {
-                    continue;
+                match cudart.bootstrap(device) {
+                    Ok(mm) => res.push((device, mm)),
+                    Err(e) => {
+                        log::debug!("{e}");
+                        continue;
+                    }
                 }
             } else if let Some(nvcuda) = &self.nvcuda {
-                if let Ok(mm) = nvcuda.bootstrap(device) {
-                    res.push((device, mm));
-                } else {
-                    continue;
+                match nvcuda.bootstrap(device) {
+                    Ok(mm) => res.push((device, mm)),
+                    Err(e) => {
+                        log::debug!("{e}");
+                        continue;
+                    }
                 }
-            } else {
-                continue;
             };
         }
         res
