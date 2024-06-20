@@ -38,9 +38,9 @@ struct CudaUUID {
 #[repr(C)]
 #[derive(Debug)]
 struct CudaDeviceProp {
-    name: [char; 256],
+    name: [c_uchar; 256],
     uuid: CudaUUID,
-    luid: [char; 8],
+    luid: [c_uchar; 8],
     luid_device_node_mask: c_uint,
     total_global_mem: usize,
     shared_mem_per_block: usize,
@@ -123,9 +123,9 @@ struct CudaDeviceProp {
 impl Default for CudaDeviceProp {
     fn default() -> Self {
         Self {
-            name: ['\0'; 256],
+            name: [0; 256],
             uuid: CudaUUID::default(),
-            luid: ['\0'; 8],
+            luid: [0; 8],
             luid_device_node_mask: 0,
             total_global_mem: 0,
             shared_mem_per_block: 0,
@@ -217,7 +217,7 @@ impl Into<crate::GpuInfo> for CudaDeviceProp {
             dependency_path: None,
             env_workarounds: vec![],
             id: "".to_string(),
-            name: String::from_utf8_lossy(self.name),
+            name: String::from_utf8_lossy(&self.name[..]).to_string(),
             compute: "".to_string(),
             driver_version: crate::DriverVersion {
                 major: self.major,
