@@ -30,12 +30,13 @@ const CUDART_MGMT_NAME: &'static str = "cudart64_*.dll";
 const CUDART_MGMT_NAME: &'static str = "libcudart.so*";
 
 #[repr(C)]
-#[derive(Default)]
+#[derive(Default, Debug)]
 struct CudaUUID {
     bytes: [c_uchar; 16],
 }
 
 #[repr(C)]
+#[derive(Debug)]
 struct CudaDeviceProp {
     name: [c_char; 256],
     uuid: CudaUUID,
@@ -271,6 +272,7 @@ impl CudartHandle {
     pub fn bootstrap(&self, device: usize) -> crate::Result<crate::GpuInfo> {
         self.set_device(device)?;
         let props = self.get_device_properties(device)?;
+        println!("{props:?}");
         Ok(props.into())
     }
 
