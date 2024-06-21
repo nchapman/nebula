@@ -13,7 +13,7 @@ pub struct MemInfo {
     free: u64,
 }
 
-#[derive(Debug, PartialEq, PartialOrd)]
+#[derive(Debug, PartialEq, PartialOrd, Eq, Ord)]
 pub enum CPUCapability {
     None,
     Avx,
@@ -184,6 +184,21 @@ struct Variant {
     pub variant: String,
 }
 
+impl std::fmt::Display for Variant {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        write!(
+            f,
+            "{}{}",
+            self.library,
+            if self.variant.is_empty() {
+                "".to_string()
+            } else {
+                format!("_{}", self.variant)
+            }
+        )
+    }
+}
+
 enum Handlers {
     Cpu(CpuHandlers),
     Cuda(CudaHandles),
@@ -238,23 +253,53 @@ impl Handlers {
         log::debug!("{variants:#?}");
         for device in devices {
             let mut vars = device.variants(&variants);
-            vars.sort_by(|_a, _b| std::cmp::Ordering::Equal);
+            vars.sort_by(|a, b| {
+                if a.library == "cpu" || b.library == "cpu" {
+                    CPUCapability::from(&a.variant).cmp(&CPUCapability::from(&b.variant))
+                } else if a.library == "cpu" || b.library != "cpu" {
+                    std::cmp::Ordering::Greater
+                } else if a.library != "cpu" || b.library == "cpu" {
+                    std::cmp::Ordering::Less
+                } else if a.library != b.library {
+                    unreachable!()
+                } else {
+                    if a.variant == b.variant {
+                        std::cmp::Ordering::Equal
+                    } else {
+                        let mut a_version =
+                            a.variant[1..].split('.').map(|v| v.parse::<i32>().unwrap());
+                        let a_v = a_version.next().unwrap_or_default() * 1000
+                            + a_version.next().unwrap_or_default();
+                        let mut b_version =
+                            b.variant[1..].split('.').map(|v| v.parse::<i32>().unwrap());
+                        let b_v = b_version.next().unwrap_or_default() * 1000
+                            + b_version.next().unwrap_or_default();
+                        a_v.cmp(&b_v)
+                    }
+                }
+            });
+            vars.reverse();
             for v in vars {
                 let mut bp = DEPENDENCIES_BASE_PATH.clone();
                 if v.variant.is_empty() {
-                    bp.push(v.library);
+                    bp.push(v.library.clone());
                 } else {
-                    bp.push(v.library + "_" + v.variant.as_str());
+                    bp.push(v.library.clone() + "_" + v.variant.as_str());
                 }
                 let mut llama_p = bp.clone();
                 #[cfg(windows)]
                 llama_p.push("llama.dll");
+                #[cfg(not(windows))]
+                llama_p.push("llama.so");
                 let mut llava_p = bp.clone();
                 #[cfg(windows)]
                 llava_p.push("llava_shared.dll");
+                #[cfg(not(windows))]
+                llava_p.push("llava_shared.so");
                 match unsafe { libloading::Library::new(llama_p.clone()) } {
                     Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
                         Ok(llava) => {
+                            log::debug!("variant {v} loaded successfully");
                             return Ok((llama, llava));
                         }
                         Err(e) => {
