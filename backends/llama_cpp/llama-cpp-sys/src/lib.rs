@@ -26,7 +26,10 @@ impl CPUCapability {
             "avx" => Self::Avx,
             "avx2" => Self::Avx2,
             "" => Self::None,
-            _ => unreachable!(),
+            _ => {
+                println!("{vv}");
+                unreachable!(),
+            }
         }
     }
 }
