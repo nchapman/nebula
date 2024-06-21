@@ -9,6 +9,7 @@ mod linux {}
 
 mod macos {}
 
+#[cfg(feature = "build")]
 #[cfg(windows)]
 mod windows {
 

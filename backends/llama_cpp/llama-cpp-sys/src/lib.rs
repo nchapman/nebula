@@ -27,7 +27,6 @@ impl CPUCapability {
             "avx2" => Self::Avx2,
             "" => Self::None,
             _ => {
-                println!("{vv}");
                 unreachable!()
             }
         }
@@ -283,6 +282,17 @@ impl Handlers {
             });
             vars.reverse();
             log::debug!("{vars:#?}");
+            let path_env = std::env::var("PATH").unwrap_or_default();
+            std::env::set_var(
+                "PATH",
+                path_env
+                    + ";"
+                    + &DEPENDENCIES_BASE_PATH
+                        .clone()
+                        .into_os_string()
+                        .into_string()
+                        .unwrap_or_default(),
+            );
             for v in vars {
                 let mut bp = DEPENDENCIES_BASE_PATH.clone();
                 if v.variant.is_empty() {
