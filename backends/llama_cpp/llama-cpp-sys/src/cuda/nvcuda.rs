@@ -43,7 +43,7 @@ impl NvCudaHandle {
         Err(crate::Error::NvCudaLoad)
     }
 
-    pub fn bootstrap(&self, _device: usize) -> crate::Result<crate::GpuInfo> {
+    pub fn bootstrap(&self, _device: usize) -> crate::Result<crate::DeviceInfo> {
         Err(crate::Error::Unimplemented(file!(), line!()))
     }
 

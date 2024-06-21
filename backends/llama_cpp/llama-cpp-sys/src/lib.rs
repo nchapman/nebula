@@ -4,6 +4,7 @@
 
 use std::fmt::{Debug, Formatter};
 
+mod cpu;
 mod cuda;
 
 #[derive(Default, Debug)]
@@ -21,17 +22,23 @@ pub enum CPUCapability {
 
 impl Default for CPUCapability {
     fn default() -> Self {
-        Self::None
+        if ::std::is_x86_feature_detected!("avx") {
+            Self::Avx
+        } else if ::std::is_x86_feature_detected!("avx2") {
+            Self::Avx2
+        } else {
+            Self::None
+        }
     }
 }
 
 #[derive(Default, Debug)]
-pub struct GpuInfo {
+pub struct DeviceInfo {
     memInfo: MemInfo,
     library: &'static str,
     variant: CPUCapability,
     minimum_memory: u64,
-    dependency_path: Option<String>,
+    dependency_paths: Vec<std::path::PathBuf>,
     env_workarounds: Vec<(String, String)>,
     id: String,
     name: String,
@@ -44,6 +51,10 @@ pub struct DriverVersion {
     major: i32,
     minor: i32,
 }
+
+#[derive(rust_embed::Embed)]
+#[folder = "dist"]
+struct Dependencies;
 
 struct CudaHandles {
     device_count: usize,
@@ -80,21 +91,23 @@ impl CudaHandles {
         } else {
             device_count
         };
-        Ok(Self {
-            nvml,
-            device_count,
-            nvcuda,
-            cudart,
-            //            llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
-            //            llava: unsafe { libloading::Library::new("libllamacpp.so")? },
-        })
+        if device_count > 0 {
+            Ok(Self {
+                nvml,
+                device_count,
+                nvcuda,
+                cudart,
+            })
+        } else {
+            Err(Error::CudaNotFound)
+        }
     }
-    pub fn get_gpu_info(&self) -> Vec<(usize, GpuInfo)> {
+    pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
         let mut res = vec![];
         for device in 0..self.device_count {
             let _meminfo = if let Some(cudart) = &self.cudart {
                 match cudart.bootstrap(device) {
-                    Ok(mm) => res.push((device, mm)),
+                    Ok(mm) => res.push(mm),
                     Err(e) => {
                         log::debug!("{e}");
                         continue;
@@ -102,7 +115,7 @@ impl CudaHandles {
                 }
             } else if let Some(nvcuda) = &self.nvcuda {
                 match nvcuda.bootstrap(device) {
-                    Ok(mm) => res.push((device, mm)),
+                    Ok(mm) => res.push(mm),
                     Err(e) => {
                         log::debug!("{e}");
                         continue;
@@ -114,29 +127,28 @@ impl CudaHandles {
     }
 }
 
-struct CpuHandlers {
-    pub llamacpp: libloading::Library,
-    llava: libloading::Library,
-}
+struct CpuHandlers {}
 
 impl CpuHandlers {
     pub fn new() -> Result<Self> {
-        Ok(if ::std::is_x86_feature_detected!("avx2") {
-            Self {
-                llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
-                llava: unsafe { libloading::Library::new("libllamacpp.so")? },
+        Ok(Self {})
+    }
+    pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
+        let mut cpu = DeviceInfo::default();
+        cpu.library = "cpu";
+        cpu.variant = CPUCapability::default();
+        cpu.memInfo = Self::get_mem();
+        vec![cpu]
+    }
+
+    fn get_mem() -> MemInfo {
+        match cpu::get_mem() {
+            Ok(m) => m,
+            Err(e) => {
+                log::warn!("memory get failed: {e}");
+                MemInfo::default()
             }
-        } else if ::std::is_x86_feature_detected!("avx") {
-            Self {
-                llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
-                llava: unsafe { libloading::Library::new("libllamacpp.so")? },
-            }
-        } else {
-            Self {
-                llamacpp: unsafe { libloading::Library::new("libllamacpp.so")? },
-                llava: unsafe { libloading::Library::new("libllamacpp.so")? },
-            }
-        })
+        }
     }
 }
 
@@ -154,25 +166,67 @@ impl Handlers {
         }
     }
 
-    pub fn llama_cpp(&self) -> &libloading::Library {
+    pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
         match self {
-            Self::Cpu(h) => &h.llamacpp,
-            Self::Cuda(h) => {
-                let gpu_info = h.get_gpu_info();
-                println!("{gpu_info:?}");
-                unimplemented!()
-                //&h.llamacpp
-            }
+            Self::Cpu(h) => h.get_devices_info(),
+            Self::Cuda(h) => h.get_devices_info(),
+        }
+    }
+
+    pub fn llama_cpp(&self) -> Result<(libloading::Library, libloading::Library)> {
+        let devices = self.get_devices_info();
+        log::debug!("{devices:#?}");
+        for device in devices {
+            let mut base_path = DEPENDENCIES_BASE_PATH.clone();
+            base_path.push(device.library);
+            //            base_path.push(device.variant);
+        }
+        Err(Error::DependenciesLoading)
+    }
+}
+
+#[cfg(test)]
+mod test {
+    #[test]
+    fn basic_get_gpu_config() {
+        let s = super::Handlers::new();
+        assert!(s.is_ok());
+        let s = s.unwrap();
+        assert!(s.len() > 0);
+        assert!(["cpu", "cuda", "rocm", "metal"].contains(s[0].library));
+        if s[0].library != "cpu" {
+            assert!(s[0].memInfo.total > 0);
+            assert!(s[0].memInfo.free > 0);
         }
     }
 }
 
+struct LlamaCppLibs {
+    pub llama_cpp: libloading::Library,
+    pub llava: libloading::Library,
+}
+
 lazy_static::lazy_static! {
-    static ref LIBS: Handlers = {
+    static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
+        for file in  Dependencies::iter() {
+            println!("{}", file.as_ref());
+        }
+        tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf()
+    };
+    static ref LIBS: LlamaCppLibs = {
         match Handlers::new(){
-            Ok(h) => h,
+            Ok(h) => {
+                match h.llama_cpp(){
+                    Ok(s) => LlamaCppLibs{
+                        llama_cpp: s.0,
+                        llava: s.1
+                    },
+                    Err(e) => panic!("can`t load dependencies: {e}")
+                }
+            }
             Err(e) => panic!("can`t load dependencies: {e}`")
         }
+
         //unsafe {libloading::Library::new("libllamacpp.so")}.expect("can`t find lammacpp library")
     };
 }
@@ -193,8 +247,17 @@ pub enum Error {
     NvCudaLoad,
     #[error("{0}")]
     CudartCall(&'static str, i32),
+    #[error("{0}")]
+    SystemCall(&'static str, i32),
     #[error("cudart load")]
     CudartLoad,
+    #[error("cuda device not found")]
+    CudaNotFound,
+    #[cfg(unix)]
+    #[error("{0}")]
+    Proc(#[from] procfs::ProcError),
+    #[error("can`t load llama_cpp dependencies`")]
+    DependenciesLoading,
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
@@ -209,7 +272,7 @@ macro_rules! get_and_load
         {
             let func: libloading::Symbol<
                 unsafe extern "C" fn($($v: $t),*) -> $rt,
-                > = LIBS.llama_cpp().get(stringify!($name).as_bytes()).expect(&format!("function \"{}\" not found in llama_cpp lib", stringify!($name)));
+                > = LIBS.llama_cpp.get(stringify!($name).as_bytes()).expect(&format!("function \"{}\" not found in llama_cpp lib", stringify!($name)));
             func($($v),*)
         }
         )*

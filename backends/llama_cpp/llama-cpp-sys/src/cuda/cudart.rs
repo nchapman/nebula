@@ -207,14 +207,17 @@ impl Default for CudaDeviceProp {
     }
 }
 
-impl Into<crate::GpuInfo> for CudaDeviceProp {
-    fn into(self) -> crate::GpuInfo {
-        crate::GpuInfo {
+impl Into<crate::DeviceInfo> for CudaDeviceProp {
+    fn into(self) -> crate::DeviceInfo {
+        crate::DeviceInfo {
             memInfo: crate::MemInfo::default(),
             library: "cuda",
             variant: crate::CPUCapability::None,
             minimum_memory: 457*1024*1024,
-            dependency_path: None,
+            #[cfg(windows)]
+            dependency_paths: vec![PathBuf::from(format!("{}/dist/windows/{}", crate::TMP_DIR, std::env::consts::ARCH))],
+            #[cfg(not(windows))]
+            dependency_paths: vec![],
             env_workarounds: vec![],
             id: format!("GPU-{:02x}{:02x}{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}-{:02x}{:02x}{:02x}{:02x}{:02x}{:02x}",
                         self.uuid.bytes[0],
@@ -299,10 +302,10 @@ impl CudartHandle {
         }
     }
 
-    pub fn bootstrap(&self, device: usize) -> crate::Result<crate::GpuInfo> {
+    pub fn bootstrap(&self, device: usize) -> crate::Result<crate::DeviceInfo> {
         self.set_device(device)?;
         let props = self.get_device_properties(device)?;
-        let mut props: crate::GpuInfo = props.into();
+        let mut props: crate::DeviceInfo = props.into();
         let (mem_free, mem_total) = self.get_mem_info()?;
         props.memInfo.free = mem_free as u64;
         props.memInfo.total = mem_total as u64;
