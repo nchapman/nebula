@@ -152,6 +152,12 @@ impl CpuHandlers {
     }
 }
 
+#[derive(Debug)]
+struct Variant {
+    pub library: String,
+    pub variant: String,
+}
+
 enum Handlers {
     Cpu(CpuHandlers),
     Cuda(CudaHandles),
@@ -173,14 +179,44 @@ impl Handlers {
         }
     }
 
+    pub fn available_variants(&self) -> Vec<Variant> {
+        match glob::glob(&format!("{}/*/llama.*", DEPENDENCIES_BASE_PATH.display())) {
+            Err(_e) => vec![],
+            Ok(entries) => entries.fold(vec![], |mut res, e| {
+                if let Ok(path) = e {
+                    let v = path
+                        .parent()
+                        .unwrap()
+                        .file_name()
+                        .clone()
+                        .unwrap()
+                        .to_os_string()
+                        .into_string();
+
+                    let v = v.unwrap();
+                    let mut v = v.split('_');
+                    res.push(Variant {
+                        library: v.next().unwrap().to_string(),
+                        variant: v.next().unwrap_or_default().to_string(),
+                    });
+                }
+                res
+            }),
+        }
+    }
+
     pub fn llama_cpp(&self) -> Result<(libloading::Library, libloading::Library)> {
         let devices = self.get_devices_info();
         log::debug!("{devices:#?}");
-        for device in devices {
-            let mut base_path = DEPENDENCIES_BASE_PATH.clone();
-            base_path.push(device.library);
-            //            base_path.push(device.variant);
-        }
+        let variants = self.available_variants();
+        log::debug!("{variants:#?}");
+        //        for device in devices {
+        //            let mut base_path = DEPENDENCIES_BASE_PATH.clone();
+        //            match device.library {
+        //                "cpu" => return self.cpu_libs(base_path),
+        //                "cuda" => return self.gpu_libs(base_path),
+        //            }
+        //        }
         Err(Error::DependenciesLoading)
     }
 }
@@ -210,10 +246,6 @@ lazy_static::lazy_static! {
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
         use std::io::Write;
         let mut tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
-        #[cfg(windows)]
-        tt.push("windows");
-        tt.push(std::env::consts::ARCH);
-        println!("tmp_dir = {}", tt.display());
         for file in  Dependencies::iter() {
             let f = file.as_ref();
             let mut path = tt.clone();
@@ -224,6 +256,10 @@ lazy_static::lazy_static! {
             fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
             println!("{}", file.as_ref());
         }
+        #[cfg(windows)]
+        tt.push("windows");
+        tt.push(std::env::consts::ARCH);
+        println!("tmp_dir = {}", tt.display());
         tt
     };
     static ref LIBS: LlamaCppLibs = {
