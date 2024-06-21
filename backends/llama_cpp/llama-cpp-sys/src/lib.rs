@@ -256,6 +256,7 @@ impl Handlers {
         log::debug!("{variants:#?}");
         for device in devices {
             let mut vars = device.variants(&variants);
+            println!("{vars:#?}");
             vars.sort_by(|a, b| {
                 if a.library == "cpu" && b.library == "cpu" {
                     CPUCapability::from(&a.variant).cmp(&CPUCapability::from(&b.variant))
