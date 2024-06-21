@@ -28,7 +28,7 @@ impl CPUCapability {
             "" => Self::None,
             _ => {
                 println!("{vv}");
-                unreachable!(),
+                unreachable!()
             }
         }
     }
