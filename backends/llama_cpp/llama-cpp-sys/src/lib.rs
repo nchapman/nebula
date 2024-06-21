@@ -257,11 +257,11 @@ impl Handlers {
         for device in devices {
             let mut vars = device.variants(&variants);
             vars.sort_by(|a, b| {
-                if a.library == "cpu" || b.library == "cpu" {
+                if a.library == "cpu" && b.library == "cpu" {
                     CPUCapability::from(&a.variant).cmp(&CPUCapability::from(&b.variant))
-                } else if a.library == "cpu" || b.library != "cpu" {
+                } else if a.library == "cpu" && b.library != "cpu" {
                     std::cmp::Ordering::Greater
-                } else if a.library != "cpu" || b.library == "cpu" {
+                } else if a.library != "cpu" && b.library == "cpu" {
                     std::cmp::Ordering::Less
                 } else if a.library != b.library {
                     unreachable!()
