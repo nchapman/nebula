@@ -209,7 +209,10 @@ struct LlamaCppLibs {
 lazy_static::lazy_static! {
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
         use std::io::Write;
-        let tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
+        let mut tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
+        #(cfg(windows))
+        tt.push("windows");
+        tt.push(std::env::consts::ARCH);
         println!("tmp_dir = {}", tt.display());
         for file in  Dependencies::iter() {
             let f = file.as_ref();
