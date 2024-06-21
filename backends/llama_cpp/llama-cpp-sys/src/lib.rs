@@ -210,7 +210,7 @@ lazy_static::lazy_static! {
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
         use std::io::Write;
         let mut tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
-        #(cfg(windows))
+        #[cfg(windows)]
         tt.push("windows");
         tt.push(std::env::consts::ARCH);
         println!("tmp_dir = {}", tt.display());
