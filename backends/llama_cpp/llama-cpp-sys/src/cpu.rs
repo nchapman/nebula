@@ -2,7 +2,7 @@
 mod windows {
     #[repr(C)]
     #[derive(Default)]
-    struct MemoryStatusEx {
+    pub struct MemoryStatusEx {
         length: u32,
         memory_load: u32,
         total_phys: u64,
@@ -26,6 +26,7 @@ mod windows {
 
 #[cfg(windows)]
 pub fn get_mem() -> crate::Result<crate::MemInfo> {
+    use std::ffi::c_int;
     let mut mem_status = windows::MemoryStatusEx::default();
     let lib = unsafe { libloading::Library::new("kernel32.dll")? };
     let global_memory_status_ex: libloading::Symbol<

@@ -215,7 +215,7 @@ impl Into<crate::DeviceInfo> for CudaDeviceProp {
             variant: crate::CPUCapability::None,
             minimum_memory: 457*1024*1024,
             #[cfg(windows)]
-            dependency_paths: vec![PathBuf::from(format!("{}/dist/windows/{}", crate::TMP_DIR, std::env::consts::ARCH))],
+            dependency_paths: vec![crate::DEPENDENCIES_BASE_PATH.clone()],
             #[cfg(not(windows))]
             dependency_paths: vec![],
             env_workarounds: vec![],
