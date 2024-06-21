@@ -226,7 +226,7 @@ mod windows {
             .collect();
         println!("cargo:warning=Building AVX2 CPU");
         let build_dir = format!(
-            "/windows/{}/cpu_avx2",
+            "{}/windows/{}/cpu_avx2",
             std::env::var("OUT_DIR").expect("No out dir found"),
             *ARCH
         );
