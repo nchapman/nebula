@@ -83,7 +83,7 @@ mod windows {
         cmake_defs: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
     ) -> std::path::PathBuf {
-        println!("build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
+        println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
         let mut dst = cmake::Config::new(src_dir);
         let mut dd = &mut dst;
         dd = dd.out_dir(build_dir);
@@ -102,7 +102,7 @@ mod windows {
 
     fn sign(build_dir: &str) {
         if let Some(kk) = &*KEY_CONTAINER {
-            print!("Signing {build_dir}/bin/*.exe  {build_dir}/bin/*.dll");
+            println!("cargo:warning=Signing {build_dir}/bin/*.exe  {build_dir}/bin/*.dll");
             for entry in glob::glob(&format!("{build_dir}/bin/*.exe"))
                 .expect("Failed to read glob pattern")
                 .chain(
@@ -124,15 +124,13 @@ mod windows {
         } else {
             "Debug".to_string()
         };
-        println!("Installing binaries to dist dir {dist_dir}");
+        println!("cargo:warning=Installing binaries to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
-        println!("{build_dir}/bin/{pp}/*.exe");
         for entry in glob::glob(&format!("{build_dir}/build/bin/{pp}/*.dll"))
             .expect("Failed to read glob pattern")
         {
             if let Ok(path) = entry {
                 let path = path.into_os_string().into_string().unwrap();
-                println!("{path}");
                 powershell_script::run(&format!(
                     "copy-item -Path \"{path}\" -Destination \"{dist_dir}\" -Force"
                 ))
@@ -162,8 +160,12 @@ mod windows {
             )
             .map(|(k, v)| (*k, *v))
             .collect();
-        println!("Building LCD CPU");
-        let build_dir = format!("target/windows/{}/cpu", *ARCH);
+        println!("cargo:warning=Building LCD CPU");
+        let build_dir = format!(
+            "{}/windows/{}/cpu",
+            env::var("OUT_DIR").expect("No out dir found"),
+            *ARCH
+        );
         build(src_dir, &build_dir, &cmake_defs, targets);
         sign(&build_dir);
         install(&build_dir, &format!("{dist_dir}/cpu"));
@@ -190,8 +192,12 @@ mod windows {
             )
             .map(|(k, v)| (*k, *v))
             .collect();
-        println!("Building AVX CPU");
-        let build_dir = format!("target/windows/{}/cpu_avx", *ARCH);
+        println!("cargo:warning=Building AVX CPU");
+        let build_dir = format!(
+            "{}/windows/{}/cpu_avx",
+            env::var("OUT_DIR").expect("No out dir found"),
+            *ARCH
+        );
         build(src_dir, &build_dir, &cmake_defs, targets);
         sign(&build_dir);
         install(&build_dir, &format!("{dist_dir}/cpu_avx"));
@@ -218,8 +224,12 @@ mod windows {
             )
             .map(|(k, v)| (*k, *v))
             .collect();
-        println!("Building AVX2 CPU");
-        let build_dir = format!("target/windows/{}/cpu_avx2", *ARCH);
+        println!("cargo:warning=Building AVX2 CPU");
+        let build_dir = format!(
+            "/windows/{}/cpu_avx2",
+            env::var("OUT_DIR").expect("No out dir found"),
+            *ARCH
+        );
         build(src_dir, &build_dir, &cmake_defs, targets);
         sign(&build_dir);
         install(&build_dir, &format!("{dist_dir}/cpu_avx2"));
@@ -242,7 +252,11 @@ mod windows {
             .stdout()
             .unwrap();
             let cuda_version = cuda_version.trim();
-            let build_dir = format!("target/windows/{}/cuda_{cuda_version}", *ARCH);
+            let build_dir = format!(
+                "{}/windows/{}/cuda_{cuda_version}",
+                env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
             let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
             let cmake_defs: std::collections::HashMap<&str, &str> = CMAKE_DEFS
                 .iter()
@@ -259,7 +273,7 @@ mod windows {
                 )
                 .map(|(k, v)| (*k, *v))
                 .collect();
-            println!("Building CUDA GPU");
+            println!("cargo:warning=Building CUDA GPU");
             build(src_dir, &build_dir, &cmake_defs, targets)
                 .into_os_string()
                 .into_string()
