@@ -256,7 +256,6 @@ impl Handlers {
         log::debug!("{variants:#?}");
         for device in devices {
             let mut vars = device.variants(&variants);
-            println!("{vars:#?}");
             vars.sort_by(|a, b| {
                 if a.library == "cpu" && b.library == "cpu" {
                     CPUCapability::from(&a.variant).cmp(&CPUCapability::from(&b.variant))
@@ -283,6 +282,7 @@ impl Handlers {
                 }
             });
             vars.reverse();
+            println!("{vars:#?}");
             for v in vars {
                 let mut bp = DEPENDENCIES_BASE_PATH.clone();
                 if v.variant.is_empty() {
@@ -317,8 +317,10 @@ impl Handlers {
                     }
                 }
             }
+
+            Err
         }
-        Err(Error::DependenciesLoading)
+        (Error::DependenciesLoading)
     }
 }
 
