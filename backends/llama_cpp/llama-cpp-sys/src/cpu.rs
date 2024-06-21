@@ -30,7 +30,7 @@ pub fn get_mem() -> crate::Result<crate::MemInfo> {
     let mut mem_status = windows::MemoryStatusEx::default();
     let lib = unsafe { libloading::Library::new("kernel32.dll")? };
     let global_memory_status_ex: libloading::Symbol<
-        unsafe extern "C" fn(*mut MemoryStatusEx) -> c_int,
+        unsafe extern "C" fn(*mut windows::MemoryStatusEx) -> c_int,
     > = unsafe { lib.get(b"GlobalMemoryStatusEx")? };
     let res = unsafe { global_memory_status_ex(&mut mem_status) };
     if res == 0 {
