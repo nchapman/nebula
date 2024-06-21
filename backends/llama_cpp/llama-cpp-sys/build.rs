@@ -163,7 +163,7 @@ mod windows {
         println!("cargo:warning=Building LCD CPU");
         let build_dir = format!(
             "{}/windows/{}/cpu",
-            env::var("OUT_DIR").expect("No out dir found"),
+            std::env::var("OUT_DIR").expect("No out dir found"),
             *ARCH
         );
         build(src_dir, &build_dir, &cmake_defs, targets);
@@ -195,7 +195,7 @@ mod windows {
         println!("cargo:warning=Building AVX CPU");
         let build_dir = format!(
             "{}/windows/{}/cpu_avx",
-            env::var("OUT_DIR").expect("No out dir found"),
+            std::env::var("OUT_DIR").expect("No out dir found"),
             *ARCH
         );
         build(src_dir, &build_dir, &cmake_defs, targets);
@@ -227,7 +227,7 @@ mod windows {
         println!("cargo:warning=Building AVX2 CPU");
         let build_dir = format!(
             "/windows/{}/cpu_avx2",
-            env::var("OUT_DIR").expect("No out dir found"),
+            std::env::var("OUT_DIR").expect("No out dir found"),
             *ARCH
         );
         build(src_dir, &build_dir, &cmake_defs, targets);
@@ -254,7 +254,7 @@ mod windows {
             let cuda_version = cuda_version.trim();
             let build_dir = format!(
                 "{}/windows/{}/cuda_{cuda_version}",
-                env::var("OUT_DIR").expect("No out dir found"),
+                std::env::var("OUT_DIR").expect("No out dir found"),
                 *ARCH
             );
             let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
