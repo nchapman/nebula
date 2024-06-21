@@ -260,9 +260,9 @@ impl Handlers {
                 if a.library == "cpu" && b.library == "cpu" {
                     CPUCapability::from(&a.variant).cmp(&CPUCapability::from(&b.variant))
                 } else if a.library == "cpu" && b.library != "cpu" {
-                    std::cmp::Ordering::Greater
-                } else if a.library != "cpu" && b.library == "cpu" {
                     std::cmp::Ordering::Less
+                } else if a.library != "cpu" && b.library == "cpu" {
+                    std::cmp::Ordering::Greater
                 } else if a.library != b.library {
                     unreachable!()
                 } else {
@@ -282,7 +282,7 @@ impl Handlers {
                 }
             });
             vars.reverse();
-            println!("{vars:#?}");
+            log::debug!("{vars:#?}");
             for v in vars {
                 let mut bp = DEPENDENCIES_BASE_PATH.clone();
                 if v.variant.is_empty() {
@@ -317,10 +317,8 @@ impl Handlers {
                     }
                 }
             }
-
-            Err
         }
-        (Error::DependenciesLoading)
+        Err(Error::DependenciesLoading)
     }
 }
 
