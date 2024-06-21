@@ -13,11 +13,22 @@ pub struct MemInfo {
     free: u64,
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum CPUCapability {
     None,
     Avx,
     Avx2,
+}
+
+impl CPUCapability {
+    pub fn from(vv: &str) -> Self {
+        match vv {
+            "avx" => Self::Avx,
+            "avx2" => Self::Avx2,
+            "" => Self::None,
+            _ => unreachable!(),
+        }
+    }
 }
 
 impl Default for CPUCapability {
@@ -44,6 +55,21 @@ pub struct DeviceInfo {
     name: String,
     compute: String,
     driver_version: DriverVersion,
+}
+
+impl DeviceInfo {
+    pub fn variants(&self, vars: &Vec<Variant>) -> Vec<Variant> {
+        vars.iter()
+            .filter(|v| {
+                if self.library == "cpu" {
+                    self.variant <= CPUCapability::from(&v.variant)
+                } else {
+                    self.library == v.library || v.library == "cpu"
+                }
+            })
+            .map(|v| v.clone())
+            .collect()
+    }
 }
 
 #[derive(Default, Debug)]
@@ -152,7 +178,7 @@ impl CpuHandlers {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Variant {
     pub library: String,
     pub variant: String,
@@ -210,13 +236,41 @@ impl Handlers {
         log::debug!("{devices:#?}");
         let variants = self.available_variants();
         log::debug!("{variants:#?}");
-        //        for device in devices {
-        //            let mut base_path = DEPENDENCIES_BASE_PATH.clone();
-        //            match device.library {
-        //                "cpu" => return self.cpu_libs(base_path),
-        //                "cuda" => return self.gpu_libs(base_path),
-        //            }
-        //        }
+        for device in devices {
+            let mut vars = device.variants(&variants);
+            vars.sort_by(|_a, _b| std::cmp::Ordering::Equal);
+            for v in vars {
+                let mut bp = DEPENDENCIES_BASE_PATH.clone();
+                if v.variant.is_empty() {
+                    bp.push(v.library);
+                } else {
+                    bp.push(v.library + "_" + v.variant.as_str());
+                }
+                let mut llama_p = bp.clone();
+                llama_p.push("llama.");
+                let mut llava_p = bp.clone();
+                llava_p.push("llava_shared.");
+                #[cfg(windows)]
+                llama_p.push("dll");
+                #[cfg(windows)]
+                llava_p.push("dll");
+                match unsafe { libloading::Library::new(llama_p.clone()) } {
+                    Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
+                        Ok(llava) => {
+                            return Ok((llama, llava));
+                        }
+                        Err(e) => {
+                            log::warn!("can`t load {}: {}`", dbg!(llava_p).display(), e);
+                            continue;
+                        }
+                    },
+                    Err(e) => {
+                        log::warn!("can`t load {}: {}`", llama_p.display(), e);
+                        continue;
+                    }
+                }
+            }
+        }
         Err(Error::DependenciesLoading)
     }
 }
