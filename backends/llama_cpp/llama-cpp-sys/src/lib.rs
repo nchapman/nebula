@@ -65,7 +65,7 @@ impl DeviceInfo {
         vars.iter()
             .filter(|v| {
                 if self.library == "cpu" {
-                    self.variant <= CPUCapability::from(&v.variant)
+                    v.variant == "cpu" && self.variant <= CPUCapability::from(&v.variant)
                 } else {
                     self.library == v.library || v.library == "cpu"
                 }
