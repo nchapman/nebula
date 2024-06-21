@@ -247,13 +247,11 @@ impl Handlers {
                     bp.push(v.library + "_" + v.variant.as_str());
                 }
                 let mut llama_p = bp.clone();
-                llama_p.push("llama.");
+                #[cfg(windows)]
+                llama_p.push("llama.dll");
                 let mut llava_p = bp.clone();
-                llava_p.push("llava_shared.");
                 #[cfg(windows)]
-                llama_p.push("dll");
-                #[cfg(windows)]
-                llava_p.push("dll");
+                llava_p.push("llava_shared.dll");
                 match unsafe { libloading::Library::new(llama_p.clone()) } {
                     Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
                         Ok(llava) => {
