@@ -208,10 +208,20 @@ struct LlamaCppLibs {
 
 lazy_static::lazy_static! {
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
+        use std::io::Write;
+        let tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
+        println!("tmp_dir = {}", tt.display());
         for file in  Dependencies::iter() {
+            let f = file.as_ref();
+            let mut path = tt.clone();
+            path.push(f);
+            let prefix = path.parent().unwrap();
+            std::fs::create_dir_all(prefix).unwrap();
+            let mut fff = std::fs::File::create(path).unwrap();
+            fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
             println!("{}", file.as_ref());
         }
-        tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf()
+        tt
     };
     static ref LIBS: LlamaCppLibs = {
         match Handlers::new(){
