@@ -226,7 +226,7 @@ impl Handlers {
     }
 
     pub fn available_variants(&self) -> Vec<Variant> {
-        match glob::glob(&format!("{}/*/llama.*", DEPENDENCIES_BASE_PATH.display())) {
+        match glob::glob(&format!("{}/*/*llama.*", DEPENDENCIES_BASE_PATH.display())) {
             Err(_e) => vec![],
             Ok(entries) => entries.fold(vec![], |mut res, e| {
                 if let Ok(path) = e {
