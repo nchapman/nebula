@@ -278,7 +278,7 @@ impl Handlers {
         match self {
             Self::Cpu(h) => h.get_devices_info(),
             Self::Cuda(h) => h.get_devices_info(),
-            #[cfg(all(target_os = "macos", target_arch = "aarh64"))]
+            #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
             Self::Metal(h) => h.get_devices_info(),
         }
     }
