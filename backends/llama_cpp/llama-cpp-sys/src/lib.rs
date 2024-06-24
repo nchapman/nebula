@@ -361,6 +361,11 @@ struct LlamaCppLibs {
 }
 
 lazy_static::lazy_static! {
+    #[cfg(target_arch = "x86_64")]
+    static ref ARCH: &'static str = "x86_64";
+    #[cfg(target_arch = "aarch64")]
+    static ref ARCH: &'static str = "arm64";
+
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
         use std::io::Write;
         let mut tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
@@ -378,7 +383,7 @@ lazy_static::lazy_static! {
         tt.push("windows");
         #[cfg(target_os = "macos")]
         tt.push("darwin");
-        tt.push(std::env::consts::ARCH);
+        tt.push(*ARCH);
         println!("tmp_dir = {}", tt.display());
         tt
     };
