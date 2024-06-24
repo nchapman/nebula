@@ -261,7 +261,7 @@ impl Handlers {
         #[cfg(target_os = "macos")]
         {
             #[cfg(target_arch = "aarch64")]
-            return Ok(Self::Metal(MetalHandlers()));
+            return Ok(Self::Metal(MetalHandlers::new()));
             #[cfg(not(target_arch = "aarch64"))]
             return Ok(Self::Cpu(CpuHandlers::new()?));
         }
