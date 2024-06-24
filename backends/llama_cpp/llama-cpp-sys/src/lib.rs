@@ -35,6 +35,7 @@ impl CPUCapability {
 
 impl Default for CPUCapability {
     fn default() -> Self {
+        #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
         if ::std::is_x86_feature_detected!("avx") {
             Self::Avx
         } else if ::std::is_x86_feature_detected!("avx2") {
@@ -42,6 +43,8 @@ impl Default for CPUCapability {
         } else {
             Self::None
         }
+        #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
+        Self::None
     }
 }
 
