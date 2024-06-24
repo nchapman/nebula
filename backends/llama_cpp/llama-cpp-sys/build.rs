@@ -95,7 +95,7 @@ mod macos {
         println!("cargo:warning=Installing binaries from {build_dir} to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
         for entry in
-            glob::glob(&format!("{build_dir}/build/*.dylib")).expect("Failed to read glob pattern")
+            glob::glob(&format!("{build_dir}/**/*.dylib")).expect("Failed to read glob pattern")
         {
             if let Ok(path) = entry {
                 let path = path.into_os_string().into_string().unwrap();
