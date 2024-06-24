@@ -21,3 +21,6 @@ harness = false
 [[bench]]
 name = "generate"
 harness = false
+
+[features]
+build = ["llama-cpp-sys/build"]
