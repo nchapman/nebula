@@ -23,4 +23,5 @@ name = "generate"
 harness = false
 
 [features]
-build = ["llama-cpp-sys/build"]
+default = ["llama-cpp-sys"]
+build = ["llama-cpp-sys?/build"]
