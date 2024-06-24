@@ -360,11 +360,12 @@ struct LlamaCppLibs {
     pub llava: libloading::Library,
 }
 
+#[cfg(target_arch = "x86_64")]
+const ARCH: &'static str = "x86_64";
+#[cfg(target_arch = "aarch64")]
+const ARCH: &'static str = "arm64";
+
 lazy_static::lazy_static! {
-    #[cfg(target_arch = "x86_64")]
-    static ref ARCH: &'static str = "x86_64";
-    #[cfg(target_arch = "aarch64")]
-    static ref ARCH: &'static str = "arm64";
 
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
         use std::io::Write;
@@ -383,7 +384,7 @@ lazy_static::lazy_static! {
         tt.push("windows");
         #[cfg(target_os = "macos")]
         tt.push("darwin");
-        tt.push(*ARCH);
+        tt.push(ARCH);
         println!("tmp_dir = {}", tt.display());
         tt
     };
