@@ -3,8 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
-#[cfg(feature = "build")]
-#[cfg(any(macos, unix))]
+//#[cfg(feature = "build")]
+#[cfg(any(target_os = "macos", target_os = "unix"))]
 mod common {
     lazy_static::lazy_static! {
         pub static ref LLAMACPP_DIR: &'static str = "llama.cpp";
@@ -43,8 +43,8 @@ mod common {
 
 mod linux {}
 
-#[cfg(feature = "build")]
-#[cfg(macos)]
+//#[cfg(feature = "build")]
+#[cfg(target_os = "macos")]
 mod macos {
 
     lazy_static::lazy_static! {
@@ -311,8 +311,8 @@ mod macos {
     }
 }
 
-#[cfg(feature = "build")]
-#[cfg(windows)]
+//#[cfg(feature = "build")]
+#[cfg(target_os = "windows")]
 mod windows {
 
     lazy_static::lazy_static! {
@@ -686,11 +686,11 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("failed to write bindings to file");
 
-    #[cfg(feature = "build")]
-    #[cfg(windows)]
+    //    #[cfg(feature = "build")]
+    #[cfg(target_os = "windows")]
     windows::bbuild();
 
-    #[cfg(feature = "build")]
-    #[cfg(macos)]
+    //    #[cfg(feature = "build")]
+    #[cfg(target_os = "macos")]
     macos::bbuild();
 }
