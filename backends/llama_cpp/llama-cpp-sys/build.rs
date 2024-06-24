@@ -87,11 +87,6 @@ mod macos {
     }
 
     fn install(build_dir: &str, dist_dir: &str) {
-        let pp = if let Ok(profile) = ::std::env::var("PROFILE") {
-            profile
-        } else {
-            "Debug".to_string()
-        };
         println!("cargo:warning=Installing binaries from {build_dir} to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
         for entry in

@@ -304,15 +304,19 @@ impl Handlers {
                     bp.push(v.library.clone() + "_" + v.variant.as_str());
                 }
                 let mut llama_p = bp.clone();
-                #[cfg(windows)]
+                #[cfg(target_os = "windows")]
                 llama_p.push("llama.dll");
-                #[cfg(not(windows))]
-                llama_p.push("llama.so");
+                #[cfg(target_os = "macos")]
+                llama_p.push("libllama.dylib");
+                //                #[cfg(not(windows))]
+                //                llama_p.push("llama.so");
                 let mut llava_p = bp.clone();
-                #[cfg(windows)]
+                #[cfg(target_os = "windows")]
                 llava_p.push("llava_shared.dll");
-                #[cfg(not(windows))]
-                llava_p.push("llava_shared.so");
+                #[cfg(target_os = "macos")]
+                llama_p.push("libllava_shared.dylib");
+                //                #[cfg(not(windows))]
+                //                llava_p.push("llava_shared.so");
                 match unsafe { libloading::Library::new(llama_p.clone()) } {
                     Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
                         Ok(llava) => {
