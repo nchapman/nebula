@@ -425,3 +425,96 @@ impl<'a> Default for AutomaticSpeechRecognitionOptions<'a> {
         }
     }
 }
+
+#[cfg(feature = "embeddings")]
+#[derive(Debug)]
+pub enum EmbeddingsModelType {
+    T5,
+    JinaBert,
+    Bert,
+}
+
+#[cfg(feature = "embeddings")]
+pub struct EmbeddingsOptions {
+    pub cpu: bool,
+    pub model_type: EmbeddingsModelType,
+    pub tokenizer: Option<String>,
+    pub model: Option<String>,
+    pub revision: Option<String>,
+    pub config: Option<String>,
+}
+
+#[cfg(feature = "embeddings")]
+impl EmbeddingsOptions {
+    pub fn with_cpu(mut self, cpu: bool) -> Self {
+        self.cpu = cpu;
+        self        
+    }
+
+    pub fn with_model_type(mut self, model_type: EmbeddingsModelType) -> Self {
+        self.model_type = model_type;
+        self
+    }
+
+    pub fn with_tokenizer(mut self, tokenizer: Option<String>) -> Self {
+        self.tokenizer = tokenizer;
+        self
+    }
+
+    pub fn with_model(mut self, model: Option<String>) -> Self {
+        self.model = model;
+        self
+    }
+
+    pub fn with_revision(mut self, revision: Option<String>) -> Self {
+        self.revision = revision;
+        self
+    }
+
+    pub fn with_config(mut self, config: Option<String>) -> Self {
+        self.config = config;
+        self
+    }
+}
+
+#[cfg(feature = "tts")]
+pub enum TTSDevice {
+    Cpu,
+    Cuda,
+}
+
+#[cfg(feature = "tts")]
+pub struct TTSOptions {
+    pub device: TTSDevice,
+}
+
+#[cfg(feature = "tts")]
+impl TTSOptions {
+    pub fn with_device(mut self, device: TTSDevice) -> Self {
+        self.device = device;
+        self
+    }
+}
+
+#[cfg(feature = "embeddings")]
+impl Default for EmbeddingsOptions {
+    fn default() -> Self {
+        Self {
+            cpu: true,
+            model_type: EmbeddingsModelType::JinaBert,
+            tokenizer: None,
+            model: None,
+            revision: None,
+            config: None
+        }
+    }
+}
+
+#[cfg(feature = "tts")]
+impl Default for TTSOptions {
+    fn default() -> Self {
+        Self {
+            device: TTSDevice::Cpu,
+        }
+    }
+}

@@ -9,6 +9,9 @@ use crate::backend::Model as _;
 #[cfg(feature = "llama")]
 use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 
+#[cfg(feature = "whisper")]
+use std::path::PathBuf;
+
 pub mod error;
 pub mod options;
 pub type Result<T> = std::result::Result<T, error::Error>;
@@ -355,5 +358,49 @@ impl AutomaticSpeechRecognitionModel {
         options: options::AutomaticSpeechRecognitionOptions,
     ) -> Result<String> {
         Ok(self.backend.predict(samples, options)?)
+    }
+}
+
+#[cfg(feature = "embeddings")]
+pub struct EmbeddingsModel {
+    backend: Box<dyn backend::EmbeddingsBackend>,
+}
+
+#[cfg(feature = "embeddings")]
+impl EmbeddingsModel {
+    pub fn new(options: options::EmbeddingsOptions) -> Result<Self> {
+        let backend = backend::init_embeddings_backend(options)?;
+        Ok(Self { backend: backend })
+    }
+
+    pub fn encode(&mut self, text: String) -> Result<Vec<f32>> {
+        Ok(self.backend.encode(text)?)
+    }
+}
+
+#[cfg(feature = "tts")]
+pub struct TextToSpeechModel {
+    backend: Box<dyn backend::TextToSpeechBackend>,
+}
+
+#[cfg(feature = "tts")]
+impl TextToSpeechModel {
+    pub fn new(options: options::TTSOptions) -> anyhow::Result<Self> {
+        let backend = backend::init_text_to_speech_backend(options)?;
+        anyhow::Ok(Self { backend: Box::new(backend) })
+    }
+
+    pub fn train(
+        &mut self,
+        ref_samples: Vec<f32>,
+    ) -> anyhow::Result<()> {
+        anyhow::Ok(self.backend.train(ref_samples)?)
+    }
+
+    pub fn predict(
+        &mut self,
+        text: String,
+    ) -> anyhow::Result<Vec<f32>> {
+        anyhow::Ok(self.backend.predict(text)?)
     }
 }
