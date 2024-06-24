@@ -8,7 +8,7 @@ use std::{
 mod common {
     lazy_static::lazy_static! {
         pub static ref LLAMACPP_DIR: &'static str = "llama.cpp";
-        pub static ref CMAKE_TARGETS: &'static[&'static str] = &["llama", "llava_shared"];
+        pub static ref CMAKE_TARGETS: &'static[&'static str] = &["llama"];
         //TODO add debug variant
         pub static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "BUILD_SHARED_LIBS" => "on",
@@ -282,7 +282,7 @@ mod macos {
                 )
                 .map(|(k, v)| (*k, *v))
                 .collect();
-            println!("cargo:warning=Building LCD CPU");
+            println!("cargo:warning=Building Metal");
             let build_dir = format!(
                 "{}/darwin/{}/metal",
                 std::env::var("OUT_DIR").expect("No out dir found"),
