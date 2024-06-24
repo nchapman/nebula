@@ -183,6 +183,49 @@ impl CpuHandlers {
     }
 }
 
+struct MetalHandlers {}
+
+impl MetalHandlers {
+    pub fn new() -> Result<Self> {
+        Ok(Self {})
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
+        let mut cpu = DeviceInfo::default();
+        cpu.library = "cpu";
+        cpu.variant = CPUCapability::default();
+        cpu.memInfo = Self::get_mem();
+        vec![cpu]
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
+        let mut gpu = DeviceInfo::default();
+        gpu.library = "metal";
+        gpu.id = 0;
+        gpu.minimum_memory = 512 * 1024 * 1024;
+        let mm = unsafe {
+            iron_oxide::MTLCreateSystemDefaultDevice().get_recommended_max_working_set_size()
+        };
+        gpu.memInfo = MemInfo {
+            total: mm,
+            free: mm,
+        };
+        vec![gpu]
+    }
+
+    fn get_mem() -> MemInfo {
+        match cpu::get_mem() {
+            Ok(m) => m,
+            Err(e) => {
+                log::warn!("memory get failed: {e}");
+                MemInfo::default()
+            }
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 struct Variant {
     pub library: String,
@@ -207,6 +250,7 @@ impl std::fmt::Display for Variant {
 enum Handlers {
     Cpu(CpuHandlers),
     Cuda(CudaHandles),
+    Metal(MetalHandlers),
 }
 
 impl Handlers {
