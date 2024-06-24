@@ -100,10 +100,11 @@ mod macos {
         {
             if let Ok(path) = entry {
                 let path = path.into_os_string().into_string().unwrap();
-                powershell_script::run(&format!(
-                    "copy-item -Path \"{path}\" -Destination \"{dist_dir}\" -Force"
-                ))
-                .expect("install error");
+                std::process::Command::new("cp")
+                    .arg(path)
+                    .arg(dist_dir)
+                    .status()
+                    .expect("sign error");
             }
         }
     }
