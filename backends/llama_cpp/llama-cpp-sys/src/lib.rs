@@ -252,7 +252,7 @@ impl std::fmt::Display for Variant {
 enum Handlers {
     Cpu(CpuHandlers),
     Cuda(CudaHandles),
-    #[cfg(all(target_os = "macos", target_arch = "aarh64"))]
+    #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     Metal(MetalHandlers),
 }
 
