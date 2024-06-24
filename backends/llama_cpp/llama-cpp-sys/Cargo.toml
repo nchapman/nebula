@@ -14,7 +14,8 @@ tempfile = "3.10"
 
 [target.'cfg(macos)'.dependencies]
 objc2-foundation = "0.2"
-[target.'cfg(unix)'.dependencies]
+
+[target.'cfg(linux)'.dependencies]
 procfs = "0.16"
 
 
