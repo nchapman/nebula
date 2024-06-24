@@ -40,7 +40,7 @@ pub fn get_mem() -> crate::Result<crate::MemInfo> {
     }
 }
 
-#[cfg(macos)]
+#[cfg(target_os = "macos")]
 pub fn get_mem() -> crate::Result<crate::MemInfo> {
     let fm = objc2_foundation::NSProcessInfo::procsessInfo().physicalMemory();
     Ok(crate::MemInfo { total: fm, free: 0 })
