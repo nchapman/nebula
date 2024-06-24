@@ -38,9 +38,9 @@ mod common {
         for (k, v) in env.iter() {
             dd = dd.env(k, v);
         }
-        //        for t in targets {
-        //            dd = dd.target(t);
-        //        }
+        for t in targets {
+            dd = dd.build_target(t);
+        }
         dd.build()
     }
 }
