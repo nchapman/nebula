@@ -13,7 +13,7 @@ rust-embed = "8.4.0"
 tempfile = "3.10"
 
 [target.'cfg(target_os="macos")'.dependencies]
-objc2-foundation = "0.2"
+objc2-foundation = {version = "0.2", features = ["NSProcessInfo"]}
 
 [target.'cfg(target_os = "linux")'.dependencies]
 procfs = "0.16"
