@@ -37,7 +37,8 @@ mod common {
         for t in targets {
             dd = dd.target(t);
         }
-        dd.very_verbose(true).build()
+        println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
+        dd.build()
     }
 }
 
