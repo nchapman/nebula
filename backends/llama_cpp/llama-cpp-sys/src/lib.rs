@@ -314,7 +314,7 @@ impl Handlers {
                 #[cfg(target_os = "windows")]
                 llava_p.push("llava_shared.dll");
                 #[cfg(target_os = "macos")]
-                llama_p.push("libllava_shared.dylib");
+                llava_p.push("libllava_shared.dylib");
                 //                #[cfg(not(windows))]
                 //                llava_p.push("llava_shared.so");
                 match unsafe { libloading::Library::new(llama_p.clone()) } {
