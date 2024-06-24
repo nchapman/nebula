@@ -263,6 +263,50 @@ mod macos {
             static ref ARCH: &'static str = "arm64";
         }
 
+        fn build_cpu(
+            src_dir: &str,
+            dist_dir: &str,
+            _cmake_defs: &std::collections::HashMap<&str, &str>,
+            targets: &[&str],
+        ) {
+            let cmake_defs: std::collections::HashMap<&str, &str> = maplit::hashmap! {
+                "CMAKE_OSX_DEPLOYMENT_TARGET" => "11.3",
+                "LLAMA_BLAS" => "off",
+                "CMAKE_SYSTEM_NAME" => "Darwin",
+                "BUILD_SHARED_LIBS" => "off",
+                "CMAKE_SYSTEM_PROCESSOR" => *ARCH,
+                "CMAKE_OSX_ARCHITECTURES" => *ARCH,
+                "LLAMA_METAL" => "off",
+                "LLAMA_ACCELERATE" => "on",
+                "LLAMA_AVX" => "off",
+                "LLAMA_AVX2" => "off",
+                "LLAMA_AVX512" => "off",
+                "LLAMA_FMA" => "off",
+                "LLAMA_F16C" => "off"
+            }
+            .iter()
+            .chain(super::super::common::CMAKE_DEFS.iter())
+            .map(|(k, v)| (*k, *v))
+            .collect();
+            println!("cargo:warning=Building Metal");
+            let build_dir = format!(
+                "{}/darwin/{}/cpu",
+                std::env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
+            super::super::common::build(
+                src_dir,
+                &build_dir,
+                &cmake_defs,
+                &maplit::hashmap! {
+                    "EXTRA_LIBS" => "-framework Accelerate -framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders"
+                },
+                targets,
+            );
+            super::sign(&build_dir);
+            super::install(&build_dir, &format!("{dist_dir}/cpu"));
+        }
+
         fn build_metal(
             src_dir: &str,
             dist_dir: &str,
@@ -299,10 +343,16 @@ mod macos {
                 targets,
             );
             super::sign(&build_dir);
-            super::install(&build_dir, &format!("{dist_dir}/cpu"));
+            super::install(&build_dir, &format!("{dist_dir}/metal"));
         }
 
         pub fn bbuild() {
+            build_cpu(
+                *super::super::common::LLAMACPP_DIR,
+                &format!("dist/darwin/{}/", *ARCH),
+                &*super::super::common::CMAKE_DEFS,
+                *super::super::common::CMAKE_TARGETS,
+            );
             build_metal(
                 *super::super::common::LLAMACPP_DIR,
                 &format!("dist/darwin/{}/", *ARCH),
