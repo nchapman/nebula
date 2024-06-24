@@ -38,7 +38,7 @@ hf-hub = "0.3.2"
 
 [features]
 llama = ["llama-cpp"]
-build = ["llama-cpp?/build"]
+llama-build = ["llama-cpp?/build"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 
 

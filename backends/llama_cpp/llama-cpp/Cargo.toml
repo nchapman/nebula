@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-llama-cpp-sys = { path = "../llama-cpp-sys" }
+llama-cpp-sys = { path = "../llama-cpp-sys", optional = true }
 thiserror = "1"
 tracing = "0.1"
 log = "0.4.21"
