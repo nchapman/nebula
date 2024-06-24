@@ -3,11 +3,313 @@ use std::{
     path::{Path, PathBuf},
 };
 
-mod common {}
+#[cfg(feature = "build")]
+#[cfg(any(macos, unix))]
+mod common {
+    lazy_static::lazy_static! {
+        pub static ref LLAMACPP_DIR: &'static str = "llama.cpp";
+        pub static ref CMAKE_TARGETS: &'static[&'static str] = &["llama", "llava"];
+        //TODO add debug variant
+        pub static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
+            "BUILD_SHARED_LIBS" => "on",
+            "LLAMA_SERVER_VERBOSE" => "off",
+            "CMAKE_BUILD_TYPE" => "Release"
+        };
+    }
+
+    pub fn build(
+        src_dir: &str,
+        build_dir: &str,
+        cmake_defs: &std::collections::HashMap<&str, &str>,
+        targets: &[&str],
+    ) -> std::path::PathBuf {
+        println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
+        let mut dst = cmake::Config::new(src_dir);
+        let mut dd = &mut dst;
+        dd = dd.out_dir(build_dir);
+        for (k, v) in cmake_defs.iter() {
+            if v.is_empty() {
+                dd = dd.build_arg(k);
+            } else {
+                dd = dd.define(k, v);
+            }
+        }
+        for t in targets {
+            dd = dd.target(t);
+        }
+        dd.build()
+    }
+}
 
 mod linux {}
 
-mod macos {}
+#[cfg(feature = "build")]
+#[cfg(macos)]
+mod macos {
+
+    lazy_static::lazy_static! {
+        static ref COMMON_DARWIN_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
+            "CMAKE_OSX_DEPLOYMENT_TARGET" => "11.3",
+            "LLAMA_METAL_MACOSX_VERSION_MIN" => "11.3",
+            "CMAKE_SYSTEM_NAME" => "Darwin",
+            "LLAMA_METAL_EMBED_LIBRARY" => "on",
+            "LLAMA_OPENMP" => "off"
+        };
+
+        static ref APPLE_IDENTITY: Option<String> = None;
+    }
+
+    fn sign(build_dir: &str) {
+        if let Some(kk) = &*APPLE_IDENTITY {
+            println!("cargo:warning=Signing {build_dir}/bin/*.dylib");
+            for entry in glob::glob(&format!("{build_dir}/bin/*.dylib"))
+                .expect("Failed to read glob pattern")
+            {
+                if let Ok(path) = entry {
+                    let path = path.into_os_string().into_string().unwrap();
+                    std::process::Command::new("codesign")
+                        .arg("-f")
+                        .arg("--timestamp")
+                        .arg("--deep")
+                        .arg("--options=runtime")
+                        .arg(format!("--sign \"{}\"", kk))
+                        .arg("--identifier nebula")
+                        .arg(&path)
+                        .status()
+                        .expect("sign error");
+                }
+            }
+        }
+    }
+
+    fn install(build_dir: &str, dist_dir: &str) {
+        let pp = if let Ok(profile) = ::std::env::var("PROFILE") {
+            profile
+        } else {
+            "Debug".to_string()
+        };
+        println!("cargo:warning=Installing binaries to dist dir {dist_dir}");
+        std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
+        for entry in glob::glob(&format!("{build_dir}/build/bin/{pp}/*.dylib"))
+            .expect("Failed to read glob pattern")
+        {
+            if let Ok(path) = entry {
+                let path = path.into_os_string().into_string().unwrap();
+                powershell_script::run(&format!(
+                    "copy-item -Path \"{path}\" -Destination \"{dist_dir}\" -Force"
+                ))
+                .expect("install error");
+            }
+        }
+    }
+
+    #[cfg(target_arch = "x86_64")]
+    mod x86 {
+        lazy_static::lazy_static! {
+            static ref ARCH: &'static str = "x86_64";
+            static ref COMMON_CPU_DEFS: std::collections::HashMap<&'static str, &'static str> = super::COMMON_DARWIN_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap!{
+                        "CMAKE_SYSTEM_PROCESSOR" => "x86_64",
+                        "CMAKE_OSX_ARCHITECTURES" => "x86_64",
+                        "LLAMA_METAL" => "off",
+                        "LLAMA_NATIVE" => "off"
+                    }.iter())
+                .map(|(k, v)| (*k, *v))
+                .collect();
+        }
+
+        fn build_cpu(
+            src_dir: &str,
+            dist_dir: &str,
+            _cmake_defs: &std::collections::HashMap<&str, &str>,
+            targets: &[&str],
+        ) {
+            let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap! {
+                        "LLAMA_ACCELERATE" => "off",
+                        "LLAMA_BLAS" => "off",
+                        "LLAMA_AVX" => "off",
+                        "LLAMA_AVX2" => "off",
+                        "LLAMA_AVX512" => "off",
+                        "LLAMA_FMA" => "off",
+                        "LLAMA_F16C" => "off"
+                    }
+                    .iter()
+                    .chain(super::super::common::CMAKE_DEFS.iter()),
+                )
+                .map(|(k, v)| (*k, *v))
+                .collect();
+            println!("cargo:warning=Building LCD CPU");
+            let build_dir = format!(
+                "{}/darwin/{}/cpu",
+                std::env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
+            super::super::common::build(src_dir, &build_dir, &cmake_defs, targets);
+            super::sign(&build_dir);
+            super::install(&build_dir, &format!("{dist_dir}/cpu"));
+        }
+
+        fn build_cpu_avx(
+            src_dir: &str,
+            dist_dir: &str,
+            cmake_defs: &std::collections::HashMap<&str, &str>,
+            targets: &[&str],
+        ) {
+            let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap! {
+                        "LLAMA_ACCELERATE" => "off",
+                        "LLAMA_BLAS" => "off",
+                        "LLAMA_AVX" => "on",
+                        "LLAMA_AVX2" => "off",
+                        "LLAMA_AVX512" => "off",
+                        "LLAMA_FMA" => "off",
+                        "LLAMA_F16C" => "off"
+                    }
+                    .iter()
+                    .chain(cmake_defs.iter()),
+                )
+                .map(|(k, v)| (*k, *v))
+                .collect();
+            println!("cargo:warning=Building AVX CPU");
+            let build_dir = format!(
+                "{}/darwin/{}/cpu_avx",
+                std::env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
+            super::super::common::build(src_dir, &build_dir, &cmake_defs, targets);
+            super::sign(&build_dir);
+            super::install(&build_dir, &format!("{dist_dir}/cpu_avx"));
+        }
+
+        fn build_cpu_avx2(
+            src_dir: &str,
+            dist_dir: &str,
+            cmake_defs: &std::collections::HashMap<&str, &str>,
+            targets: &[&str],
+        ) {
+            let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap! {
+                        "LLAMA_ACCELERATE" => "on",
+                        "LLAMA_BLAS" => "off",
+                        "LLAMA_AVX" => "on",
+                        "LLAMA_AVX2" => "on",
+                        "LLAMA_AVX512" => "off",
+                        "LLAMA_FMA" => "on",
+                        "LLAMA_F16C" => "on",
+                        "-framework Accelerate" => "",
+                        "-framework Foundation" => ""
+                    }
+                    .iter()
+                    .chain(cmake_defs.iter()),
+                )
+                .map(|(k, v)| (*k, *v))
+                .collect();
+            println!("cargo:warning=Building AVX2 CPU");
+            let build_dir = format!(
+                "{}/darwin/{}/cpu_avx2",
+                std::env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
+            super::super::common::build(src_dir, &build_dir, &cmake_defs, targets);
+            super::sign(&build_dir);
+            super::install(&build_dir, &format!("{dist_dir}/cpu_avx2"));
+        }
+
+        pub fn bbuild() {
+            build_cpu(
+                *super::super::common::LLAMACPP_DIR,
+                &format!("dist/darwin/{}/", *ARCH),
+                &*super::super::common::CMAKE_DEFS,
+                *super::super::common::CMAKE_TARGETS,
+            );
+
+            if ::std::is_x86_feature_detected!("avx") {
+                build_cpu_avx(
+                    *super::super::common::LLAMACPP_DIR,
+                    &format!("dist/darwin/{}/", *ARCH),
+                    &*super::super::common::CMAKE_DEFS,
+                    *super::super::common::CMAKE_TARGETS,
+                );
+            }
+            if ::std::is_x86_feature_detected!("avx2") {
+                build_cpu_avx2(
+                    *super::super::common::LLAMACPP_DIR,
+                    &format!("dist/darwin/{}/", *ARCH),
+                    &*super::super::common::CMAKE_DEFS,
+                    *super::super::common::CMAKE_TARGETS,
+                );
+            }
+        }
+    }
+
+    #[cfg(target_arch = "aarch64")]
+    mod aarch64 {
+        lazy_static::lazy_static! {
+            static ref ARCH: &'static str = "arm64";
+        }
+
+        fn build_metal(
+            src_dir: &str,
+            dist_dir: &str,
+            _cmake_defs: &std::collections::HashMap<&str, &str>,
+            targets: &[&str],
+        ) {
+            let cmake_defs: std::collections::HashMap<&str, &str> = super::COMMON_DARWIN_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap! {
+                        "LLAMA_ACCELERATE" => "on",
+                        "CMAKE_SYSTEM_PROCESSOR" => *ARCH,
+                        "CMAKE_OSX_ARCHITECTURES" => *ARCH,
+                        "LLAMA_METAL" => "on",
+                        "-framework Accelerate" => "",
+                        "-framework Foundation" => "",
+                        "-framework Metal" => "",
+                        "-framework MetalKit" => "",
+                        "-framework MetalPerformanceShaders" => ""
+                    }
+                    .iter()
+                    .chain(super::super::common::CMAKE_DEFS.iter()),
+                )
+                .map(|(k, v)| (*k, *v))
+                .collect();
+            println!("cargo:warning=Building LCD CPU");
+            let build_dir = format!(
+                "{}/darwin/{}/metal",
+                std::env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
+            super::super::common::build(src_dir, &build_dir, &cmake_defs, targets);
+            super::sign(&build_dir);
+            super::install(&build_dir, &format!("{dist_dir}/cpu"));
+        }
+
+        pub fn bbuild() {
+            build_metal(
+                *super::super::common::LLAMACPP_DIR,
+                &format!("dist/darwin/{}/", *ARCH),
+                &*super::super::common::CMAKE_DEFS,
+                *super::super::common::CMAKE_TARGETS,
+            );
+        }
+    }
+
+    pub fn bbuild() {
+        #[cfg(target_arch = "x86_64")]
+        x86::bbuild();
+        #[cfg(target_arch = "aarch64")]
+        aarch64::bbuild();
+    }
+}
 
 #[cfg(feature = "build")]
 #[cfg(windows)]
@@ -387,4 +689,8 @@ fn main() {
     #[cfg(feature = "build")]
     #[cfg(windows)]
     windows::bbuild();
+
+    #[cfg(feature = "build")]
+    #[cfg(macos)]
+    macos::bbuild();
 }
