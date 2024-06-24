@@ -252,7 +252,7 @@ impl std::fmt::Display for Variant {
 enum Handlers {
     Cpu(CpuHandlers),
     Cuda(CudaHandles),
-    #[cfg(target_os = "macos")]
+    #[cfg(all(target_os = "macos", target_arch = "aarh64"))]
     Metal(MetalHandlers),
 }
 
@@ -265,16 +265,21 @@ impl Handlers {
             #[cfg(not(target_arch = "aarch64"))]
             return Ok(Self::Cpu(CpuHandlers::new()?));
         }
-        if let Ok(cuda) = CudaHandles::new() {
-            return Ok(Self::Cuda(cuda));
+        #[cfg(not(target_os = "macos"))]
+        {
+            if let Ok(cuda) = CudaHandles::new() {
+                return Ok(Self::Cuda(cuda));
+            }
+            Ok(Self::Cpu(CpuHandlers::new()?))
         }
-        Ok(Self::Cpu(CpuHandlers::new()?))
     }
 
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
         match self {
             Self::Cpu(h) => h.get_devices_info(),
             Self::Cuda(h) => h.get_devices_info(),
+            #[cfg(all(target_os = "macos", target_arch = "aarh64"))]
+            Self::Metal(h) => h.get_devices_info(),
         }
     }
 
