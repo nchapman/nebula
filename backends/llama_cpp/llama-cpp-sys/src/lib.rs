@@ -203,7 +203,7 @@ impl MetalHandlers {
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
         let mut gpu = DeviceInfo::default();
         gpu.library = "metal";
-        gpu.id = 0;
+        gpu.id = "0".to_string();
         gpu.minimum_memory = 512 * 1024 * 1024;
         let mm = unsafe {
             iron_oxide::MTLCreateSystemDefaultDevice().get_recommended_max_working_set_size()
