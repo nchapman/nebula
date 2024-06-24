@@ -8,7 +8,7 @@ use std::{
 mod common {
     lazy_static::lazy_static! {
         pub static ref LLAMACPP_DIR: &'static str = "llama.cpp";
-        pub static ref CMAKE_TARGETS: &'static[&'static str] = &["llama"];
+        pub static ref CMAKE_TARGETS: &'static[&'static str] = &["llama", "llava_shared"];
         //TODO add debug variant
         pub static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "BUILD_SHARED_LIBS" => "on",
@@ -37,7 +37,7 @@ mod common {
         for t in targets {
             dd = dd.target(t);
         }
-        dd.build()
+        dd.very_verbose(true).build()
     }
 }
 
