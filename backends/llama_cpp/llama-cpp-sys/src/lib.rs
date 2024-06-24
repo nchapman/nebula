@@ -183,8 +183,10 @@ impl CpuHandlers {
     }
 }
 
+#[cfg(target_os = "macos")]
 struct MetalHandlers {}
 
+#[cfg(target_os = "macos")]
 impl MetalHandlers {
     pub fn new() -> Result<Self> {
         Ok(Self {})
@@ -250,16 +252,23 @@ impl std::fmt::Display for Variant {
 enum Handlers {
     Cpu(CpuHandlers),
     Cuda(CudaHandles),
+    #[cfg(target_os = "macos")]
     Metal(MetalHandlers),
 }
 
 impl Handlers {
     pub fn new() -> Result<Self> {
-        if let Ok(cuda) = CudaHandles::new() {
-            Ok(Self::Cuda(cuda))
-        } else {
-            Ok(Self::Cpu(CpuHandlers::new()?))
+        #[cfg(target_os = "macos")]
+        {
+            #[cfg(target_arch = "aarch64")]
+            return Ok(Self::Metal(MetalHandlers()));
+            #[cfg(not(target_arch = "aarch64"))]
+            return Ok(Self::Cpu(CpuHandlers::new()?));
         }
+        if let Ok(cuda) = CudaHandles::new() {
+            return Ok(Self::Cuda(cuda));
+        }
+        Ok(Self::Cpu(CpuHandlers::new()?))
     }
 
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
