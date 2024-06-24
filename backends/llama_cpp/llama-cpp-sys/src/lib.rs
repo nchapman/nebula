@@ -416,7 +416,7 @@ pub enum Error {
     CudartLoad,
     #[error("cuda device not found")]
     CudaNotFound,
-    #[cfg(unix)]
+    #[cfg(target_os = "linux")]
     #[error("{0}")]
     Proc(#[from] procfs::ProcError),
     #[error("can`t load llama_cpp dependencies`")]
