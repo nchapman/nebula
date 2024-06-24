@@ -92,6 +92,7 @@ mod macos {
         } else {
             "Debug".to_string()
         };
+        println!("cargo:warning=Installing binaries to dist dir {build_dir}");
         println!("cargo:warning=Installing binaries to dist dir {dist_dir}");
         std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
         for entry in glob::glob(&format!("{build_dir}/build/bin/{pp}/*.dylib"))
