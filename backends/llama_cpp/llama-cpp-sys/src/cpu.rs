@@ -46,7 +46,7 @@ pub fn get_mem() -> crate::Result<crate::MemInfo> {
     Ok(crate::MemInfo { total: fm, free: 0 })
 }
 
-#[cfg(unix)]
+#[cfg(linux)]
 pub fn get_mem() -> crate::Result<crate::MemInfo> {
     use procfs::Current;
     let meminfo = procfs::Meminfo::current()?;
