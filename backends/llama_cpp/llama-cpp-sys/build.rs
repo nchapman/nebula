@@ -21,6 +21,7 @@ mod common {
         src_dir: &str,
         build_dir: &str,
         cmake_defs: &std::collections::HashMap<&str, &str>,
+        env: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
     ) -> std::path::PathBuf {
         println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
@@ -37,7 +38,6 @@ mod common {
         for t in targets {
             dd = dd.target(t);
         }
-        println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
         dd.build()
     }
 }
@@ -272,11 +272,6 @@ mod macos {
                         "CMAKE_SYSTEM_PROCESSOR" => *ARCH,
                         "CMAKE_OSX_ARCHITECTURES" => *ARCH,
                         "LLAMA_METAL" => "on",
-                        "-framework Accelerate" => "",
-                        "-framework Foundation" => "",
-                        "-framework Metal" => "",
-                        "-framework MetalKit" => "",
-                        "-framework MetalPerformanceShaders" => ""
                     }
                     .iter()
                     .chain(super::super::common::CMAKE_DEFS.iter()),
@@ -289,7 +284,15 @@ mod macos {
                 std::env::var("OUT_DIR").expect("No out dir found"),
                 *ARCH
             );
-            super::super::common::build(src_dir, &build_dir, &cmake_defs, targets);
+            super::super::common::build(
+                src_dir,
+                &build_dir,
+                &cmake_defs,
+                &maplit::hashmap! {
+                    "EXTRA_LIBS" => "-framework Accelerate -framework Foundation -framework Metal -framework MetalKit -framework MetalPerformanceShaders"
+                },
+                targets,
+            );
             super::sign(&build_dir);
             super::install(&build_dir, &format!("{dist_dir}/cpu"));
         }
