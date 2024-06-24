@@ -374,8 +374,10 @@ lazy_static::lazy_static! {
             fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
             println!("{}", file.as_ref());
         }
-        #[cfg(windows)]
+        #[cfg(target_os = "windows")]
         tt.push("windows");
+        #[cfg(target_os = "macos")]
+        tt.push("darwin");
         tt.push(std::env::consts::ARCH);
         println!("tmp_dir = {}", tt.display());
         tt
