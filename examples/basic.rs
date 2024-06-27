@@ -6,6 +6,10 @@ use nebula::{
 };
 
 fn main() {
+    simple_logger::SimpleLogger::new()
+        .with_level(log::LevelFilter::Debug)
+        .init()
+        .unwrap();
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 3 {
         println!(

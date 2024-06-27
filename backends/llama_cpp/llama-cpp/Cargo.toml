@@ -4,7 +4,7 @@ version = "0.0.1"
 edition = "2021"
 
 [dependencies]
-llama-cpp-sys = { path = "../llama-cpp-sys" }
+llama-cpp-sys = { path = "../llama-cpp-sys", optional = true }
 thiserror = "1"
 tracing = "0.1"
 log = "0.4.21"
@@ -23,10 +23,5 @@ name = "generate"
 harness = false
 
 [features]
-cublas = ["llama-cpp-sys/cublas"]
-clblas = ["llama-cpp-sys/clblas"]
-openblas = ["llama-cpp-sys/openblas"]
-blis = ["llama-cpp-sys/blis"]
-hipblas = ["llama-cpp-sys/hipblas"]
-no-metal = ["llama-cpp-sys/no-metal"]
-sycl = ["llama-cpp-sys/sycl"]
+default = ["llama-cpp-sys"]
+build = ["llama-cpp-sys?/build"]

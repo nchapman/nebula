@@ -3,50 +3,30 @@ name = "llama-cpp-sys"
 version = "0.0.1"
 edition = "2021"
 
-include = [
-    "build.rs",
-    "/src",
-    "/llama.cpp/ggml.c",
-    "/llama.cpp/ggml.h",
-    "/llama.cpp/ggml-alloc.c",
-    "/llama.cpp/ggml-alloc.h",
-    "/llama.cpp/ggml-backend.c",
-    "/llama.cpp/ggml-backend.h",
-    "/llama.cpp/ggml-backend-impl.h",
-    "/llama.cpp/ggml-cuda.cu",
-    "/llama.cpp/ggml-cuda.h",
-    "/llama.cpp/ggml-impl.h",
-    "/llama.cpp/ggml-metal.m",
-    "/llama.cpp/ggml-metal.metal",
-    "/llama.cpp/ggml-metal.h",
-    "/llama.cpp/ggml-mpi.c",
-    "/llama.cpp/ggml-mpi.h",
-    "/llama.cpp/ggml-opencl.cpp",
-    "/llama.cpp/ggml-opencl.h",
-    "/llama.cpp/ggml-quants.c",
-    "/llama.cpp/ggml-quants.h",
-    "/llama.cpp/llama.cpp",
-    "/llama.cpp/llama.h",
-    "/llama.cpp/unicode.h",
-    "/llama.cpp/unicode.cpp",
-    "/llama.cpp/common/sampling.h",
-    "/llama.cpp/common/sampling.cpp",
-]
-
 [dependencies]
+lazy_static = "1.4"
+libloading = "0.8"
+thiserror = "1"
+log = "0.4"
+glob = "0.3"
+rust-embed = "8.4.0"
+tempfile = "3.10"
+
+[target.'cfg(target_os="macos")'.dependencies]
+objc2-foundation = {version = "0.2", features = ["NSProcessInfo"]}
+iron-oxide = "0.1"
+
+[target.'cfg(target_os = "linux")'.dependencies]
+procfs = "0.16"
+
 
 [build-dependencies]
+lazy_static = "1.4"
+cmake = "0.1"
 bindgen = "0.69.4"
-cc = "1.0.96"
-glob = "0.3.1"
+maplit = "1"
+powershell_script = "1"
+glob = "0.3"
 
 [features]
-cublas = []
-openblas = []
-blis = []
-sycl = []
-hipblas = []
-clblas = []
-hip_uma = []
-cuda_force_dmmv = []
-no-metal = []
+build = []
