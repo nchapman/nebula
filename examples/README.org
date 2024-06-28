@@ -336,3 +336,4 @@ After running these commands, download models from [[https://drive.google.com/fi
 usage:
 	cargo +nightly r --release --example text_to_speech --features tts
 #+END_SRC
+After successful running, you should find a file =test.wav= with an audio sequence pronouncing the following =Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?=.
