@@ -208,14 +208,16 @@ impl Drop for Model {
 
 #[cfg(test)]
 mod test {
-    use std::{io::Read, path::PathBuf};
+    use std::{io::Read, path::{PathBuf, Path}};
 
+    #[cfg(feature = "llama")]
     struct TestModel {
         pub _repo: String,
         pub filename: PathBuf,
         pub _mmproj: Option<PathBuf>,
     }
 
+    #[cfg(feature = "llama")]
     impl TestModel {
         pub fn new(repo: &str, model_file_name: &str) -> Self {
             let api = hf_hub::api::sync::Api::new();
@@ -243,6 +245,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     impl Drop for TestModel {
         fn drop(&mut self) {
             let res = std::fs::remove_file(&self.filename);
@@ -250,6 +253,7 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     fn main_with_model(model_repo: &str, model_file_name: &str) {
         let test_model = TestModel::new(model_repo, model_file_name);
         let model_options = super::options::ModelOptions::default();
@@ -269,6 +273,7 @@ mod test {
         println!("{answer}");
     }
 
+    #[cfg(feature = "llama")]
     macro_rules! models_tests {
         ($($name:ident: ($value:expr, $value2:expr),)*) => {
             $(
@@ -280,13 +285,15 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     models_tests! {
     //        model_test_llava_1_6_mistral_7b_gguf:
     //        ("cjpais/llava-1.6-mistral-7b-gguf",
         //        "llava-v1.6-mistral-7b.Q4_K_M.gguf"),
         test: ("stabilityai/stable-code-instruct-3b","stable-code-3b-q4_k_m.gguf"),
-        }
+    }
 
+    #[cfg(feature = "llama")]
     fn _main_with_model_and_mmproj(
         model_repo: &str,
         model_file_name: &str,
@@ -322,6 +329,7 @@ mod test {
         println!("{answer}");
     }
 
+    #[cfg(feature = "llama")]
     macro_rules! models_with_mmproj_tests {
         ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
             $(
@@ -333,9 +341,119 @@ mod test {
         }
     }
 
+    #[cfg(feature = "llama")]
     models_with_mmproj_tests! {
     //        model_test_llava_1_6_mistral_7b_gguf_with_mmproj: ("cjpais/llava-1.6-mistral-7b-gguf", "llava-v1.6-mistral-7b.Q4_K_M.gguf", "mmproj-model-f16.gguf"),
+    }
+
+    #[cfg(feature = "whisper")]
+    fn test_whisper_on_wav(model_path: PathBuf, wav_file_path: PathBuf, expected_text: String) {
+        let model = super::AutomaticSpeechRecognitionModel::new(
+            model_path
+        );
+        assert!(model.is_ok());
+        let mut model = model.unwrap();
+        let samples = super::utils::convert_wav_to_samples(
+            wav_file_path.as_path().to_str().unwrap()
+        );
+
+        let options = super::options::AutomaticSpeechRecognitionOptions::default().with_n_threads(1);
+        let out = model.predict(&samples[..], options);
+        assert!(out.is_ok());
+        let out = out.unwrap();
+        let out = out.trim().to_string();
+        assert_eq!(expected_text, out);
+    }
+
+    #[cfg(feature = "whisper")]
+    macro_rules! whisper_tests {
+        ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    test_whisper_on_wav($value, $value2, $value3);
+                }
+            )*
         }
+    }
+
+    #[cfg(feature = "whisper")]
+    whisper_tests! {
+        test: (
+            Path::new("models").join("ggml-base.en.bin"),
+            Path::new("samples").join("jfk.wav"),
+            "And so my fellow Americans, ask not what your country can do for you, ask what you can do for your country.".to_string()
+        ),
+    }
+
+    #[cfg(feature = "embeddings")]
+    fn test_embeddings_model(
+            model_type: super::options::EmbeddingsModelType,
+            text: String,
+            expected_size: usize
+    ) {
+        let options = super::options::EmbeddingsOptions::default().with_model_type(model_type);
+        let model = super::EmbeddingsModel::new(options);
+        assert!(model.is_ok());
+        let mut model = model.unwrap();
+        let embedding = model.encode(text);
+        assert!(embedding.is_ok());
+        let embedding = embedding.unwrap();
+        assert_eq!(expected_size, embedding.len());
+    }
+
+    #[cfg(feature = "embeddings")]
+    macro_rules! embeddings_tests {
+        ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    test_embeddings_model($value, $value2, $value3);
+                }
+            )*
+        }
+    }
+
+    #[cfg(feature = "embeddings")]
+    embeddings_tests! {
+        test_jina: (super::options::EmbeddingsModelType::JinaBert, "Hello world!".to_string(), 768),
+        test_t5: (super::options::EmbeddingsModelType::T5, "Hello world!".to_string(), 512),
+        test_bert: (super::options::EmbeddingsModelType::Bert, "Hello world!".to_string(), 384),
+    }
+
+    #[cfg(feature = "tts")]
+    fn test_tts_model(reference_audio_path: PathBuf, text: String) {
+        let ref_samples = super::utils::get_tts_samples_from_audio_path(
+            reference_audio_path
+        );
+        assert!(ref_samples.is_ok());
+        let ref_samples = ref_samples.unwrap();
+        let tts_options = super::options::TTSOptions::default();
+        let model = super::TextToSpeechModel::new(tts_options);
+        assert!(model.is_ok());
+        let mut model = model.unwrap();
+        let train_result = model.train(ref_samples);
+        assert!(train_result.is_ok());
+        let generated_audio_sample = model.predict(text);
+        assert!(generated_audio_sample.is_ok());
+    }
+
+    #[cfg(feature = "tts")]
+    macro_rules! tts_tests {
+        ($($name:ident: ($value:expr, $value2:expr),)*) => {
+            $(
+                #[test]
+                fn $name() {
+                    test_tts_model($value, $value2);
+                }
+            )*
+        }
+    }
+
+    #[cfg(feature = "tts")]
+    tts_tests! {
+        test_tts: (Path::new("samples").join("resampled_ref.wav"), "Hello world!".to_string()),
+    }
 }
 
 #[cfg(feature = "whisper")]
