@@ -329,6 +329,7 @@ pip install torch==1.13.0 torchvision==0.14.0 torchaudio==0.13.0
     mkdir models
     cd models
     mkdir torch-scripts
+    cd ..
 #+END_SRC
 After running these commands, download models from [[https://drive.google.com/file/d/15UCvTNTwSacP_e7ZjNzib4iiHSegkM8Q/view?usp=sharing][my Google Drive]] manually. Unpack the =*.pt= files into =models/torch-scripts= folder.
 ** usage
