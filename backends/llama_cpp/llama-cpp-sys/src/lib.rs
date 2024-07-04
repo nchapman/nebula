@@ -9,7 +9,7 @@ mod cpu;
 mod cuda;
 
 #[derive(Default, Debug)]
-pub struct MemInfo {
+struct MemInfo {
     total: u64,
     free: u64,
 }
