@@ -5,7 +5,7 @@ pub struct NvCudaHandle {
     _path: std::path::PathBuf,
 }
 
-#[cfg(taryet_os = "windows")]
+#[cfg(target_os = "windows")]
 const NVCUDA_GLOBS: &'static [&'static str] = &["c:\\windows\\system*\\nvcuda.dll"];
 #[cfg(target_os = "linux")]
 const NVCUDA_GLOBS: &'static [&'static str] = &[
