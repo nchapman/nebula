@@ -24,6 +24,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           submodules: true
+          lfs: true
+
+#      - name: Fetch LFS objects
+#        run: git lfs fetch --all
+
+#      - name: Pull LFS objects
+#        run: git lfs pull
 
       - name: Update local toolchain
         run: |

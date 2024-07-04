@@ -298,10 +298,8 @@ impl Handlers {
 
     pub fn llama_cpp(&self) -> Result<(libloading::Library, libloading::Library)> {
         let devices = self.get_devices_info();
-        println!("dd {devices:#?}");
         log::debug!("{devices:#?}");
         let variants = self.available_variants();
-        println!("vv {variants:#?}");
         log::debug!("{variants:#?}");
         for device in devices {
             let mut vars = device.variants(&variants);
@@ -331,6 +329,7 @@ impl Handlers {
                 }
             });
             vars.reverse();
+            println!("{vars:#?}");
             log::debug!("{vars:#?}");
             let path_env = std::env::var("PATH").unwrap_or_default();
             std::env::set_var(
