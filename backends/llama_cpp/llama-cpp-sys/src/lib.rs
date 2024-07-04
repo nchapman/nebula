@@ -379,11 +379,13 @@ impl Handlers {
                             return Ok((llama, llava));
                         }
                         Err(e) => {
+                            println!("can`t load {}: {}`", dbg!(llava_p).display(), e);
                             log::warn!("can`t load {}: {}`", dbg!(llava_p).display(), e);
                             continue;
                         }
                     },
                     Err(e) => {
+                        println!("can`t load {}: {}`", dbg!(llava_p).display(), e);
                         log::warn!("can`t load {}: {}`", llama_p.display(), e);
                         continue;
                     }
