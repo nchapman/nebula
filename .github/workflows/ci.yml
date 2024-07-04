@@ -12,7 +12,7 @@ on:
 
 jobs:
   test_nebula:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
 
     strategy:
       matrix:
