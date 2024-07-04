@@ -197,8 +197,11 @@ impl MetalHandlers {
             let dd = objc2_metal::MTLCreateSystemDefaultDevice();
             (&*dd).name().to_string()
         };
-        println!("device {:?}", device_name);
-        Ok(Self {})
+        if device_name == "Apple Paravirtual device" {
+            Err(crate::Error::MacParaVirtualDevice)
+        } else {
+            Ok(Self {})
+        }
     }
 
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
@@ -468,6 +471,8 @@ pub enum Error {
     Unimplemented(&'static str, u32),
     #[error("")]
     NvMlLoad,
+    #[error("Apple Paravirtual Device")]
+    MacParaVirtualDevice,
     #[error("{0}")]
     NvMlInit_v2(i32),
     #[cfg(any(target_os = "windows", target_os = "linux"))]
