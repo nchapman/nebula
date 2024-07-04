@@ -88,6 +88,7 @@ pub struct DriverVersion {
 #[folder = "dist"]
 struct Dependencies;
 
+#[cfg(any(target_os = "windows", target_os = "linux"))]
 struct CudaHandles {
     device_count: usize,
     cudart: Option<cuda::cudart::CudartHandle>,
@@ -95,6 +96,7 @@ struct CudaHandles {
     _nvml: Option<cuda::nvml::NvMlHandle>,
 }
 
+#[cfg(any(target_os = "windows", target_os = "linux"))]
 impl CudaHandles {
     pub fn new() -> Result<Self> {
         let nvml = match cuda::nvml::NvMlHandle::new() {
@@ -252,6 +254,7 @@ impl std::fmt::Display for Variant {
 
 enum Handlers {
     Cpu(CpuHandlers),
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     Cuda(CudaHandles),
     #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
     Metal(MetalHandlers),
@@ -268,6 +271,7 @@ impl Handlers {
         }
         #[cfg(not(target_os = "macos"))]
         {
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             if let Ok(cuda) = CudaHandles::new() {
                 return Ok(Self::Cuda(cuda));
             }
@@ -278,6 +282,7 @@ impl Handlers {
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
         match self {
             Self::Cpu(h) => h.get_devices_info(),
+            #[cfg(any(target_os = "windows", target_os = "linux"))]
             Self::Cuda(h) => h.get_devices_info(),
             #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
             Self::Metal(h) => h.get_devices_info(),
@@ -477,16 +482,21 @@ pub enum Error {
     NvMlLoad,
     #[error("{0}")]
     NvMlInit_v2(i32),
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     #[error("{0}")]
     NvCudaCall(&'static str, i32),
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     #[error("nvcuda load")]
     NvCudaLoad,
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     #[error("{0}")]
     CudartCall(&'static str, i32),
     #[error("{0}")]
     SystemCall(&'static str, i32),
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     #[error("cudart load")]
     CudartLoad,
+    #[cfg(any(target_os = "windows", target_os = "linux"))]
     #[error("cuda device not found")]
     CudaNotFound,
     #[cfg(target_os = "linux")]
