@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - build: linux
-            platform: ubuntu-20.04
+            platform: ubuntu-latest
 
           - build: macos
             platform: macos-latest
@@ -37,12 +37,6 @@ jobs:
       #      - name: Pull LFS objects
       #        run: git lfs pull
 
-      - name: install
-        if: matrix.platform == 'ubuntu-20.04'
-        run: |
-          sudo apt update
-          sudo apt -y upgrade
-
       - name: Update local toolchain
         run: |
           rustup update --no-self-update
@@ -60,8 +54,8 @@ jobs:
         run: |
           #cd nebula
           cargo test --features llama -- --nocapture
-      - name: Build with llama
-        run: |
-          #cd nebula
-          cargo clean
-          cargo build --release --features llama
+#      - name: Build with llama
+#        run: |
+#          #cd nebula
+#          cargo clean
+#          cargo build --release --features llama
