@@ -298,10 +298,10 @@ impl Handlers {
 
     pub fn llama_cpp(&self) -> Result<(libloading::Library, libloading::Library)> {
         let devices = self.get_devices_info();
-        println!("{devices:#?}");
+        println!("dd {devices:#?}");
         log::debug!("{devices:#?}");
         let variants = self.available_variants();
-        println!("{variants:#?}");
+        println!("vv {variants:#?}");
         log::debug!("{variants:#?}");
         for device in devices {
             let mut vars = device.variants(&variants);
