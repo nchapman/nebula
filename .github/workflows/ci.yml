@@ -61,4 +61,5 @@ jobs:
       - name: Build with llama
         run: |
           #cd nebula
+          cargo clean
           cargo build --release --features llama
