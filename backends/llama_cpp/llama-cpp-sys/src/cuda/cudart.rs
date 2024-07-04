@@ -2,7 +2,7 @@ use std::ffi::{c_int, c_uchar, c_uint};
 
 pub struct CudartHandle {
     handler: libloading::Library,
-    path: std::path::PathBuf,
+    _path: std::path::PathBuf,
 }
 
 #[cfg(windows)]
@@ -24,9 +24,9 @@ const CUDART_GLOBS: &'static [&'static str] = &[
     "/usr/local/lib*/libcudart.so*",
 ];
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 const CUDART_MGMT_NAME: &'static str = "cudart64_*.dll";
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 const CUDART_MGMT_NAME: &'static str = "libcudart.so*";
 
 #[repr(C)]
@@ -256,7 +256,7 @@ impl CudartHandle {
                     dc,
                     Self {
                         handler: m,
-                        path: p.clone(),
+                        _path: p.clone(),
                     },
                 ));
             }
@@ -275,7 +275,7 @@ impl CudartHandle {
         }
     }
 
-    pub fn get_device_properties(&self, device: usize) -> crate::Result<CudaDeviceProp> {
+    fn get_device_properties(&self, device: usize) -> crate::Result<CudaDeviceProp> {
         let mut props = CudaDeviceProp::default();
         let get_device_props: libloading::Symbol<
             unsafe extern "C" fn(*mut CudaDeviceProp, c_int) -> c_int,

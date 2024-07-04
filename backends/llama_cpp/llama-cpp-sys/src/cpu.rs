@@ -24,7 +24,7 @@ mod windows {
     }
 }
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 pub fn get_mem() -> crate::Result<crate::MemInfo> {
     use std::ffi::c_int;
     let mut mem_status = windows::MemoryStatusEx::default();
@@ -46,7 +46,7 @@ pub fn get_mem() -> crate::Result<crate::MemInfo> {
     Ok(crate::MemInfo { total: fm, free: 0 })
 }
 
-#[cfg(linux)]
+#[cfg(target_os = "linux")]
 pub fn get_mem() -> crate::Result<crate::MemInfo> {
     use procfs::Current;
     let meminfo = procfs::Meminfo::current()?;

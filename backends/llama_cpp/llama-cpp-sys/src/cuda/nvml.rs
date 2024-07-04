@@ -9,8 +9,8 @@ pub struct Memory {
 }
 
 pub struct NvMlHandle {
-    handler: libloading::Library,
-    path: std::path::PathBuf,
+    _handler: libloading::Library,
+    _path: std::path::PathBuf,
 }
 
 #[cfg(windows)]
@@ -30,8 +30,8 @@ impl NvMlHandle {
             if let Ok(m) = Self::load(p) {
                 log::debug!("nvidia-ml loaded {}", p.display());
                 return Ok(Self {
-                    handler: m,
-                    path: p.clone(),
+                    _handler: m,
+                    _path: p.clone(),
                 });
             }
         }

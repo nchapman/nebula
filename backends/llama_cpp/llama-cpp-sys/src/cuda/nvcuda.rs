@@ -1,13 +1,13 @@
 use std::ffi::c_int;
 
 pub struct NvCudaHandle {
-    handler: libloading::Library,
-    path: std::path::PathBuf,
+    _handler: libloading::Library,
+    _path: std::path::PathBuf,
 }
 
-#[cfg(windows)]
+#[cfg(taryet_os = "windows")]
 const NVCUDA_GLOBS: &'static [&'static str] = &["c:\\windows\\system*\\nvcuda.dll"];
-#[cfg(unix)]
+#[cfg(target_os = "linux")]
 const NVCUDA_GLOBS: &'static [&'static str] = &[
     "/usr/local/cuda*/targets/*/lib/libcuda.so*",
     "/usr/lib/*-linux-gnu/nvidia/current/libcuda.so*",
@@ -20,7 +20,7 @@ const NVCUDA_GLOBS: &'static [&'static str] = &[
     "/usr/local/lib*/libcuda.so*",
 ];
 
-#[cfg(windows)]
+#[cfg(target_os = "windows")]
 const NVCUDA_MGMT_NAME: &'static str = "nvcuda.dll";
 #[cfg(unix)]
 const NVCUDA_MGMT_NAME: &'static str = "libcuda.so*";
@@ -34,8 +34,8 @@ impl NvCudaHandle {
                 return Ok((
                     dc,
                     Self {
-                        handler: m,
-                        path: p.clone(),
+                        _handler: m,
+                        _path: p.clone(),
                     },
                 ));
             }

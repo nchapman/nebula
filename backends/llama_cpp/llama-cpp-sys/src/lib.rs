@@ -36,10 +36,10 @@ impl CPUCapability {
 impl Default for CPUCapability {
     fn default() -> Self {
         #[cfg(any(target_arch = "x86", target_arch = "x86_64"))]
-        if ::std::is_x86_feature_detected!("avx") {
-            Self::Avx
-        } else if ::std::is_x86_feature_detected!("avx2") {
+        if ::std::is_x86_feature_detected!("avx2") {
             Self::Avx2
+        } else if ::std::is_x86_feature_detected!("avx") {
+            Self::Avx
         } else {
             Self::None
         }
@@ -50,20 +50,20 @@ impl Default for CPUCapability {
 
 #[derive(Default, Debug)]
 pub struct DeviceInfo {
-    memInfo: MemInfo,
-    library: &'static str,
-    variant: CPUCapability,
-    minimum_memory: u64,
-    dependency_paths: Vec<std::path::PathBuf>,
-    env_workarounds: Vec<(String, String)>,
-    id: String,
-    name: String,
-    compute: String,
-    driver_version: DriverVersion,
+    pub memInfo: MemInfo,
+    pub library: &'static str,
+    pub variant: CPUCapability,
+    pub minimum_memory: u64,
+    pub dependency_paths: Vec<std::path::PathBuf>,
+    pub env_workarounds: Vec<(String, String)>,
+    pub id: String,
+    pub name: String,
+    pub compute: String,
+    pub driver_version: DriverVersion,
 }
 
 impl DeviceInfo {
-    pub fn variants(&self, vars: &Vec<Variant>) -> Vec<Variant> {
+    pub(crate) fn variants(&self, vars: &Vec<Variant>) -> Vec<Variant> {
         vars.iter()
             .filter(|v| {
                 if self.library == "cpu" {
@@ -79,8 +79,8 @@ impl DeviceInfo {
 
 #[derive(Default, Debug)]
 pub struct DriverVersion {
-    major: i32,
-    minor: i32,
+    pub major: i32,
+    pub minor: i32,
 }
 
 #[derive(rust_embed::Embed)]
@@ -91,7 +91,7 @@ struct CudaHandles {
     device_count: usize,
     cudart: Option<cuda::cudart::CudartHandle>,
     nvcuda: Option<cuda::nvcuda::NvCudaHandle>,
-    nvml: Option<cuda::nvml::NvMlHandle>,
+    _nvml: Option<cuda::nvml::NvMlHandle>,
 }
 
 impl CudaHandles {
@@ -124,7 +124,7 @@ impl CudaHandles {
         };
         if device_count > 0 {
             Ok(Self {
-                nvml,
+                _nvml: nvml,
                 device_count,
                 nvcuda,
                 cudart,
@@ -183,10 +183,10 @@ impl CpuHandlers {
     }
 }
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 struct MetalHandlers {}
 
-#[cfg(target_os = "macos")]
+#[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl MetalHandlers {
     pub fn new() -> Result<Self> {
         Ok(Self {})
@@ -366,15 +366,15 @@ impl Handlers {
                 llama_p.push("llama.dll");
                 #[cfg(target_os = "macos")]
                 llama_p.push("libllama.dylib");
-                //                #[cfg(not(windows))]
-                //                llama_p.push("llama.so");
+                #[cfg(target_os = "linux")]
+                llama_p.push("libllama.so");
                 let mut llava_p = bp.clone();
                 #[cfg(target_os = "windows")]
                 llava_p.push("llava_shared.dll");
                 #[cfg(target_os = "macos")]
                 llava_p.push("libllava_shared.dylib");
-                //                #[cfg(not(windows))]
-                //                llava_p.push("llava_shared.so");
+                #[cfg(target_os = "linux")]
+                llava_p.push("libllava_shared.so");
                 match unsafe { libloading::Library::new(llama_p.clone()) } {
                     Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
                         Ok(llava) => {
@@ -442,6 +442,8 @@ lazy_static::lazy_static! {
         tt.push("windows");
         #[cfg(target_os = "macos")]
         tt.push("darwin");
+        #[cfg(target_os = "linux")]
+        tt.push("linux");
         tt.push(ARCH);
         println!("tmp_dir = {}", tt.display());
         tt
@@ -497,7 +499,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
 
-macro_rules! get_and_load
+macro_rules! get_and_load_from_llama
 {
     ($($name:tt($($v:ident: $t:ty),* $(,)?) -> $rt:ty),* $(,)?) => {
 
@@ -512,7 +514,43 @@ macro_rules! get_and_load
     };
 }
 
-get_and_load!(
+macro_rules! get_and_load_from_llava
+{
+    ($($name:tt($($v:ident: $t:ty),* $(,)?) -> $rt:ty),* $(,)?) => {
+
+        $(pub unsafe fn $name($($v: $t),*) -> $rt
+        {
+            let func: libloading::Symbol<
+                unsafe extern "C" fn($($v: $t),*) -> $rt,
+                > = LIBS.llava.get(stringify!($name).as_bytes()).expect(&format!("function \"{}\" not found in llama_cpp lib", stringify!($name)));
+            func($($v),*)
+        }
+        )*
+    };
+}
+
+get_and_load_from_llava!(
+    clip_model_load(
+        fname: *const ::std::os::raw::c_char,
+        verbocity: ::std::os::raw::c_int
+    ) -> *mut clip_ctx,
+    clip_free(ctx: *mut clip_ctx) -> (),
+    llava_image_embed_make_with_bytes(
+        ctx_clip: *mut clip_ctx,
+        n_threads: ::std::os::raw::c_int,
+        image_bytes: *const ::std::os::raw::c_uchar,
+        image_bytes_length: ::std::os::raw::c_int
+    ) -> *mut llava_image_embed,
+    llava_image_embed_free(embed: *mut llava_image_embed) -> (),
+    llava_eval_image_embed(
+        ctx_llama: *mut llama_context,
+        embed: *const llava_image_embed,
+        n_batch: ::std::os::raw::c_int,
+        n_past: *mut ::std::os::raw::c_int
+    ) -> bool,
+);
+
+get_and_load_from_llama!(
     llama_load_model_from_file(
         path_model: *const ::std::os::raw::c_char,
         params: llama_model_params) -> *mut llama_model,
@@ -542,12 +580,6 @@ get_and_load!(
         start_rule_index: usize
     ) -> *mut llama_grammar,
     llama_grammar_copy(grammar: *const llama_grammar) -> *mut llama_grammar,
-    llava_eval_image_embed(
-        ctx_llama: *mut llama_context,
-        embed: *const llava_image_embed,
-        n_batch: ::std::os::raw::c_int,
-        n_past: *mut ::std::os::raw::c_int
-    ) -> bool,
     llama_get_timings(ctx: *mut llama_context) -> llama_timings,
     llama_reset_timings(ctx: *mut llama_context) -> (),
     llama_get_logits_ith(ctx: *mut llama_context, i: i32) -> *mut f32,
@@ -628,18 +660,6 @@ get_and_load!(
         p0: llama_pos,
         p1: llama_pos
     ) -> (),
-    clip_free(ctx: *mut clip_ctx) -> (),
-    llava_image_embed_make_with_bytes(
-        ctx_clip: *mut clip_ctx,
-        n_threads: ::std::os::raw::c_int,
-        image_bytes: *const ::std::os::raw::c_uchar,
-        image_bytes_length: ::std::os::raw::c_int
-    ) -> *mut llava_image_embed,
-    llava_image_embed_free(embed: *mut llava_image_embed) -> (),
-    clip_model_load(
-        fname: *const ::std::os::raw::c_char,
-        verbocity: ::std::os::raw::c_int
-    ) -> *mut clip_ctx,
     llama_supports_mlock() -> bool,
     llama_supports_mmap() -> bool,
     llama_max_devices() -> usize,

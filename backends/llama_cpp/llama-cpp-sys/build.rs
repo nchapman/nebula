@@ -45,7 +45,297 @@ mod common {
     }
 }
 
-mod linux {}
+#[cfg(feature = "build")]
+#[cfg(target_os = "linux")]
+mod linux {
+    lazy_static::lazy_static! {
+        static ref LLAMACPP_DIR: &'static str = "llama.cpp";
+        static ref CMAKE_TARGETS: &'static[&'static str] = &["llama", "llava"];
+        //TODO add debug variant
+        static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
+            "BUILD_SHARED_LIBS" => "on",
+            "LLAMA_NATIVE" => "off",
+            "LLAMA_OPENMP" => "off",
+            "LLAMA_SERVER_VERBOSE" => "off",
+            "CMAKE_BUILD_TYPE" => "Release"
+        };
+        static ref COMMON_CPU_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
+            "CMAKE_POSITION_INDEPENDENT_CODE" => "on"};
+        static ref ARCH: String = std::env::consts::ARCH.to_string();
+        static ref DIST_BASE: String = {
+            let dist_base = format!("../dist/linux-{}", std::env::consts::ARCH);
+            std::fs::create_dir_all(&dist_base).expect("can`t create dist directory");
+            dist_base
+        };
+
+        static ref CUDA_DIR: (Option<String>, Option<String>) = {
+            match std::env::var("CUDA_LIB_DIR"){
+                Err(_) => {
+                    match powershell_script::run("(get-command -ea 'silentlycontinue' nvcc).path"){
+                        Ok(path) => {
+                            let path = path.stdout().unwrap();
+                            let mut lib_path = std::path::PathBuf::from(path.clone());
+                            lib_path.pop();
+                            let mut include_path = std::path::PathBuf::from(path);
+                            include_path.pop();
+                            include_path.pop();
+                            (Some(lib_path.into_os_string().into_string().unwrap()), Some(include_path.into_os_string().into_string().unwrap()))
+                        }
+                        Err(_) => {
+                            (None, None)
+                        }
+                    }
+                }
+                Ok(cuda_lib_dir) => {
+                    (Some(cuda_lib_dir), None)
+                }
+            }
+        };
+
+        static ref CMAKE_CUDA_ARCHITECTURES: String = {
+            match std::env::var("CMAKE_CUDA_ARCHITECTURES"){
+                Ok(cmake_cuda_architectures) => cmake_cuda_architectures,
+                Err(_) => "50;52;61;70;75;80".to_string()
+            }
+        };
+    }
+
+    fn install(build_dir: &str, dist_dir: &str) {
+        println!("cargo:warning=Installing binaries from {build_dir} to dist dir {dist_dir}");
+        std::fs::create_dir_all(dist_dir).expect("can`t create dist directory");
+        for entry in
+            glob::glob(&format!("{build_dir}/**/*.so")).expect("Failed to read glob pattern")
+        {
+            if let Ok(path) = entry {
+                let path = path.into_os_string().into_string().unwrap();
+                println!("{path}");
+                std::process::Command::new("cp")
+                    .arg(path)
+                    .arg(dist_dir)
+                    .status()
+                    .expect("sign error");
+            }
+        }
+    }
+
+    fn build_cpu(
+        src_dir: &str,
+        dist_dir: &str,
+        cmake_defs: &std::collections::HashMap<&str, &str>,
+        targets: &[&str],
+    ) {
+        let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+            .iter()
+            .chain(
+                maplit::hashmap! {
+                    "LLAMA_AVX" => "off",
+                    "LLAMA_AVX2" => "off",
+                    "LLAMA_AVX512" => "off",
+                    "LLAMA_FMA" => "off",
+                    "LLAMA_F16C" => "off"
+                }
+                .iter()
+                .chain(cmake_defs.iter()),
+            )
+            .map(|(k, v)| (*k, *v))
+            .collect();
+        println!("cargo:warning=Building LCD CPU");
+        let build_dir = format!(
+            "{}/linux/{}/cpu",
+            std::env::var("OUT_DIR").expect("No out dir found"),
+            *ARCH
+        );
+        super::common::build(
+            src_dir,
+            &build_dir,
+            &cmake_defs,
+            &maplit::hashmap! {},
+            targets,
+        );
+        install(&build_dir, &format!("{dist_dir}/cpu"));
+    }
+
+    fn build_cpu_avx(
+        src_dir: &str,
+        dist_dir: &str,
+        cmake_defs: &std::collections::HashMap<&str, &str>,
+        targets: &[&str],
+    ) {
+        let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+            .iter()
+            .chain(
+                maplit::hashmap! {
+                    "LLAMA_AVX" => "on",
+                    "LLAMA_AVX2" => "off",
+                    "LLAMA_AVX512" => "off",
+                    "LLAMA_FMA" => "off",
+                    "LLAMA_F16C" => "off"
+                }
+                .iter()
+                .chain(cmake_defs.iter()),
+            )
+            .map(|(k, v)| (*k, *v))
+            .collect();
+        println!("cargo:warning=Building AVX CPU");
+        let build_dir = format!(
+            "{}/linux/{}/cpu_avx",
+            std::env::var("OUT_DIR").expect("No out dir found"),
+            *ARCH
+        );
+        super::common::build(
+            src_dir,
+            &build_dir,
+            &cmake_defs,
+            &maplit::hashmap! {},
+            targets,
+        );
+        install(&build_dir, &format!("{dist_dir}/cpu_avx"));
+    }
+
+    fn build_cpu_avx2(
+        src_dir: &str,
+        dist_dir: &str,
+        cmake_defs: &std::collections::HashMap<&str, &str>,
+        targets: &[&str],
+    ) {
+        let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+            .iter()
+            .chain(
+                maplit::hashmap! {
+                    "LLAMA_AVX" => "on",
+                    "LLAMA_AVX2" => "on",
+                    "LLAMA_AVX512" => "off",
+                    "LLAMA_FMA" => "on",
+                    "LLAMA_F16C" => "on"
+                }
+                .iter()
+                .chain(cmake_defs.iter()),
+            )
+            .map(|(k, v)| (*k, *v))
+            .collect();
+        println!("cargo:warning=Building AVX2 CPU");
+        let build_dir = format!(
+            "{}/linux/{}/cpu_avx2",
+            std::env::var("OUT_DIR").expect("No out dir found"),
+            *ARCH
+        );
+        super::common::build(
+            src_dir,
+            &build_dir,
+            &cmake_defs,
+            &maplit::hashmap! {},
+            targets,
+        );
+        install(&build_dir, &format!("{dist_dir}/cpu_avx2"));
+    }
+
+    fn build_cuda(
+        src_dir: &str,
+        dist_dir: &str,
+        _cmake_defs: &std::collections::HashMap<&str, &str>,
+        targets: &[&str],
+    ) {
+        if let (Some(cuda_lib_dir), Some(cuda_include_dir)) = &*CUDA_DIR {
+            let mut nvcc = std::path::PathBuf::from(cuda_lib_dir);
+            nvcc.push("nvcc.exe");
+            let nvcc = nvcc.into_os_string().into_string().unwrap();
+            let cuda_version = powershell_script::run(&format!(
+                "(get-item (\"{nvcc}\" | split-path | split-path)).Basename"
+            ))
+            .expect("can`t get cuda version")
+            .stdout()
+            .unwrap();
+            let cuda_version = cuda_version.trim();
+            let build_dir = format!(
+                "{}/linux/{}/cuda_{cuda_version}",
+                std::env::var("OUT_DIR").expect("No out dir found"),
+                *ARCH
+            );
+            let disst_dir = format!("{dist_dir}/cuda_{cuda_version}");
+            let cmake_defs: std::collections::HashMap<&str, &str> = CMAKE_DEFS
+                .iter()
+                .chain(
+                    maplit::hashmap! {
+                        "LLAMA_CUDA" => "ON",
+                        "LLAMA_AVX" => "on",
+                        "LLAMA_AVX2" => "off",
+                        "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
+                        "CMAKE_CUDA_FLAGS" => "-t8",
+                        "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES
+                    }
+                    .iter(),
+                )
+                .map(|(k, v)| (*k, *v))
+                .collect();
+            println!("cargo:warning=Building CUDA GPU");
+            super::common::build(
+                src_dir,
+                &build_dir,
+                &cmake_defs,
+                &maplit::hashmap! {},
+                targets,
+            )
+            .into_os_string()
+            .into_string()
+            .unwrap();
+            install(&build_dir, &disst_dir);
+            println!("copying CUDA dependencies to {dist_dir}");
+            for entry in glob::glob(&format!("{cuda_lib_dir}/cudart64_*.dll"))
+                .expect("Failed to read glob pattern")
+                .chain(
+                    glob::glob(&format!("{cuda_lib_dir}/cublas64_*.dll"))
+                        .expect("Failed to read glob pattern")
+                        .chain(
+                            glob::glob(&format!("{cuda_lib_dir}/cublasLt64_*.dll"))
+                                .expect("Failed to read glob pattern"),
+                        ),
+                )
+            {
+                if let Ok(path) = entry {
+                    println!("{}", path.display());
+                    let path = path.into_os_string().into_string().unwrap();
+                    println!("{}", path);
+                    powershell_script::run(&format!(
+                        "copy-item -Path \"{path}\" -Destination \"{dist_dir}\" -Force"
+                    ))
+                    .expect("sign error");
+                }
+            }
+        }
+    }
+
+    pub fn bbuild() {
+        build_cpu(
+            *super::common::LLAMACPP_DIR,
+            &format!("dist/linux/{}/", *ARCH),
+            &*super::common::CMAKE_DEFS,
+            *super::common::CMAKE_TARGETS,
+        );
+
+        if ::std::is_x86_feature_detected!("avx") {
+            build_cpu_avx(
+                *super::common::LLAMACPP_DIR,
+                &format!("dist/linux/{}/", *ARCH),
+                &*super::common::CMAKE_DEFS,
+                *super::common::CMAKE_TARGETS,
+            );
+        }
+        if ::std::is_x86_feature_detected!("avx2") {
+            build_cpu_avx2(
+                *super::common::LLAMACPP_DIR,
+                &format!("dist/linux/{}/", *ARCH),
+                &*super::common::CMAKE_DEFS,
+                *super::common::CMAKE_TARGETS,
+            );
+        }
+        build_cuda(
+            *super::common::LLAMACPP_DIR,
+            &format!("dist/linux/{}/", *ARCH),
+            &*super::common::CMAKE_DEFS,
+            *super::common::CMAKE_TARGETS,
+        );
+    }
+}
 
 #[cfg(feature = "build")]
 #[cfg(target_os = "macos")]
@@ -747,4 +1037,8 @@ fn main() {
     #[cfg(feature = "build")]
     #[cfg(target_os = "macos")]
     macos::bbuild();
+
+    #[cfg(feature = "build")]
+    #[cfg(target_os = "linux")]
+    linux::bbuild();
 }
