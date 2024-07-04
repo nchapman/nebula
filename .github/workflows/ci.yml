@@ -4,22 +4,27 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - develop
+      - main
+      - release
 
 jobs:
   test_nebula:
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.platform }}
 
     strategy:
       matrix:
         include:
           - build: linux
-            os: ubuntu-latest
+            platform: ubuntu-latest
 
           - build: macos
-            os: macos-latest
+            platform: macos-latest
 
           - build: windows
-            os: windows-latest
+            platform: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,10 +37,6 @@ jobs:
       #      - name: Pull LFS objects
       #        run: git lfs pull
 
-      - name: install macos intel arch
-        if: matrix.platform == 'macos-latest'
-        run: rustup target add x86_64-apple-darwin
-
       - name: Update local toolchain
         run: |
           rustup update --no-self-update
@@ -44,36 +45,17 @@ jobs:
         run: |
           cargo --version --verbose
           rustc --version
-      - name: Lint (non macos)
-        if: matrix.platform != 'macos-latest'
+      - name: Lint
         run: |
           #cd nebula
           #cargo fmt -- --check
           cargo clippy --features llama -- -D warnings
-      - name: Test (non macos)
-        if: matrix.platform != 'macos-latest'
+      - name: Test
         run: |
           #cd nebula
-          cargo test --features llama
-      - name: Build with llama (non macos)
-        if: matrix.platform != 'macos-latest'
-        run: |
-          #cd nebula
-          cargo build --release --features llama
-
-      - name: Lint (non macos)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          #cd nebula
-          #cargo fmt -- --check
-          cargo clippy --features llama --target x86_64-apple-darwin -- -D warnings
-      - name: Test (non macos)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          #cd nebula
-          cargo test --features llama --target x86_64-apple-darwin
-      - name: Build with llama (non macos)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          #cd nebula
-          cargo build --release --features llama --target x86_64-apple-darwin
+          cargo test --features llama -- --nocapture
+#      - name: Build with llama
+#        run: |
+#          #cd nebula
+#          cargo clean
+#          cargo build --release --features llama

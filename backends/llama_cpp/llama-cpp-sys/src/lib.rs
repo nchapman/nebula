@@ -192,7 +192,16 @@ struct MetalHandlers {}
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl MetalHandlers {
     pub fn new() -> Result<Self> {
-        Ok(Self {})
+        use objc2_metal::MTLDevice;
+        let device_name = unsafe {
+            let dd = objc2_metal::MTLCreateSystemDefaultDevice();
+            (&*dd).name().to_string()
+        };
+        if device_name == "Apple Paravirtual device" {
+            Err(crate::Error::MacParaVirtualDevice)
+        } else {
+            Ok(Self {})
+        }
     }
 
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
@@ -301,6 +310,7 @@ impl Handlers {
         log::debug!("{devices:#?}");
         let variants = self.available_variants();
         log::debug!("{variants:#?}");
+        let mut errs = vec![];
         for device in devices {
             let mut vars = device.variants(&variants);
             vars.sort_by(|a, b| {
@@ -370,18 +380,20 @@ impl Handlers {
                             return Ok((llama, llava));
                         }
                         Err(e) => {
-                            log::warn!("can`t load {}: {}`", dbg!(llava_p).display(), e);
+                            errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
+                            log::warn!("can`t load {}: {}`", llava_p.display(), e);
                             continue;
                         }
                     },
                     Err(e) => {
+                        errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
                         log::warn!("can`t load {}: {}`", llama_p.display(), e);
                         continue;
                     }
                 }
             }
         }
-        Err(Error::DependenciesLoading)
+        Err(Error::DependenciesLoading(errs))
     }
 }
 
@@ -462,6 +474,8 @@ pub enum Error {
     Unimplemented(&'static str, u32),
     #[error("")]
     NvMlLoad,
+    #[error("Apple Paravirtual Device")]
+    MacParaVirtualDevice,
     #[error("{0}")]
     NvMlInit_v2(i32),
     #[cfg(any(target_os = "windows", target_os = "linux"))]
@@ -485,7 +499,7 @@ pub enum Error {
     #[error("{0}")]
     Proc(#[from] procfs::ProcError),
     #[error("can`t load llama_cpp dependencies`")]
-    DependenciesLoading,
+    DependenciesLoading(Vec<String>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
