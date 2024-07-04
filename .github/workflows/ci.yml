@@ -18,7 +18,7 @@ jobs:
       matrix:
         include:
           - build: linux
-            os: ubuntu-latest
+            os: ubuntu-20.04
 
           - build: macos
             os: macos-latest
@@ -36,10 +36,6 @@ jobs:
 
       #      - name: Pull LFS objects
       #        run: git lfs pull
-
-      - name: install macos intel arch
-        if: matrix.platform == 'macos-latest'
-        run: rustup target add x86_64-apple-darwin
 
       - name: Update local toolchain
         run: |
