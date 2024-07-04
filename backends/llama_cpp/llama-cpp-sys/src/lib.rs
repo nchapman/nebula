@@ -194,7 +194,7 @@ impl MetalHandlers {
     pub fn new() -> Result<Self> {
         use objc2_metal::MTLDevice;
         let device_name = unsafe {
-            let dd = *objc2_metal::MTLCreateSystemDefaultDevice();
+            let dd = objc2_metal::MTLCreateSystemDefaultDevice();
             dd.name().to_string()
         };
         println!("device {:?}", device_name);
