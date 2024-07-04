@@ -5,6 +5,7 @@
 use std::fmt::{Debug, Formatter};
 
 mod cpu;
+#[cfg(any(target_os = "windows", target_os = "linux"))]
 mod cuda;
 
 #[derive(Default, Debug)]

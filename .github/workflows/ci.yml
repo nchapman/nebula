@@ -12,8 +12,8 @@ jobs:
     strategy:
       matrix:
         include:
-          #- build: linux
-          #  os: ubuntu-latest
+          - build: linux
+            os: ubuntu-latest
 
           - build: macos
             os: macos-latest
@@ -33,16 +33,16 @@ jobs:
         run: |
           cargo --version --verbose
           rustc --version
-          cargo clippy --version
-      #- name: Lint
-      #  run: |
-      #    #cd nebula
-      #    #cargo fmt -- --check
-      #   cargo clippy --features llama -- -D warnings
+          cargo clippy --features llama
+      - name: Lint
+        run: |
+          #cd nebula
+          #cargo fmt -- --check
+          cargo clippy --features llama -- -D warnings
       - name: Test
         run: |
           #cd nebula
-          cargo test --features llama no-metal
+          cargo test --features llama
       - name: Build with llama
         run: |
           #cd nebula

@@ -4,7 +4,7 @@ pub mod nvml;
 
 pub fn find_libs(name: &str, patterns: &[&str]) -> Vec<std::path::PathBuf> {
     log::debug!("Searching for GPU library {}", name);
-    #[cfg(windows)]
+    #[cfg(target_os = "windows")]
     return std::env::var("PATH")
         .unwrap_or_default()
         .split(";")
@@ -18,7 +18,7 @@ pub fn find_libs(name: &str, patterns: &[&str]) -> Vec<std::path::PathBuf> {
         .flatten()
         .filter_map(|p| p.ok())
         .collect();
-    #[cfg(linux)]
+    #[cfg(target_os = "linux")]
     return std::env::var("LD_LIBRARY_PATH")
         .unwrap_or_default()
         .split(":")
@@ -32,7 +32,7 @@ pub fn find_libs(name: &str, patterns: &[&str]) -> Vec<std::path::PathBuf> {
         .flatten()
         .filter_map(|p| p.ok())
         .collect();
-    #[cfg(not(any(windows, linux)))]
+    #[cfg(not(any(target_os = "windows", target_os = "linux")))]
     return patterns
         .iter()
         .map(|s| s.to_string())
