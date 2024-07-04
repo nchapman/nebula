@@ -310,6 +310,7 @@ impl Handlers {
         log::debug!("{devices:#?}");
         let variants = self.available_variants();
         log::debug!("{variants:#?}");
+        let mut errs = vec![];
         for device in devices {
             let mut vars = device.variants(&variants);
             vars.sort_by(|a, b| {
@@ -379,20 +380,20 @@ impl Handlers {
                             return Ok((llama, llava));
                         }
                         Err(e) => {
-                            println!("can`t load {}: {}`", llava_p.display(), e);
+                            errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
                             log::warn!("can`t load {}: {}`", llava_p.display(), e);
                             continue;
                         }
                     },
                     Err(e) => {
-                        println!("can`t load {}: {}`", llava_p.display(), e);
+                        errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
                         log::warn!("can`t load {}: {}`", llama_p.display(), e);
                         continue;
                     }
                 }
             }
         }
-        Err(Error::DependenciesLoading)
+        Err(Error::DependenciesLoading(errs))
     }
 }
 
@@ -498,7 +499,7 @@ pub enum Error {
     #[error("{0}")]
     Proc(#[from] procfs::ProcError),
     #[error("can`t load llama_cpp dependencies`")]
-    DependenciesLoading,
+    DependenciesLoading(Vec<String>),
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
