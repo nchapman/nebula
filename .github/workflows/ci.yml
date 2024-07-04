@@ -26,11 +26,15 @@ jobs:
           submodules: true
           lfs: true
 
-#      - name: Fetch LFS objects
-#        run: git lfs fetch --all
+      #      - name: Fetch LFS objects
+      #        run: git lfs fetch --all
 
-#      - name: Pull LFS objects
-#        run: git lfs pull
+      #      - name: Pull LFS objects
+      #        run: git lfs pull
+
+      - name: install macos intel arch
+        if: matrix.platform == 'macos-latest'
+        run: rustup target add x86_64-apple-darwin
 
       - name: Update local toolchain
         run: |
@@ -40,17 +44,36 @@ jobs:
         run: |
           cargo --version --verbose
           rustc --version
-          cargo clippy --features llama
-      - name: Lint
+      - name: Lint (non macos)
+        if: matrix.platform != 'macos-latest'
         run: |
           #cd nebula
           #cargo fmt -- --check
           cargo clippy --features llama -- -D warnings
-      - name: Test
+      - name: Test (non macos)
+        if: matrix.platform != 'macos-latest'
         run: |
           #cd nebula
           cargo test --features llama
-      - name: Build with llama
+      - name: Build with llama (non macos)
+        if: matrix.platform != 'macos-latest'
         run: |
           #cd nebula
           cargo build --release --features llama
+
+      - name: Lint (non macos)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          #cd nebula
+          #cargo fmt -- --check
+          cargo clippy --features llama --target universal-apple-darwin -- -D warnings
+      - name: Test (non macos)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          #cd nebula
+          cargo test --features llama --target universal-apple-darwin
+      - name: Build with llama (non macos)
+        if: matrix.platform == 'macos-latest'
+        run: |
+          #cd nebula
+          cargo build --release --features llama --target universal-apple-darwin
