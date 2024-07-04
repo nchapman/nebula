@@ -49,36 +49,16 @@ jobs:
         run: |
           cargo --version --verbose
           rustc --version
-      - name: Lint (non macos)
-        if: matrix.platform != 'macos-latest'
+      - name: Lint
         run: |
           #cd nebula
           #cargo fmt -- --check
           cargo clippy --features llama -- -D warnings
-      - name: Test (non macos)
-        if: matrix.platform != 'macos-latest'
+      - name: Test
         run: |
           #cd nebula
           cargo test --features llama
-      - name: Build with llama (non macos)
-        if: matrix.platform != 'macos-latest'
+      - name: Build with llama
         run: |
           #cd nebula
           cargo build --release --features llama
-
-      - name: Lint (non macos)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          #cd nebula
-          #cargo fmt -- --check
-          cargo clippy --features llama --target x86_64-apple-darwin -- -D warnings
-      - name: Test (non macos)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          #cd nebula
-          cargo test --features llama --target x86_64-apple-darwin
-      - name: Build with llama (non macos)
-        if: matrix.platform == 'macos-latest'
-        run: |
-          #cd nebula
-          cargo build --release --features llama --target x86_64-apple-darwin

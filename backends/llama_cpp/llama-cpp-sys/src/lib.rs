@@ -193,7 +193,7 @@ struct MetalHandlers {}
 impl MetalHandlers {
     pub fn new() -> Result<Self> {
         let device = unsafe { objc2_metal::MTLCreateSystemDefaultDevice() };
-        println!("device {:?}", device.name);
+        println!("device {:?}", device.name());
         Ok(Self {})
     }
 
