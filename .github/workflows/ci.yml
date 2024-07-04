@@ -66,14 +66,14 @@ jobs:
         run: |
           #cd nebula
           #cargo fmt -- --check
-          cargo clippy --features llama --target universal-apple-darwin -- -D warnings
+          cargo clippy --features llama --target x86_64-apple-darwin -- -D warnings
       - name: Test (non macos)
         if: matrix.platform == 'macos-latest'
         run: |
           #cd nebula
-          cargo test --features llama --target universal-apple-darwin
+          cargo test --features llama --target x86_64-apple-darwin
       - name: Build with llama (non macos)
         if: matrix.platform == 'macos-latest'
         run: |
           #cd nebula
-          cargo build --release --features llama --target universal-apple-darwin
+          cargo build --release --features llama --target x86_64-apple-darwin
