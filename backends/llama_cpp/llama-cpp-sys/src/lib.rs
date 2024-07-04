@@ -192,6 +192,8 @@ struct MetalHandlers {}
 #[cfg(all(target_os = "macos", target_arch = "aarch64"))]
 impl MetalHandlers {
     pub fn new() -> Result<Self> {
+        let device = unsafe { objc2_metal::MTLCreateSystemDefaultDevice() };
+        println!("device {:?}", device.name);
         Ok(Self {})
     }
 
