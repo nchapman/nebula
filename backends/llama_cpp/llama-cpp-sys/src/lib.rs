@@ -195,16 +195,6 @@ impl MetalHandlers {
         Ok(Self {})
     }
 
-    #[cfg(target_arch = "x86_64")]
-    pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
-        let mut cpu = DeviceInfo::default();
-        cpu.library = "cpu";
-        cpu.variant = CPUCapability::default();
-        cpu.memInfo = Self::get_mem();
-        vec![cpu]
-    }
-
-    #[cfg(target_arch = "aarch64")]
     pub fn get_devices_info(&self) -> Vec<DeviceInfo> {
         let mut gpu = DeviceInfo::default();
         gpu.library = "metal";
@@ -218,16 +208,6 @@ impl MetalHandlers {
             free: mm,
         };
         vec![gpu]
-    }
-
-    fn get_mem() -> MemInfo {
-        match cpu::get_mem() {
-            Ok(m) => m,
-            Err(e) => {
-                log::warn!("memory get failed: {e}");
-                MemInfo::default()
-            }
-        }
     }
 }
 
