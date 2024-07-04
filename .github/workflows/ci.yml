@@ -57,7 +57,7 @@ jobs:
       - name: Test
         run: |
           #cd nebula
-          cargo test --features llama
+          cargo test --features llama -- --nocapture
       - name: Build with llama
         run: |
           #cd nebula
