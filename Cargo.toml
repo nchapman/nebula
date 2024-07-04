@@ -74,10 +74,6 @@ name = "whisper_stream"
 required-features = ["whisper"]
 
 [[example]]
-name = "whisper_stream"
-required-features = ["whisper"]
-
-[[example]]
 name = "embeddings"
 required-features = ["embeddings"]
 
