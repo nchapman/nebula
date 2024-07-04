@@ -37,6 +37,10 @@ jobs:
       #      - name: Pull LFS objects
       #        run: git lfs pull
 
+      - name: install macos intel arch
+        if: matrix.platform == 'ubuntu-20.04'
+        run: apt update && apt -y upgrade
+
       - name: Update local toolchain
         run: |
           rustup update --no-self-update
