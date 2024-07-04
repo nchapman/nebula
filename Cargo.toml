@@ -72,3 +72,15 @@ required-features = ["whisper"]
 [[example]]
 name = "whisper_stream"
 required-features = ["whisper"]
+
+[[example]]
+name = "whisper_stream"
+required-features = ["whisper"]
+
+[[example]]
+name = "embeddings"
+required-features = ["embeddings"]
+
+[[example]]
+name = "text_to_speech"
+required-features = ["tts"]
