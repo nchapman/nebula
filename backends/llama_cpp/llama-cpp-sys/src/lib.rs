@@ -498,7 +498,7 @@ pub enum Error {
     #[cfg(target_os = "linux")]
     #[error("{0}")]
     Proc(#[from] procfs::ProcError),
-    #[error("can`t load llama_cpp dependencies`")]
+    #[error("can`t load llama_cpp dependencies {0:#?}")]
     DependenciesLoading(Vec<String>),
 }
 
