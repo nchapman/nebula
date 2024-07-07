@@ -207,6 +207,7 @@ impl Drop for Model {
 }
 
 #[cfg(test)]
+#[cfg(feature = "llama")]
 mod test {
     use std::{io::Read, path::PathBuf};
 
@@ -252,6 +253,7 @@ mod test {
 
     fn main_with_model(model_repo: &str, model_file_name: &str) {
         let test_model = TestModel::new(model_repo, model_file_name);
+        eprintln!("{}", test_model.filename.display());
         let model_options = super::options::ModelOptions::default();
         let prompt = "Write simple Rust programm.";
         let model = super::Model::new(test_model.filename.clone(), model_options);
@@ -284,7 +286,8 @@ mod test {
     //        model_test_llava_1_6_mistral_7b_gguf:
     //        ("cjpais/llava-1.6-mistral-7b-gguf",
         //        "llava-v1.6-mistral-7b.Q4_K_M.gguf"),
-        test: ("stabilityai/stable-code-instruct-3b","stable-code-3b-q4_k_m.gguf"),
+        //test: ("stabilityai/stable-code-instruct-3b","stable-code-3b-q4_k_m.gguf"),
+        test: ("TheBloke/evolvedSeeker_1_3-GGUF","evolvedseeker_1_3.Q2_K.gguf"),
         }
 
     fn _main_with_model_and_mmproj(
@@ -305,6 +308,7 @@ mod test {
         let model = model.unwrap();
         let ctx_options = super::options::ContextOptions::default();
         let ctx = model.context(ctx_options);
+
         assert!(ctx.is_ok());
         let mut ctx = ctx.unwrap();
 
@@ -387,20 +391,16 @@ pub struct TextToSpeechModel {
 impl TextToSpeechModel {
     pub fn new(options: options::TTSOptions) -> anyhow::Result<Self> {
         let backend = backend::init_text_to_speech_backend(options)?;
-        anyhow::Ok(Self { backend: Box::new(backend) })
+        anyhow::Ok(Self {
+            backend: Box::new(backend),
+        })
     }
 
-    pub fn train(
-        &mut self,
-        ref_samples: Vec<f32>,
-    ) -> anyhow::Result<()> {
+    pub fn train(&mut self, ref_samples: Vec<f32>) -> anyhow::Result<()> {
         anyhow::Ok(self.backend.train(ref_samples)?)
     }
 
-    pub fn predict(
-        &mut self,
-        text: String,
-    ) -> anyhow::Result<Vec<f32>> {
+    pub fn predict(&mut self, text: String) -> anyhow::Result<Vec<f32>> {
         anyhow::Ok(self.backend.predict(text)?)
     }
 }

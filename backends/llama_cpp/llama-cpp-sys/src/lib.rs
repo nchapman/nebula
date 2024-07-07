@@ -339,7 +339,6 @@ impl Handlers {
                 }
             });
             vars.reverse();
-            println!("{vars:#?}");
             log::debug!("{vars:#?}");
             let path_env = std::env::var("PATH").unwrap_or_default();
             std::env::set_var(
