@@ -41,6 +41,11 @@ jobs:
         run: |
           rustup update --no-self-update
           rustup component add clippy
+
+      - name: install dependencies (ubuntu only)
+        if: matrix.platform == 'ubuntu-latest'
+        run: rustup target add x86_64-unknown-linux-musl
+
       - name: Toolchain info
         run: |
           cargo --version --verbose
@@ -54,8 +59,8 @@ jobs:
         run: |
           #cd nebula
           cargo test --features llama -- --nocapture
-#      - name: Build with llama
-#        run: |
-#          #cd nebula
-#          cargo clean
-#          cargo build --release --features llama
+      - name: Build with llama
+        run: |
+          #cd nebula
+          cargo clean
+          cargo build --terget x86_64-unknown-linux-musl --release --features llama
