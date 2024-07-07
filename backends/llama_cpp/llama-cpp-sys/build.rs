@@ -986,13 +986,19 @@ mod windows {
 }
 
 fn main() {
-    if !Path::new("llama.cpp/ggml.c").exists() {
+    if !Path::new("llama.cpp/ggml/src/ggml.c").exists() {
         panic!("llama.cpp seems to not be populated, try running `git submodule update --init --recursive` to init.")
     }
 
     let bindings = bindgen::builder()
-        .clang_args(&["-x", "c++", "-std=c++11", "-I./llama.cpp"])
-        .header("llama.cpp/llama.h")
+        .clang_args(&[
+            "-x",
+            "c++",
+            "-std=c++11",
+            "-I./llama.cpp/include",
+            "-I./llama.cpp/ggml/include",
+        ])
+        .header("llama.cpp/include/llama.h")
         .header("llama.cpp/examples/llava/clip.h")
         .header("llama.cpp/examples/llava/llava.h")
         //        .allowlist_function("llama_load_model_from_file")
@@ -1010,7 +1016,7 @@ fn main() {
         .allowlist_type("llama_token_data_array")
         .allowlist_type("llama_token")
         .allowlist_type("llama_vocab_type")
-        .allowlist_type("llama_token_type")
+        .allowlist_type("llama_token_attr")
         .allowlist_type("llama_model")
         .allowlist_type("llama_model_params")
         .allowlist_type("clip_ctx")

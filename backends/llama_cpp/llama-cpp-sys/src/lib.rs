@@ -568,7 +568,7 @@ get_and_load_from_llama!(
         n_tokens_max: i32,
         add_special: bool,
         parse_special: bool) -> i32,
-    llama_token_get_type(model: *const llama_model, token: llama_token) -> llama_token_type,
+    llama_token_get_attr(model: *const llama_model, token: llama_token) -> llama_token_attr,
     llama_token_nl(model: *const llama_model) -> llama_token,
     llama_token_eos(model: *const llama_model) -> llama_token,
     llama_token_bos(model: *const llama_model) -> llama_token,

@@ -202,7 +202,7 @@ impl LlamaModel {
     #[must_use]
     pub fn token_type(&self, LlamaToken(id): LlamaToken) -> LlamaTokenType {
         let token_type =
-            unsafe { llama_cpp_sys::llama_token_get_type(self.model.model.as_ptr(), id) };
+            unsafe { llama_cpp_sys::llama_token_get_attr(self.model.model.as_ptr(), id) };
         LlamaTokenType::try_from(token_type).expect("token type is valid")
     }
 

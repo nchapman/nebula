@@ -6,19 +6,19 @@
 #[allow(clippy::module_name_repetitions)]
 pub enum LlamaTokenType {
     /// An undefined token type.
-    Undefined = llama_cpp_sys::LLAMA_TOKEN_TYPE_UNDEFINED as _,
+    Undefined = llama_cpp_sys::LLAMA_TOKEN_ATTR_UNDEFINED as _,
     /// A normal token type.
-    Normal = llama_cpp_sys::LLAMA_TOKEN_TYPE_NORMAL as _,
+    Normal = llama_cpp_sys::LLAMA_TOKEN_ATTR_NORMAL as _,
     /// An unknown token type.
-    Unknown = llama_cpp_sys::LLAMA_TOKEN_TYPE_UNKNOWN as _,
+    Unknown = llama_cpp_sys::LLAMA_TOKEN_ATTR_UNKNOWN as _,
     /// A control token type.
-    Control = llama_cpp_sys::LLAMA_TOKEN_TYPE_CONTROL as _,
+    Control = llama_cpp_sys::LLAMA_TOKEN_ATTR_CONTROL as _,
     /// A user defined token type.
-    UserDefined = llama_cpp_sys::LLAMA_TOKEN_TYPE_USER_DEFINED as _,
+    UserDefined = llama_cpp_sys::LLAMA_TOKEN_ATTR_USER_DEFINED as _,
     /// An unused token type.
-    Unused = llama_cpp_sys::LLAMA_TOKEN_TYPE_UNUSED as _,
+    Unused = llama_cpp_sys::LLAMA_TOKEN_ATTR_UNUSED as _,
     /// A byte token type.
-    Byte = llama_cpp_sys::LLAMA_TOKEN_TYPE_BYTE as _,
+    Byte = llama_cpp_sys::LLAMA_TOKEN_ATTR_BYTE as _,
 }
 
 /// A safe wrapper for converting potentially deceptive `llama_token_type` values into
@@ -40,18 +40,18 @@ pub enum LlamaTokenType {
 /// assert_eq!(Err(LlamaTokenTypeFromIntError::UnknownValue(100)), bad_llama_token_type);
 /// # Ok(())
 /// # }
-impl TryFrom<llama_cpp_sys::llama_token_type> for LlamaTokenType {
+impl TryFrom<llama_cpp_sys::llama_token_attr> for LlamaTokenType {
     type Error = LlamaTokenTypeFromIntError;
 
     fn try_from(value: llama_cpp_sys::llama_vocab_type) -> Result<Self, Self::Error> {
         match value {
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_UNDEFINED => Ok(LlamaTokenType::Undefined),
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_NORMAL => Ok(LlamaTokenType::Normal),
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_UNKNOWN => Ok(LlamaTokenType::Unknown),
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_CONTROL => Ok(LlamaTokenType::Control),
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_USER_DEFINED => Ok(LlamaTokenType::UserDefined),
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_UNUSED => Ok(LlamaTokenType::Unused),
-            llama_cpp_sys::LLAMA_TOKEN_TYPE_BYTE => Ok(LlamaTokenType::Byte),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_UNDEFINED => Ok(LlamaTokenType::Undefined),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_NORMAL => Ok(LlamaTokenType::Normal),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_UNKNOWN => Ok(LlamaTokenType::Unknown),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_CONTROL => Ok(LlamaTokenType::Control),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_USER_DEFINED => Ok(LlamaTokenType::UserDefined),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_UNUSED => Ok(LlamaTokenType::Unused),
+            llama_cpp_sys::LLAMA_TOKEN_ATTR_BYTE => Ok(LlamaTokenType::Byte),
             _ => Err(LlamaTokenTypeFromIntError::UnknownValue(value as _)),
         }
     }
