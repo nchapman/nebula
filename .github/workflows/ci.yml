@@ -59,7 +59,14 @@ jobs:
         run: |
           #cd nebula
           cargo test --features llama -- --nocapture
-      - name: Build with llama
+      - name: Build with llama (non linux)
+        if: matrix.platform != 'ubuntu-latest'
+        run: |
+          #cd nebula
+          cargo clean
+          cargo build --release --features llama
+      - name: Build with llama (non linux)
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           #cd nebula
           cargo clean
