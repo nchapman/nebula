@@ -93,13 +93,17 @@ impl LlamaContext {
         let result = unsafe {
             llama_cpp_sys::llama_decode(self.context.context.as_ptr(), batch.llama_batch)
         };
-
+        eprintln!("22");
         match NonZeroI32::new(result) {
             None => {
+                eprintln!("23");
                 self.initialized_logits = batch.initialized_logits.clone();
                 Ok(())
             }
-            Some(error) => Err(DecodeError::from(error)),
+            Some(error) => {
+                eprintln!("24");
+                Err(DecodeError::from(error))
+            }
         }
     }
 
