@@ -340,23 +340,40 @@ impl Handlers {
             });
             vars.reverse();
             log::debug!("{vars:#?}");
-            let path_env = std::env::var("PATH").unwrap_or_default();
-            std::env::set_var(
-                "PATH",
-                path_env
-                    + ";"
-                    + &DEPENDENCIES_BASE_PATH
-                        .clone()
-                        .into_os_string()
-                        .into_string()
-                        .unwrap_or_default(),
-            );
+            #[cfg(target_os = "windows")]
+            {
+                let path_env = std::env::var("PATH").unwrap_or_default();
+                std::env::set_var(
+                    "PATH",
+                    path_env
+                        + ";"
+                        + &DEPENDENCIES_BASE_PATH
+                            .clone()
+                            .into_os_string()
+                            .into_string()
+                            .unwrap_or_default(),
+                );
+            }
             for v in vars {
                 let mut bp = DEPENDENCIES_BASE_PATH.clone();
                 if v.variant.is_empty() {
                     bp.push(v.library.clone());
                 } else {
                     bp.push(v.library.clone() + "_" + v.variant.as_str());
+                }
+                #[cfg(target_os = "linux")]
+                {
+                    let path_env = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
+                    std::env::set_var(
+                        "LD_LIBRARY_PATH",
+                        path_env
+                            + ":"
+                            + &bp
+                                .clone()
+                                .into_os_string()
+                                .into_string()
+                                .unwrap_or_default(),
+                    );
                 }
                 let mut llama_p = bp.clone();
                 #[cfg(target_os = "windows")]
