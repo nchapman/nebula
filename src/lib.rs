@@ -258,24 +258,16 @@ mod test {
         let prompt = "Write simple Rust programm.";
         let model = super::Model::new(test_model.filename.clone(), model_options);
         assert!(model.is_ok());
-        eprintln!("sdsd");
         let model = model.unwrap();
-        eprintln!("sdsd");
         let ctx_options = super::options::ContextOptions::default();
-        eprintln!("sdsd");
         let ctx = model.context(ctx_options);
-        eprintln!("sdsd");
         assert!(ctx.is_ok());
         let mut ctx = ctx.unwrap();
-        eprintln!("prev");
         let eval_res = ctx.eval_str(&prompt, true);
-        eprintln!("pust");
         assert!(eval_res.is_ok());
         let answer = ctx.predict().predict();
-        eprintln!("sdsd");
         assert!(answer.is_ok());
         let answer = answer.unwrap();
-        eprintln!("sdsd");
         println!("{answer}");
     }
 
