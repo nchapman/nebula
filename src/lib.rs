@@ -267,9 +267,9 @@ mod test {
         eprintln!("sdsd");
         assert!(ctx.is_ok());
         let mut ctx = ctx.unwrap();
-        eprintln!("sdsd");
+        eprintln!("prev");
         let eval_res = ctx.eval_str(&prompt, true);
-        eprintln!("sdsd");
+        eprintln!("pust");
         assert!(eval_res.is_ok());
         let answer = ctx.predict().predict();
         eprintln!("sdsd");
