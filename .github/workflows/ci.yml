@@ -20,11 +20,11 @@ jobs:
           - build: linux
             platform: ubuntu-latest
 
-          - build: macos
-            platform: macos-latest
+          # - build: macos
+          #   platform: macos-latest
 
-          - build: windows
-            platform: windows-latest
+          # - build: windows
+          #   platform: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
