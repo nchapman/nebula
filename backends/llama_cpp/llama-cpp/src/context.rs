@@ -93,17 +93,12 @@ impl LlamaContext {
         let result = unsafe {
             llama_cpp_sys::llama_decode(self.context.context.as_ptr(), batch.llama_batch)
         };
-        eprintln!("22");
         match NonZeroI32::new(result) {
             None => {
-                eprintln!("23");
                 self.initialized_logits = batch.initialized_logits.clone();
                 Ok(())
             }
-            Some(error) => {
-                eprintln!("24");
-                Err(DecodeError::from(error))
-            }
+            Some(error) => Err(DecodeError::from(error)),
         }
     }
 
@@ -238,20 +233,19 @@ impl LlamaContext {
         n_curr: &mut i32,
     ) -> Result<i32, DecodeError> {
         let tokens = self.model.str_to_token(string, add_bos)?;
-        eprintln!("1");
-        tokens.chunks(batch).into_iter().try_fold(0, |_acc, ch| {
+        let mut rr = 0;
+        for chunk in tokens.chunks(batch).into_iter() {
             let mut batch = LlamaBatch::new(batch, 1);
-            let last_index = ch.len() - 1;
-            ch.into_iter().enumerate().try_for_each(|(i, t)| {
+            let last_index = chunk.len() - 1;
+            chunk.into_iter().enumerate().try_for_each(|(i, t)| {
                 batch.add(t.clone(), *n_curr, &[0], i == last_index)?;
                 *n_curr += 1;
                 Ok::<(), DecodeError>(())
             })?;
-            eprintln!("2");
             self.decode(&mut batch)?;
-            eprintln!("3");
-            Ok::<_, DecodeError>(batch.n_tokens() - 1)
-        })
+            rr = batch.n_tokens() - 1;
+        }
+        Ok(rr)
     }
 
     pub fn eval_embed_image(
