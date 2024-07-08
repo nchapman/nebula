@@ -797,6 +797,7 @@ mod windows {
             .iter()
             .chain(
                 maplit::hashmap! {
+                    "CMAKE_SYSTEM_PROCESSOR" => "x64",
                     "GGML_AVX" => "off",
                     "GGML_AVX2" => "off",
                     "GGML_AVX512" => "off",
@@ -829,6 +830,7 @@ mod windows {
             .iter()
             .chain(
                 maplit::hashmap! {
+                    "CMAKE_SYSTEM_PROCESSOR" => "x64",
                     "GGML_AVX" => "on",
                     "GGML_AVX2" => "off",
                     "GGML_AVX512" => "off",
@@ -861,6 +863,7 @@ mod windows {
             .iter()
             .chain(
                 maplit::hashmap! {
+                    "CMAKE_SYSTEM_PROCESSOR" => "x64",
                     "GGML_AVX" => "on",
                     "GGML_AVX2" => "on",
                     "GGML_AVX512" => "off",
@@ -910,6 +913,7 @@ mod windows {
                 .iter()
                 .chain(
                     maplit::hashmap! {
+                        "CMAKE_SYSTEM_PROCESSOR" => "x64",
                         "GGML_CUDA" => "ON",
                         "GGML_AVX" => "on",
                         "GGML_AVX2" => "off",
