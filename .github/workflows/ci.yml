@@ -12,19 +12,25 @@ on:
 
 jobs:
   test_nebula:
-    runs-on: ${{ matrix.platform }}
+    #runs-on: ${{ matrix.platform }}
 
     strategy:
       matrix:
-        include:
-          - build: linux
-            platform: ubuntu-latest
+        cuda-version:
+          - '11.8.0'
+    runs-on: linux
+    container: nvidia/cuda:11.8.0-devel-ubuntu22.04
+    # strategy:
+    #   matrix:
+    #     include:
+    #       - build: linux
+    #         platform: ubuntu-latest
 
-          # - build: macos
-          #   platform: macos-latest
+    #       # - build: macos
+    #       #   platform: macos-latest
 
-          # - build: windows
-          #   platform: windows-latest
+    #       # - build: windows
+    #       #   platform: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
