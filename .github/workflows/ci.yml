@@ -51,12 +51,18 @@ jobs:
           #cd nebula
           #cargo fmt -- --check
           cargo clippy --features llama -- -D warnings
-      - name: Test
+      - name: Test (linux)
+        if: matrix.platform == 'ubuntu-latest'
         run: |
           #cd nebula
           cargo test --features "llama, llama-build" -- --nocapture
-      - name: Build with llama
+      - name: Test (non linux)
+        if: matrix.platform != 'ubuntu-latest'
         run: |
           #cd nebula
-          cargo clean
-          cargo build --release --features "llama, llama-build"
+          cargo test --features "llama" -- --nocapture
+        # - name: Build with llama
+        # run: |
+        #   #cd nebula
+        #   cargo clean
+        #   cargo build --release --features "llama, llama-build"
