@@ -41,7 +41,8 @@ mod common {
         for t in targets {
             dd = dd.build_target(t);
         }
-        dd.build()
+        dd.very_verbose(true)
+            .build()
     }
 }
 
@@ -54,8 +55,8 @@ mod linux {
         //TODO add debug variant
         static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "BUILD_SHARED_LIBS" => "on",
-            "LLAMA_NATIVE" => "off",
-            "LLAMA_OPENMP" => "off",
+            "GGML_NATIVE" => "off",
+            "GGML_OPENMP" => "off",
             "LLAMA_SERVER_VERBOSE" => "off",
             "CMAKE_BUILD_TYPE" => "Release"
         };
@@ -128,11 +129,11 @@ mod linux {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "LLAMA_AVX" => "off",
-                    "LLAMA_AVX2" => "off",
-                    "LLAMA_AVX512" => "off",
-                    "LLAMA_FMA" => "off",
-                    "LLAMA_F16C" => "off"
+                    "GGML_AVX" => "off",
+                    "GGML_AVX2" => "off",
+                    "GGML_AVX512" => "off",
+                    "GGML_FMA" => "off",
+                    "GGML_F16C" => "off"
                 }
                 .iter()
                 .chain(cmake_defs.iter()),
@@ -165,11 +166,11 @@ mod linux {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "LLAMA_AVX" => "on",
-                    "LLAMA_AVX2" => "off",
-                    "LLAMA_AVX512" => "off",
-                    "LLAMA_FMA" => "off",
-                    "LLAMA_F16C" => "off"
+                    "GGML_AVX" => "on",
+                    "GGML_AVX2" => "off",
+                    "GGML_AVX512" => "off",
+                    "GGML_FMA" => "off",
+                    "GGML_F16C" => "off"
                 }
                 .iter()
                 .chain(cmake_defs.iter()),
@@ -202,11 +203,11 @@ mod linux {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "LLAMA_AVX" => "on",
-                    "LLAMA_AVX2" => "on",
-                    "LLAMA_AVX512" => "off",
-                    "LLAMA_FMA" => "on",
-                    "LLAMA_F16C" => "on"
+                    "GGML_AVX" => "on",
+                    "GGML_AVX2" => "on",
+                    "GGML_AVX512" => "off",
+                    "GGML_FMA" => "on",
+                    "GGML_F16C" => "on"
                 }
                 .iter()
                 .chain(cmake_defs.iter()),
@@ -256,9 +257,9 @@ mod linux {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "LLAMA_CUDA" => "ON",
-                        "LLAMA_AVX" => "on",
-                        "LLAMA_AVX2" => "off",
+                        "GGML_CUDA" => "ON",
+                        "GGML_AVX" => "on",
+                        "GGML_AVX2" => "off",
                         "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
                         "CMAKE_CUDA_FLAGS" => "-t8",
                         "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES
@@ -344,10 +345,10 @@ mod macos {
     lazy_static::lazy_static! {
         static ref COMMON_DARWIN_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "CMAKE_OSX_DEPLOYMENT_TARGET" => "11.3",
-            "LLAMA_METAL_MACOSX_VERSION_MIN" => "11.3",
+            "GGML_METAL_MACOSX_VERSION_MIN" => "11.3",
             "CMAKE_SYSTEM_NAME" => "Darwin",
-            "LLAMA_METAL_EMBED_LIBRARY" => "on",
-            "LLAMA_OPENMP" => "off"
+            "GGML_METAL_EMBED_LIBRARY" => "on",
+            "GGML_OPENMP" => "off"
         };
 
         static ref APPLE_IDENTITY: Option<String> = None;
@@ -404,8 +405,8 @@ mod macos {
                     maplit::hashmap!{
                         "CMAKE_SYSTEM_PROCESSOR" => "x86_64",
                         "CMAKE_OSX_ARCHITECTURES" => "x86_64",
-                        "LLAMA_METAL" => "off",
-                        "LLAMA_NATIVE" => "off"
+                        "GGML_METAL" => "off",
+                        "GGML_NATIVE" => "off"
                     }.iter())
                 .map(|(k, v)| (*k, *v))
                 .collect();
@@ -421,13 +422,13 @@ mod macos {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "LLAMA_ACCELERATE" => "off",
-                        "LLAMA_BLAS" => "off",
-                        "LLAMA_AVX" => "off",
-                        "LLAMA_AVX2" => "off",
-                        "LLAMA_AVX512" => "off",
-                        "LLAMA_FMA" => "off",
-                        "LLAMA_F16C" => "off"
+                        "GGML_ACCELERATE" => "off",
+                        "GGML_BLAS" => "off",
+                        "GGML_AVX" => "off",
+                        "GGML_AVX2" => "off",
+                        "GGML_AVX512" => "off",
+                        "GGML_FMA" => "off",
+                        "GGML_F16C" => "off"
                     }
                     .iter()
                     .chain(super::super::common::CMAKE_DEFS.iter()),
@@ -455,13 +456,13 @@ mod macos {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "LLAMA_ACCELERATE" => "off",
-                        "LLAMA_BLAS" => "off",
-                        "LLAMA_AVX" => "on",
-                        "LLAMA_AVX2" => "off",
-                        "LLAMA_AVX512" => "off",
-                        "LLAMA_FMA" => "off",
-                        "LLAMA_F16C" => "off"
+                        "GGML_ACCELERATE" => "off",
+                        "GGML_BLAS" => "off",
+                        "GGML_AVX" => "on",
+                        "GGML_AVX2" => "off",
+                        "GGML_AVX512" => "off",
+                        "GGML_FMA" => "off",
+                        "GGML_F16C" => "off"
                     }
                     .iter()
                     .chain(cmake_defs.iter()),
@@ -489,13 +490,13 @@ mod macos {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "LLAMA_ACCELERATE" => "on",
-                        "LLAMA_BLAS" => "off",
-                        "LLAMA_AVX" => "on",
-                        "LLAMA_AVX2" => "on",
-                        "LLAMA_AVX512" => "off",
-                        "LLAMA_FMA" => "on",
-                        "LLAMA_F16C" => "on",
+                        "GGML_ACCELERATE" => "on",
+                        "GGML_BLAS" => "off",
+                        "GGML_AVX" => "on",
+                        "GGML_AVX2" => "on",
+                        "GGML_AVX512" => "off",
+                        "GGML_FMA" => "on",
+                        "GGML_F16C" => "on",
                         "-framework Accelerate" => "",
                         "-framework Foundation" => ""
                     }
@@ -556,18 +557,18 @@ mod macos {
         ) {
             let cmake_defs: std::collections::HashMap<&str, &str> = maplit::hashmap! {
                 "CMAKE_OSX_DEPLOYMENT_TARGET" => "11.3",
-                "LLAMA_BLAS" => "off",
+                "GGML_BLAS" => "off",
                 "CMAKE_SYSTEM_NAME" => "Darwin",
                 "BUILD_SHARED_LIBS" => "off",
                 "CMAKE_SYSTEM_PROCESSOR" => *ARCH,
                 "CMAKE_OSX_ARCHITECTURES" => *ARCH,
-                "LLAMA_METAL" => "off",
-                "LLAMA_ACCELERATE" => "on",
-                "LLAMA_AVX" => "off",
-                "LLAMA_AVX2" => "off",
-                "LLAMA_AVX512" => "off",
-                "LLAMA_FMA" => "off",
-                "LLAMA_F16C" => "off"
+                "GGML_METAL" => "off",
+                "GGML_ACCELERATE" => "on",
+                "GGML_AVX" => "off",
+                "GGML_AVX2" => "off",
+                "GGML_AVX512" => "off",
+                "GGML_FMA" => "off",
+                "GGML_F16C" => "off"
             }
             .iter()
             .chain(super::super::common::CMAKE_DEFS.iter())
@@ -602,10 +603,10 @@ mod macos {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "LLAMA_ACCELERATE" => "on",
+                        "GGML_ACCELERATE" => "on",
                         "CMAKE_SYSTEM_PROCESSOR" => *ARCH,
                         "CMAKE_OSX_ARCHITECTURES" => *ARCH,
-                        "LLAMA_METAL" => "on",
+                        "GGML_METAL" => "on",
                     }
                     .iter()
                     .chain(super::super::common::CMAKE_DEFS.iter()),
@@ -665,8 +666,8 @@ mod windows {
         //TODO add debug variant
         static ref CMAKE_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "BUILD_SHARED_LIBS" => "on",
-            "LLAMA_NATIVE" => "off",
-            "LLAMA_OPENMP" => "off",
+            "GGML_NATIVE" => "off",
+            "GGML_OPENMP" => "off",
             "LLAMA_SERVER_VERBOSE" => "off",
             "CMAKE_BUILD_TYPE" => "Release"
         };
@@ -796,11 +797,11 @@ mod windows {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "LLAMA_AVX" => "off",
-                    "LLAMA_AVX2" => "off",
-                    "LLAMA_AVX512" => "off",
-                    "LLAMA_FMA" => "off",
-                    "LLAMA_F16C" => "off"
+                    "GGML_AVX" => "off",
+                    "GGML_AVX2" => "off",
+                    "GGML_AVX512" => "off",
+                    "GGML_FMA" => "off",
+                    "GGML_F16C" => "off"
                 }
                 .iter()
                 .chain(cmake_defs.iter()),
@@ -828,11 +829,11 @@ mod windows {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "LLAMA_AVX" => "on",
-                    "LLAMA_AVX2" => "off",
-                    "LLAMA_AVX512" => "off",
-                    "LLAMA_FMA" => "off",
-                    "LLAMA_F16C" => "off"
+                    "GGML_AVX" => "on",
+                    "GGML_AVX2" => "off",
+                    "GGML_AVX512" => "off",
+                    "GGML_FMA" => "off",
+                    "GGML_F16C" => "off"
                 }
                 .iter()
                 .chain(cmake_defs.iter()),
@@ -860,11 +861,11 @@ mod windows {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "LLAMA_AVX" => "on",
-                    "LLAMA_AVX2" => "on",
-                    "LLAMA_AVX512" => "off",
-                    "LLAMA_FMA" => "on",
-                    "LLAMA_F16C" => "on"
+                    "GGML_AVX" => "on",
+                    "GGML_AVX2" => "on",
+                    "GGML_AVX512" => "off",
+                    "GGML_FMA" => "on",
+                    "GGML_F16C" => "on"
                 }
                 .iter()
                 .chain(cmake_defs.iter()),
@@ -909,9 +910,9 @@ mod windows {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "LLAMA_CUDA" => "ON",
-                        "LLAMA_AVX" => "on",
-                        "LLAMA_AVX2" => "off",
+                        "GGML_CUDA" => "ON",
+                        "GGML_AVX" => "on",
+                        "GGML_AVX2" => "off",
                         "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
                         "CMAKE_CUDA_FLAGS" => "-t8",
                         "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES
