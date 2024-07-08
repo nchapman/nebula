@@ -305,7 +305,13 @@ impl Handlers {
         }
     }
 
-    pub fn llama_cpp(&self) -> Result<(libloading::Library, libloading::Library)> {
+    pub fn llama_cpp(
+        &self,
+    ) -> Result<(
+        libloading::Library,
+        libloading::Library,
+        libloading::Library,
+    )> {
         let devices = self.get_devices_info();
         log::debug!("{devices:#?}");
         let variants = self.available_variants();
@@ -361,20 +367,13 @@ impl Handlers {
                 } else {
                     bp.push(v.library.clone() + "_" + v.variant.as_str());
                 }
+                let mut ggml_p = bp.clone();
+                #[cfg(target_os = "windows")]
+                ggml_p.push("ggml_shared.dll");
+                #[cfg(target_os = "macos")]
+                ggml_p.push("libllama.dylib");
                 #[cfg(target_os = "linux")]
-                {
-                    let path_env = std::env::var("LD_LIBRARY_PATH").unwrap_or_default();
-                    std::env::set_var(
-                        "LD_LIBRARY_PATH",
-                        path_env
-                            + ":"
-                            + &bp
-                                .clone()
-                                .into_os_string()
-                                .into_string()
-                                .unwrap_or_default(),
-                    );
-                }
+                ggml_p.push("libggml.so");
                 let mut llama_p = bp.clone();
                 #[cfg(target_os = "windows")]
                 llama_p.push("llama.dll");
@@ -389,21 +388,28 @@ impl Handlers {
                 llava_p.push("libllava_shared.dylib");
                 #[cfg(target_os = "linux")]
                 llava_p.push("libllava_shared.so");
-                match unsafe { libloading::Library::new(llama_p.clone()) } {
-                    Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
-                        Ok(llava) => {
-                            log::debug!("variant {v} loaded successfully");
-                            return Ok((llama, llava));
-                        }
+                match unsafe { libloading::Library::new(ggml_p.clone()) } {
+                    Ok(ggml) => match unsafe { libloading::Library::new(llama_p.clone()) } {
+                        Ok(llama) => match unsafe { libloading::Library::new(llava_p.clone()) } {
+                            Ok(llava) => {
+                                log::debug!("variant {v} loaded successfully");
+                                return Ok((llama, llava, ggml));
+                            }
+                            Err(e) => {
+                                errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
+                                log::warn!("can`t load {}: {}`", llava_p.display(), e);
+                                continue;
+                            }
+                        },
                         Err(e) => {
-                            errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
-                            log::warn!("can`t load {}: {}`", llava_p.display(), e);
+                            errs.push(format!("can`t load {}: {}`", llama_p.display(), e));
+                            log::warn!("can`t load {}: {}`", llama_p.display(), e);
                             continue;
                         }
                     },
                     Err(e) => {
-                        errs.push(format!("can`t load {}: {}`", llava_p.display(), e));
-                        log::warn!("can`t load {}: {}`", llama_p.display(), e);
+                        errs.push(format!("can`t load {}: {}`", ggml_p.display(), e));
+                        log::warn!("can`t load {}: {}`", ggml_p.display(), e);
                         continue;
                     }
                 }
@@ -431,6 +437,7 @@ mod test {
 
 struct LlamaCppLibs {
     pub llama_cpp: libloading::Library,
+    pub _ggml: libloading::Library,
     pub llava: libloading::Library,
 }
 
@@ -470,6 +477,7 @@ lazy_static::lazy_static! {
                 match h.llama_cpp(){
                     Ok(s) => LlamaCppLibs{
                         llama_cpp: s.0,
+                        _ggml: s.2,
                         llava: s.1
                     },
                     Err(e) => panic!("can`t load dependencies: {e}")
