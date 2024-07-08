@@ -911,7 +911,7 @@ mod windows {
                 .chain(
                     maplit::hashmap! {
                         "-A" => "",
-                        "x64" => ""
+                        "x64" => "",
                         "GGML_CUDA" => "ON",
                         "GGML_AVX" => "on",
                         "GGML_AVX2" => "off",
