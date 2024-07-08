@@ -371,7 +371,7 @@ impl Handlers {
                 #[cfg(target_os = "windows")]
                 ggml_p.push("ggml_shared.dll");
                 #[cfg(target_os = "macos")]
-                ggml_p.push("libllama.dylib");
+                ggml_p.push("libggml.dylib");
                 #[cfg(target_os = "linux")]
                 ggml_p.push("libggml.so");
                 let mut llama_p = bp.clone();
