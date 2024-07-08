@@ -20,11 +20,11 @@ jobs:
           - build: linux
             platform: ubuntu-latest
 
-          # - build: macos
-          #   platform: macos-latest
+          - build: macos
+            platform: macos-latest
 
-          # - build: windows
-          #   platform: windows-latest
+          - build: windows
+            platform: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,4 +59,4 @@ jobs:
         run: |
           #cd nebula
           cargo clean
-          cargo build --release --features llama
+          cargo build --release --features "llama, llama-build"
