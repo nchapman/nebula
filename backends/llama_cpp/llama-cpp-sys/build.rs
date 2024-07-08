@@ -673,7 +673,7 @@ mod windows {
         };
         static ref COMMON_CPU_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "CMAKE_POSITION_INDEPENDENT_CODE" => "on"};
-        static ref ARCH: String = std::env::consts::ARCH.to_string();
+        static ref ARCH: S4tring = std::env::consts::ARCH.to_string();
         static ref DIST_BASE: String = {
             let dist_base = format!("../dist/windows-{}", std::env::consts::ARCH);
             std::fs::create_dir_all(&dist_base).expect("can`t create dist directory");
@@ -729,7 +729,7 @@ mod windows {
         src_dir: &str,
         build_dir: &str,
         cmake_defs: &std::collections::HashMap<&str, &str>,
-        targets: &[&str],
+       targets: &[&str],
     ) -> std::path::PathBuf {
         println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
         let mut dst = cmake::Config::new(src_dir);
@@ -910,6 +910,8 @@ mod windows {
                 .iter()
                 .chain(
                     maplit::hashmap! {
+                        "-A" => "",
+                        "x64" => ""
                         "GGML_CUDA" => "ON",
                         "GGML_AVX" => "on",
                         "GGML_AVX2" => "off",
