@@ -673,7 +673,7 @@ mod windows {
         };
         static ref COMMON_CPU_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "CMAKE_POSITION_INDEPENDENT_CODE" => "on"};
-        static ref ARCH: S4tring = std::env::consts::ARCH.to_string();
+        static ref ARCH: String = std::env::consts::ARCH.to_string();
         static ref DIST_BASE: String = {
             let dist_base = format!("../dist/windows-{}", std::env::consts::ARCH);
             std::fs::create_dir_all(&dist_base).expect("can`t create dist directory");
