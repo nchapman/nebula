@@ -910,8 +910,6 @@ mod windows {
                 .iter()
                 .chain(
                     maplit::hashmap! {
-                        "-A" => "",
-                        "x64" => "",
                         "GGML_CUDA" => "ON",
                         "GGML_AVX" => "on",
                         "GGML_AVX2" => "off",

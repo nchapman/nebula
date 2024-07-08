@@ -369,7 +369,7 @@ impl Handlers {
                 }
                 let mut ggml_p = bp.clone();
                 #[cfg(target_os = "windows")]
-                ggml_p.push("ggml_shared.dll");
+                ggml_p.push("ggml.dll");
                 #[cfg(target_os = "macos")]
                 ggml_p.push("libggml.dylib");
                 #[cfg(target_os = "linux")]
