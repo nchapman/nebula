@@ -12,25 +12,19 @@ on:
 
 jobs:
   test_nebula:
-    #runs-on: ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
 
     strategy:
       matrix:
-        cuda-version:
-          - '11.8.0'
-    runs-on: linux
-    container: nvidia/cuda:11.8.0-devel-ubuntu22.04
-    # strategy:
-    #   matrix:
-    #     include:
-    #       - build: linux
-    #         platform: ubuntu-latest
+        include:
+          - build: linux
+            platform: ubuntu-latest
 
-    #       # - build: macos
-    #       #   platform: macos-latest
+          # - build: macos
+          #   platform: macos-latest
 
-    #       # - build: windows
-    #       #   platform: windows-latest
+          # - build: windows
+          #   platform: windows-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -60,15 +54,9 @@ jobs:
       - name: Test
         run: |
           #cd nebula
-          cargo test --features llama -- --nocapture
-      - name: Build with llama (non linux)
-        if: matrix.platform != 'ubuntu-latest'
-        run: |
-          #cd nebula
-          cargo clean
-          cargo build --release --features llama
+          cargo test --features "llama, llama-build" -- --nocapture
       - name: Build with llama
         run: |
           #cd nebula
           cargo clean
-          cargo build --features llama
+          cargo build --release --features llama
