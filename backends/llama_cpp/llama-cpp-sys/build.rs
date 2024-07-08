@@ -916,7 +916,6 @@ mod windows {
                         "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
                         "CMAKE_CUDA_FLAGS" => "-t8",
                         "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES,
-                        "-j8" => ""
                     }
                     .iter(),
                 )
