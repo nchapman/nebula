@@ -1041,9 +1041,9 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("failed to write bindings to file");
 
-    #[cfg(feature = "build")]
-    #[cfg(target_os = "windows")]
-    windows::bbuild();
+//    #[cfg(feature = "build")]
+//    #[cfg(target_os = "windows")]
+//    windows::bbuild();
 
     #[cfg(feature = "build")]
     #[cfg(target_os = "macos")]
