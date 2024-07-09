@@ -1031,7 +1031,7 @@ fn main() {
         .allowlist_type("ggml_log_level")
         .derive_partialeq(true)
         .no_debug("llama_grammar_element")
-        .prepend_enum_name(false)
+//        .prepend_enum_name(false)
         .derive_eq(true)
         .generate()
         .expect("failed to generate bindings for llama.cpp");
