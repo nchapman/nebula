@@ -8,6 +8,11 @@ use std::ptr::null;
 
 pub mod kv_overrides;
 
+extern "C" fn do_something_handler(x: f32, arg: *mut std::ffi::c_void) -> bool {
+    let closure: &mut Box<dyn FnMut(f32) -> bool> = unsafe { std::mem::transmute(arg) };
+    closure(x) as bool
+}
+
 /// A safe wrapper around `llama_model_params`.
 #[allow(clippy::module_name_repetitions)]
 pub struct LlamaModelParams {
@@ -172,6 +177,19 @@ impl LlamaModelParams {
     #[must_use]
     pub fn with_use_mlock(mut self, use_mlock: bool) -> Self {
         self.params.use_mlock = use_mlock;
+        self
+    }
+
+    /// sets `use_mlock`
+    #[must_use]
+    pub fn with_load_process_callback<F>(mut self, callback: F) -> Self
+    where
+        F: FnMut(f32) -> bool,
+        F: 'static,
+    {
+        let cb: Box<Box<dyn FnMut(f32) -> bool>> = Box::new(Box::new(callback));
+        self.params.progress_callback = Some(do_something_handler);
+        self.params.progress_callback_user_data = Box::into_raw(cb) as *mut _;
         self
     }
 }

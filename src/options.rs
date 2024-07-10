@@ -16,6 +16,8 @@ pub struct ModelOptions {
     pub cpu: bool,
     #[serde(default = "default_i32_minus1")]
     pub n_gpu_layers: i32,
+    #[serde(skip)]
+    pub load_progress_callback: Option<Box<dyn FnMut(f32) -> bool + 'static>>,
 }
 
 impl ModelOptions {
@@ -28,6 +30,14 @@ impl ModelOptions {
         self.n_gpu_layers = n_gpu_layers;
         self
     }
+
+    pub fn with_load_progress_callback(
+        mut self,
+        callback: impl FnMut(f32) -> bool + 'static,
+    ) -> Self {
+        self.load_progress_callback = Some(Box::new(callback));
+        self
+    }
 }
 
 impl Default for ModelOptions {
@@ -35,6 +45,7 @@ impl Default for ModelOptions {
         Self {
             cpu: false,
             n_gpu_layers: default_i32_minus1(),
+            load_progress_callback: None,
         }
     }
 }
@@ -448,7 +459,7 @@ pub struct EmbeddingsOptions {
 impl EmbeddingsOptions {
     pub fn with_cpu(mut self, cpu: bool) -> Self {
         self.cpu = cpu;
-        self        
+        self
     }
 
     pub fn with_model_type(mut self, model_type: EmbeddingsModelType) -> Self {
@@ -505,7 +516,7 @@ impl Default for EmbeddingsOptions {
             tokenizer: None,
             model: None,
             revision: None,
-            config: None
+            config: None,
         }
     }
 }
