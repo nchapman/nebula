@@ -84,8 +84,19 @@ pub struct DriverVersion {
     pub minor: i32,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(rust_embed::Embed)]
-#[folder = "dist"]
+#[folder = "dist/windows"]
+struct Dependencies;
+
+#[cfg(target_os = "linux")]
+#[derive(rust_embed::Embed)]
+#[folder = "dist/linux"]
+struct Dependencies;
+
+#[cfg(target_os = "macos")]
+#[derive(rust_embed::Embed)]
+#[folder = "dist/darwin"]
 struct Dependencies;
 
 #[cfg(any(target_os = "windows", target_os = "linux"))]
@@ -461,12 +472,6 @@ lazy_static::lazy_static! {
             fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
             log::debug!("unpack {}", file.as_ref());
         }
-        #[cfg(target_os = "windows")]
-        tt.push("windows");
-        #[cfg(target_os = "macos")]
-        tt.push("darwin");
-        #[cfg(target_os = "linux")]
-        tt.push("linux");
         tt.push(ARCH);
         log::debug!("tmp_dir = {}", tt.display());
         tt
