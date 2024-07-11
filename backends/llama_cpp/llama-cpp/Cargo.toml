@@ -8,6 +8,7 @@ llama-cpp-sys = { path = "../llama-cpp-sys", optional = true }
 thiserror = "1"
 tracing = "0.1"
 log = "0.4.21"
+stdio-override = "0.1"
 
 [dev-dependencies]
 hf-hub = "0.3.2"

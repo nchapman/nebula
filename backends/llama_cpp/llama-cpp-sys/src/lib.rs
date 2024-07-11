@@ -459,7 +459,7 @@ lazy_static::lazy_static! {
             std::fs::create_dir_all(prefix).unwrap();
             let mut fff = std::fs::File::create(path).unwrap();
             fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
-            println!("{}", file.as_ref());
+            log::debug!("unpack {}", file.as_ref());
         }
         #[cfg(target_os = "windows")]
         tt.push("windows");
@@ -468,7 +468,7 @@ lazy_static::lazy_static! {
         #[cfg(target_os = "linux")]
         tt.push("linux");
         tt.push(ARCH);
-        println!("tmp_dir = {}", tt.display());
+        log::debug!("tmp_dir = {}", tt.display());
         tt
     };
     static ref LIBS: LlamaCppLibs = {
