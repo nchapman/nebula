@@ -312,9 +312,11 @@ impl LlamaModel {
         let cstr = CString::new(path)?;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
+        #[cfg(any(target_os = "windows"))]
+        let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
         let llama_model =
             unsafe { llama_cpp_sys::llama_load_model_from_file(cstr.as_ptr(), params.params) };
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         drop(guard);
         let model = NonNull::new(llama_model).ok_or(LlamaModelLoadError::NullResult)?;
 
@@ -339,10 +341,12 @@ impl LlamaModel {
         let context_params = params.context_params;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
+        #[cfg(any(target_os = "windows"))]
+        let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
         let context = unsafe {
             llama_cpp_sys::llama_new_context_with_model(self.model.model.as_ptr(), context_params)
         };
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
         drop(guard);
         let context = NonNull::new(context).ok_or(LlamaContextLoadError::NullReturn)?;
 
