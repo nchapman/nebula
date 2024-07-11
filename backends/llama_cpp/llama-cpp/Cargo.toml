@@ -9,6 +9,7 @@ thiserror = "1"
 tracing = "0.1"
 log = "0.4.21"
 stdio-override = { git = "https://github.com/elichai/stdio-override.git", rev = "a6712588"}
+gag = "1"
 
 [dev-dependencies]
 hf-hub = "0.3.2"
