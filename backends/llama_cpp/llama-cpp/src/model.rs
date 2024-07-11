@@ -311,7 +311,7 @@ impl LlamaModel {
 
         let cstr = CString::new(path)?;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        let guard = stdio_override::StderrOverride::override_file("/dev/null").unwrap();
+        let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         let llama_model =
             unsafe { llama_cpp_sys::llama_load_model_from_file(cstr.as_ptr(), params.params) };
         #[cfg(any(target_os = "linux", target_os = "macos"))]
@@ -338,7 +338,7 @@ impl LlamaModel {
     ) -> Result<LlamaContext, LlamaContextLoadError> {
         let context_params = params.context_params;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        let guard = stdio_override::StderrOverride::override_file("/dev/null").unwrap();
+        let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         let context = unsafe {
             llama_cpp_sys::llama_new_context_with_model(self.model.model.as_ptr(), context_params)
         };

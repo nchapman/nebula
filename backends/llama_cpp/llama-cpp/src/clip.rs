@@ -41,7 +41,7 @@ impl ClipContext {
 
         let cstr = CString::new(path)?;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        let guard = stdio_override::StderrOverride::override_file("/dev/null").unwrap();
+        let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         #[cfg(debug_assertions)]
         let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 1) };
         #[cfg(not(debug_assertions))]
@@ -58,7 +58,7 @@ impl ClipContext {
 
     pub fn embed_image(&self, n_threads: usize, image: &[u8]) -> Result<ImageEmbed, ClipError> {
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        let guard = stdio_override::StderrOverride::override_file("/dev/null").unwrap();
+        let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         let embed = unsafe {
             llama_cpp_sys::llava_image_embed_make_with_bytes(
                 self.context.context.as_ptr(),
