@@ -313,7 +313,7 @@ impl LlamaModel {
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         #[cfg(target_os = "windows")]
-        let guard = gag::Gag::stdout().unwrap();
+        let guard = gag::Gag::stderr().unwrap();
         let llama_model =
             unsafe { llama_cpp_sys::llama_load_model_from_file(cstr.as_ptr(), params.params) };
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
