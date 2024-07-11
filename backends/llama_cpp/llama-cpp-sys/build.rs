@@ -41,8 +41,7 @@ mod common {
         for t in targets {
             dd = dd.build_target(t);
         }
-        dd.very_verbose(true)
-            .build()
+        dd.very_verbose(true).build()
     }
 }
 
@@ -607,6 +606,7 @@ mod macos {
                         "CMAKE_SYSTEM_PROCESSOR" => *ARCH,
                         "CMAKE_OSX_ARCHITECTURES" => *ARCH,
                         "GGML_METAL" => "on",
+                        "GGML_METAL_NDEBUG" => "on",
                     }
                     .iter()
                     .chain(super::super::common::CMAKE_DEFS.iter()),
@@ -729,7 +729,7 @@ mod windows {
         src_dir: &str,
         build_dir: &str,
         cmake_defs: &std::collections::HashMap<&str, &str>,
-       targets: &[&str],
+        targets: &[&str],
     ) -> std::path::PathBuf {
         println!("cargo:warning=build with: cmake -S {src_dir} -B {build_dir} {cmake_defs:?}");
         let mut dst = cmake::Config::new(src_dir);
@@ -1041,9 +1041,9 @@ fn main() {
         .write_to_file(out_path.join("bindings.rs"))
         .expect("failed to write bindings to file");
 
-//    #[cfg(feature = "build")]
-//    #[cfg(target_os = "windows")]
-//    windows::bbuild();
+    //    #[cfg(feature = "build")]
+    //    #[cfg(target_os = "windows")]
+    //    windows::bbuild();
 
     #[cfg(feature = "build")]
     #[cfg(target_os = "macos")]
