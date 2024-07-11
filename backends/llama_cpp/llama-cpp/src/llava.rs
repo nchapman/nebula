@@ -16,8 +16,11 @@ impl ClipContext {
             .ok_or(ClipError::PathToStrError(path.to_path_buf()))?;
 
         let cstr = CString::new(path)?;
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        let guard = stdio_override::StderrOverride::override_file("/dev/null").unwrap();
         let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 1) };
-
+        #[cfg(any(target_os = "linux", target_os = "macos"))]
+        drop(guard);
         let context = NonNull::new(clip).ok_or(ClipError::NullReturn)?;
 
         tracing::debug!(?path, "Loaded model");

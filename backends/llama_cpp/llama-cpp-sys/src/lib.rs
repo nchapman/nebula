@@ -84,8 +84,19 @@ pub struct DriverVersion {
     pub minor: i32,
 }
 
+#[cfg(target_os = "windows")]
 #[derive(rust_embed::Embed)]
-#[folder = "dist"]
+#[folder = "dist/windows"]
+struct Dependencies;
+
+#[cfg(target_os = "linux")]
+#[derive(rust_embed::Embed)]
+#[folder = "dist/linux"]
+struct Dependencies;
+
+#[cfg(target_os = "macos")]
+#[derive(rust_embed::Embed)]
+#[folder = "dist/darwin"]
 struct Dependencies;
 
 #[cfg(any(target_os = "windows", target_os = "linux"))]
@@ -459,16 +470,10 @@ lazy_static::lazy_static! {
             std::fs::create_dir_all(prefix).unwrap();
             let mut fff = std::fs::File::create(path).unwrap();
             fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
-            println!("{}", file.as_ref());
+            log::debug!("unpack {}", file.as_ref());
         }
-        #[cfg(target_os = "windows")]
-        tt.push("windows");
-        #[cfg(target_os = "macos")]
-        tt.push("darwin");
-        #[cfg(target_os = "linux")]
-        tt.push("linux");
         tt.push(ARCH);
-        println!("tmp_dir = {}", tt.display());
+        log::debug!("tmp_dir = {}", tt.display());
         tt
     };
     static ref LIBS: LlamaCppLibs = {
