@@ -28,7 +28,9 @@ impl From<ModelOptions> for LlamaModelParams {
             lmp
         };
         if let Some(c) = val.load_progress_callback {
-            lmp = lmp.with_load_process_callback(std::sync::Arc::into_inner(c).unwrap());
+            lmp = lmp.with_load_process_callback(
+                std::sync::Arc::into_inner(c).unwrap().into_inner().unwrap(),
+            );
         }
         lmp
     }

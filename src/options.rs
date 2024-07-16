@@ -17,7 +17,8 @@ pub struct ModelOptions {
     #[serde(default = "default_i32_minus1")]
     pub n_gpu_layers: i32,
     #[serde(skip)]
-    pub load_progress_callback: Option<std::sync::Arc<Box<dyn FnMut(f32) -> bool + 'static>>>,
+    pub load_progress_callback:
+        Option<std::sync::Arc<std::sync::Mutex<Box<dyn FnMut(f32) -> bool + 'static>>>>,
 }
 
 impl ModelOptions {
@@ -35,7 +36,9 @@ impl ModelOptions {
         mut self,
         callback: impl FnMut(f32) -> bool + 'static,
     ) -> Self {
-        self.load_progress_callback = Some(std::sync::Arc::new(Box::new(callback)));
+        self.load_progress_callback = Some(std::sync::Arc::new(std::sync::Mutex::new(Box::new(
+            callback,
+        ))));
         self
     }
 }
