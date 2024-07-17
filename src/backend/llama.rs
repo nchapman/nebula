@@ -165,6 +165,7 @@ impl Context for LlamaContext {
         temperature: Option<f32>,
         stop_tokens: &[String],
     ) -> Result<()> {
+        let dst = crate::options::default_stop_tokens();
         self.logit = self.ctx.pedict(
             self.logit,
             &mut self.n_curr,
@@ -173,7 +174,11 @@ impl Context for LlamaContext {
             top_p,
             min_p,
             temperature,
-            stop_tokens,
+            if stop_tokens.is_empty() {
+                &dst
+            } else {
+                stop_tokens
+            },
             token_callback,
         )?;
         Ok(())

@@ -55,7 +55,7 @@ fn default_conversation_prompt_format_with_image() -> String {
     "{image}\nUser:\n{prompt}\nAssistant:\n".to_string()
 }
 
-fn default_stop_tokens() -> Vec<String> {
+pub fn default_stop_tokens() -> Vec<String> {
     ["\nUser:", "\nAssistant:"]
         .iter()
         .map(|s| s.to_string())
