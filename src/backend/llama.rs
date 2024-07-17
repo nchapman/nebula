@@ -22,12 +22,11 @@ use super::{Context, Model};
 impl From<ModelOptions> for LlamaModelParams {
     fn from(val: ModelOptions) -> Self {
         let lmp = Self::default();
-        let lmp = if !val.cpu {
+        if !val.cpu {
             lmp.with_n_gpu_layers(val.n_gpu_layers as u32)
         } else {
             lmp
-        };
-        lmp
+        }
     }
 }
 
