@@ -22,16 +22,11 @@ use super::{Context, Model};
 impl From<ModelOptions> for LlamaModelParams {
     fn from(val: ModelOptions) -> Self {
         let lmp = Self::default();
-        let mut lmp = if !val.cpu {
+        let lmp = if !val.cpu {
             lmp.with_n_gpu_layers(val.n_gpu_layers as u32)
         } else {
             lmp
         };
-        if let Some(c) = val.load_progress_callback {
-            lmp = lmp.with_load_process_callback(
-                std::sync::Arc::into_inner(c).unwrap().into_inner().unwrap(),
-            );
-        }
         lmp
     }
 }
@@ -54,9 +49,17 @@ pub struct Llama {
 }
 
 impl Llama {
-    pub fn new(model: impl Into<PathBuf>, options: ModelOptions) -> Result<Self> {
+    pub fn new(
+        model: impl Into<PathBuf>,
+        options: ModelOptions,
+        callback: Option<impl FnMut(f32) -> bool + 'static>,
+    ) -> Result<Self> {
         let backend = Arc::new(LlamaBackend::init()?);
-        let model_params: Pin<Box<LlamaModelParams>> = Box::pin(options.into());
+        let mut lmp: LlamaModelParams = options.into();
+        if let Some(cb) = callback {
+            lmp = lmp.with_load_process_callback(cb);
+        }
+        let model_params = Box::pin(lmp);
         let model = LlamaModel::load_from_file(&backend, Path::new(&model.into()), &model_params)?;
         Ok(Self {
             backend,

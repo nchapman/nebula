@@ -45,15 +45,18 @@ fn main() {
     );
     pb.set_position(0);
     let pbb = pb.clone();
-    let model_options = ModelOptions::default()
-        .with_n_gpu_layers(10)
-        .with_load_progress_callback(move |a| {
+    let model_options = ModelOptions::default().with_n_gpu_layers(10);
+    let model = Model::new_with_mmproj_with_callback(
+        model_file_name,
+        mmproj_model_file_name,
+        model_options,
+        move |a| {
             pbb.set_position((a * 1000.0) as u64);
             std::thread::sleep(std::time::Duration::from_millis(12));
             true
-        });
-    let model =
-        Model::new_with_mmproj(model_file_name, mmproj_model_file_name, model_options).unwrap();
+        },
+    )
+    .unwrap();
     pb.finish_with_message("done");
 
     let context_options = ContextOptions::default().with_n_ctx(6000);

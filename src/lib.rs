@@ -30,7 +30,22 @@ impl Model {
         model: impl Into<PathBuf> + 'static,
         options: options::ModelOptions,
     ) -> Result<Self> {
-        let backend = backend::init(model, options)?;
+        let backend = backend::init(
+            model,
+            options,
+            None::<Box<dyn FnMut(f32) -> bool + 'static>>,
+        )?;
+        Ok(Self {
+            backend: Box::pin(backend),
+        })
+    }
+
+    pub fn new_with_progress_callback(
+        model: impl Into<PathBuf> + 'static,
+        options: options::ModelOptions,
+        callback: impl FnMut(f32) -> bool + 'static,
+    ) -> Result<Self> {
+        let backend = backend::init(model, options, Some(Box::new(callback)))?;
         Ok(Self {
             backend: Box::pin(backend),
         })
@@ -41,7 +56,24 @@ impl Model {
         mmproj: impl Into<PathBuf> + 'static,
         options: options::ModelOptions,
     ) -> Result<Self> {
-        let mut backend = backend::init(model, options)?;
+        let mut backend = backend::init(
+            model,
+            options,
+            None::<Box<dyn FnMut(f32) -> bool + 'static>>,
+        )?;
+        backend.with_mmproj(mmproj.into())?;
+        Ok(Self {
+            backend: Box::pin(backend),
+        })
+    }
+
+    pub fn new_with_mmproj_with_callback(
+        model: impl Into<PathBuf> + 'static,
+        mmproj: impl Into<PathBuf> + 'static,
+        options: options::ModelOptions,
+        callback: impl FnMut(f32) -> bool + 'static,
+    ) -> Result<Self> {
+        let mut backend = backend::init(model, options, Some(Box::new(callback)))?;
         backend.with_mmproj(mmproj.into())?;
         Ok(Self {
             backend: Box::pin(backend),

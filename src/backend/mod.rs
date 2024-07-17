@@ -66,8 +66,12 @@ pub trait Model: Send {
 }
 
 #[cfg(feature = "llama")]
-pub fn init(model: impl Into<PathBuf>, options: ModelOptions) -> Result<impl Model> {
-    llama::Llama::new(model, options)
+pub fn init(
+    model: impl Into<PathBuf>,
+    options: ModelOptions,
+    callback: Option<impl FnMut(f32) -> bool + 'static>,
+) -> Result<impl Model> {
+    llama::Llama::new(model, options, callback)
 }
 
 #[cfg(feature = "whisper")]
