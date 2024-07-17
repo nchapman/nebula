@@ -122,7 +122,11 @@ impl ContextOptions {
     }
 
     pub fn with_stop_tokens(mut self, tokens: &[&str]) -> Self {
-        self.stop_tokens = tokens.iter().map(|s| s.to_string()).collect();
+        self.stop_tokens = if tokens.is_empty() {
+            default_stop_tokens()
+        } else {
+            tokens.iter().map(|s| s.to_string()).collect()
+        };
         self
     }
 
