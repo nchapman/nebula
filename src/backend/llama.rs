@@ -19,6 +19,10 @@ use llama_cpp::{
 
 use super::{Context, Model};
 
+lazy_static::lazy_static! {
+    static ref LLAMA_BACKEND: Arc<LlamaBackend> = Arc::new(LlamaBackend::init().unwrap());
+}
+
 impl From<ModelOptions> for LlamaModelParams {
     fn from(val: ModelOptions) -> Self {
         let lmp = Self::default();
@@ -42,7 +46,6 @@ impl From<ContextOptions> for LlamaContextParams {
 
 #[derive(Clone)]
 pub struct Llama {
-    backend: Arc<LlamaBackend>,
     model: LlamaModel,
     mmproj: Option<ClipContext>,
 }
@@ -53,15 +56,14 @@ impl Llama {
         options: ModelOptions,
         callback: Option<impl FnMut(f32) -> bool + 'static>,
     ) -> Result<Self> {
-        let backend = Arc::new(LlamaBackend::init()?);
         let mut lmp: LlamaModelParams = options.into();
         if let Some(cb) = callback {
             lmp = lmp.with_load_process_callback(cb);
         }
         let model_params = Box::pin(lmp);
-        let model = LlamaModel::load_from_file(&backend, Path::new(&model.into()), &model_params)?;
+        let model =
+            LlamaModel::load_from_file(&LLAMA_BACKEND, Path::new(&model.into()), &model_params)?;
         Ok(Self {
-            backend,
             model,
             mmproj: None,
         })
@@ -92,7 +94,7 @@ impl<'a> LlamaContext {
         let ctx_params: LlamaContextParams = options.into();
         let n_threads = ctx_params.n_threads() as usize;
         let ctx = Self {
-            ctx: Box::pin(model.model.new_context(&model.backend, ctx_params)?),
+            ctx: Box::pin(model.model.new_context(&LLAMA_BACKEND, ctx_params)?),
             n_curr: 0,
             logit: 0,
             n_threads,

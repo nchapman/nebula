@@ -371,6 +371,10 @@ impl Handlers {
                             .unwrap_or_default(),
                 );
             }
+            log::debug!(
+                "updated PATH: {}",
+                std::env::var("PATH").unwrap_or_default()
+            );
             for v in vars {
                 let mut bp = DEPENDENCIES_BASE_PATH.clone();
                 if v.variant.is_empty() {

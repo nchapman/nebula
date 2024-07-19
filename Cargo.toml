@@ -8,6 +8,7 @@ clap = { version = "4.5.1", features = ["derive"] }
 num_cpus = "1.0"
 serde = { version = "1", features = [ "derive" ] }
 strfmt = "*"
+lazy_static="1.5"
 
 #llama feature
 llama-cpp = { path="backends/llama_cpp/llama-cpp", optional = true }

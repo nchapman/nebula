@@ -2,6 +2,7 @@
 name = "llama-cpp-sys"
 version = "0.0.1"
 edition = "2021"
+inclue = ["/dst"]
 
 [dependencies]
 lazy_static = "1.4"
