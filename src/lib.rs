@@ -20,7 +20,7 @@ pub mod utils;
 mod backend;
 
 pub fn init(resource_path: std::path::PathBuf) -> Result<()> {
-    Ok(resource_path::set(resource_path).map_err(|e| error::Error::Unknown(e))?)
+    resource_path::set(resource_path).map_err(error::Error::Unknown)
 }
 
 #[cfg(feature = "llama")]
