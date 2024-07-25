@@ -84,21 +84,6 @@ pub struct DriverVersion {
     pub minor: i32,
 }
 
-#[cfg(target_os = "windows")]
-#[derive(rust_embed::Embed)]
-#[folder = "dist/windows"]
-struct Dependencies;
-
-#[cfg(target_os = "linux")]
-#[derive(rust_embed::Embed)]
-#[folder = "dist/linux"]
-struct Dependencies;
-
-#[cfg(target_os = "macos")]
-#[derive(rust_embed::Embed)]
-#[folder = "dist/darwin"]
-struct Dependencies;
-
 #[cfg(any(target_os = "windows", target_os = "linux"))]
 struct CudaHandles {
     device_count: usize,
