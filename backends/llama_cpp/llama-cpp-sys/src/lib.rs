@@ -464,22 +464,19 @@ const ARCH: &'static str = "arm64";
 lazy_static::lazy_static! {
 
     static ref DEPENDENCIES_BASE_PATH: std::path::PathBuf = {
-        use std::io::Write;
-        let mut tt = tempfile::tempdir().expect("can`t cretae temp dir").path().to_path_buf();
-        for file in  Dependencies::iter() {
-            let f = file.as_ref();
-            let mut path = tt.clone();
-            path.push(f);
-            let prefix = path.parent().unwrap();
-            std::fs::create_dir_all(prefix).unwrap();
-            let mut fff = std::fs::File::create(path).unwrap();
-            fff.write_all(&Dependencies::get(f).unwrap().data).unwrap();
-            log::debug!("unpack {}", file.as_ref());
-        }
+        let mut tt = resource_path::get().unwrap();
+        #[cfg(target_os = "windows")]
+        tt.push("windows");
+        #[cfg(target_os = "linux")]
+        tt.push("linux");
+        #[cfg(target_os = "macos")]
+        tt.push("darwin");
+
         tt.push(ARCH);
         log::debug!("tmp_dir = {}", tt.display());
         tt
     };
+
     static ref LIBS: LlamaCppLibs = {
         match Handlers::new(){
             Ok(h) => {

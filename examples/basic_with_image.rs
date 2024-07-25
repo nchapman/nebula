@@ -32,6 +32,10 @@ fn main() {
             n_len = ss;
         }
     }
+    nebula::init(std::path::PathBuf::from(
+        "backends/llama_cpp/llama-cpp-sys/dist",
+    ))
+    .unwrap();
     println!("model loading...");
     let total_size = 1000;
     let pb = indicatif::ProgressBar::new(total_size);
