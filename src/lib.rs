@@ -19,6 +19,10 @@ pub mod utils;
 
 mod backend;
 
+pub fn init(resource_path: std::path::PathBuf) -> Result<()> {
+    resource_path::set(resource_path).map_err(|e| error::Error::Unknown(e))
+}
+
 #[cfg(feature = "llama")]
 pub struct Model {
     backend: Pin<Box<dyn backend::Model>>,
@@ -284,6 +288,10 @@ mod test {
     }
 
     fn main_with_model(model_repo: &str, model_file_name: &str) {
+        super::init(std::path::PathBuf::from(
+            "backends/llama_cpp/llama-cpp-sys/dist",
+        ))
+        .unwrap();
         let test_model = TestModel::new(model_repo, model_file_name);
         eprintln!("{}", test_model.filename.display());
         let model_options = super::options::ModelOptions::default();
