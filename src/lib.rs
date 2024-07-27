@@ -288,6 +288,10 @@ mod test {
     }
 
     fn main_with_model(model_repo: &str, model_file_name: &str) {
+        simple_logger::SimpleLogger::new()
+            .with_level(log::LevelFilter::Debug)
+            .init()
+            .unwrap();
         super::init(std::path::PathBuf::from(
             "backends/llama_cpp/llama-cpp-sys/dist",
         ))
