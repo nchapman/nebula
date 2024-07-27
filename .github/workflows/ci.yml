@@ -53,9 +53,8 @@ jobs:
           cargo clippy --features llama -- -D warnings
       - name: Test (linux)
         if: matrix.platform == 'ubuntu-latest'
-        run: |
-          #cd nebula
-          cargo test --features "llama, llama-build" -- --nocapture
+        run: cargo test --features "llama" -- --nocapture
+
       - name: Test (non linux)
         if: matrix.platform != 'ubuntu-latest'
         run: |
