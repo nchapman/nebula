@@ -276,7 +276,16 @@ impl Handlers {
     }
 
     pub fn available_variants(&self) -> Vec<Variant> {
-        match glob::glob(&format!("{}/*/*llama.*", DEPENDENCIES_BASE_PATH.display())) {
+        let p = DEPENDENCIES_BASE_PATH.display().to_string();
+        //can be remove on closing https://github.com/rust-lang/glob/issues/132
+        #[cfg(target_os = "windows")]
+        let p = if p.starts_with(r###"\\?\"###) {
+            &p[4..]
+        } else {
+            &p[..]
+        }
+        .to_string();
+        match glob::glob(&format!("{}/*/*llama.*", p)) {
             Err(_e) => vec![],
             Ok(entries) => entries.fold(vec![], |mut res, e| {
                 if let Ok(path) = e {

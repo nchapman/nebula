@@ -202,8 +202,6 @@ mod linux {
             .iter()
             .chain(
                 maplit::hashmap! {
-                    "GGML_LSX" => "off",
-                    "GGML_LASX" => "off",
                     "GGML_AVX" => "on",
                     "GGML_AVX2" => "on",
                     "GGML_AVX512" => "off",
