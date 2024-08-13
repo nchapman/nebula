@@ -12,6 +12,7 @@ stdio-override = { git = "https://github.com/elichai/stdio-override.git", rev = 
 gag = "1"
 
 [dev-dependencies]
+openssl-sys = { version = "0.9.103", features = ["vendored"] }
 hf-hub = "0.3.2"
 criterion = "0.5.1"
 pprof = { version = "0.13.0", features = ["criterion", "flamegraph"] }

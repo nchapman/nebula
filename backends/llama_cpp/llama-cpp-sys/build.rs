@@ -49,6 +49,18 @@ mod common {
 #[cfg(target_os = "linux")]
 mod linux {
     lazy_static::lazy_static! {
+        static ref ARCH: &'static str = if let Ok(s) = std::env::var("CARGO_CFG_TARGET_ARCH"){
+            match s.as_str(){
+                "x86_64" => "x86_64",
+                "aarch64" => "arm64",
+                _ => panic!("unsupported target arch: {}", s)
+            }
+        } else {
+            panic!("undefined target arch")
+        };
+    }
+
+    lazy_static::lazy_static! {
         static ref LLAMACPP_DIR: &'static str = "llama.cpp";
         static ref CMAKE_TARGETS: &'static[&'static str] = &["llama", "llava"];
         //TODO add debug variant
@@ -61,9 +73,8 @@ mod linux {
         };
         static ref COMMON_CPU_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
             "CMAKE_POSITION_INDEPENDENT_CODE" => "on"};
-        static ref ARCH: String = std::env::consts::ARCH.to_string();
         static ref DIST_BASE: String = {
-            let dist_base = format!("../dist/linux-{}", std::env::consts::ARCH);
+            let dist_base = format!("../dist/linux-{}", *ARCH);
             std::fs::create_dir_all(&dist_base).expect("can`t create dist directory");
             dist_base
         };
@@ -305,6 +316,11 @@ mod linux {
     }
 
     pub fn bbuild() {
+        println!(
+            "cargo:warning=Installing binaries for {} {:?}",
+            *ARCH,
+            std::env::var("CARGO_CFG_TARGET_ARCH")
+        );
         build_cpu(
             *super::common::LLAMACPP_DIR,
             &format!("dist/linux/{}/", *ARCH),
@@ -312,15 +328,14 @@ mod linux {
             *super::common::CMAKE_TARGETS,
         );
 
-        if ::std::is_x86_feature_detected!("avx") {
+        if *ARCH == "x86_64" {
             build_cpu_avx(
                 *super::common::LLAMACPP_DIR,
                 &format!("dist/linux/{}/", *ARCH),
                 &*super::common::CMAKE_DEFS,
                 *super::common::CMAKE_TARGETS,
             );
-        }
-        if ::std::is_x86_feature_detected!("avx2") {
+
             build_cpu_avx2(
                 *super::common::LLAMACPP_DIR,
                 &format!("dist/linux/{}/", *ARCH),
@@ -328,6 +343,7 @@ mod linux {
                 *super::common::CMAKE_TARGETS,
             );
         }
+
         build_cuda(
             *super::common::LLAMACPP_DIR,
             &format!("dist/linux/{}/", *ARCH),
