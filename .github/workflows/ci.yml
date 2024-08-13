@@ -17,7 +17,12 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: linux
+          - build: linux-arm64
+            arch: aarch64
+            platform: ubuntu-latest
+
+          - build: linux-x86_64
+            arch: x86_64
             platform: ubuntu-latest
 
           - build: macos
@@ -54,4 +59,4 @@ jobs:
         run: cat /proc/cpuinfo
 
       - name: Test
-        run: cargo test --features "llama" -- --nocapture
+        run: cargo test --features "llama llama-build" -- --nocapture
