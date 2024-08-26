@@ -74,7 +74,27 @@ build_dependencies_for_mac_os() {
         exit 1
     fi
 
+    brew install unzip
+    if [ $? -ne 0 ]; then
+        echo "Failed to install unzip"
+        exit 1
+    fi
+
     brew install espeak-ng
+    brew install make autoconf automake libtool pkg-config
+    brew install gcc
+    brew install ronn
+    brew install pcaudiolib
+    mkdir -p ./espeak-ng/
+    curl -o ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
+    unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
+    cd ./espeak-ng/espeak-ng-1.51.1/
+    chmod +x autogen.sh
+    ./autogen.sh
+    chmod +x configure
+    ./configure --prefix=/usr
+    make
+    cd ../..
     if [ $? -ne 0 ]; then
         echo "Failed to install espeak-ng"
         exit 1
@@ -87,12 +107,6 @@ build_dependencies_for_mac_os() {
         exit 1
     fi
 
-    brew install unzip
-    if [ $? -ne 0 ]; then
-        echo "Failed to install unzip"
-        exit 1
-    fi
-
     unzip ./libtorch/libtorch-2.0.0.zip -d ./libtorch/
     if [ $? -ne 0 ]; then
         echo "Failed to unzip libtorch"
@@ -100,7 +114,7 @@ build_dependencies_for_mac_os() {
     fi
 
     export LIBTORCH=$(cd "$(dirname "./libtorch/")" && pwd)/$(basename "./libtorch/")
-    cd -
+    cd ..
     export LD_LIBRARY_PATH=${LIBTORCH}/lib:$LD_LIBRARY_PATH
 
     echo "Successfully built dependencies for MacOS"
