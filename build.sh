@@ -11,6 +11,9 @@ get_linux_distribution() {
 
 build_dependencies_for_ubuntu() {
     sudo apt-get install -y clang
+    sudo apt-get install -y llvm
+    sudo apt-get install -y libssl-dev
+    sudo apt-get install -y libclang-dev
     if [ $? -ne 0 ]; then
         echo "Failed to install clang"
         exit 1
