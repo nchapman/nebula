@@ -42,6 +42,7 @@ build_dependencies_for_ubuntu() {
     ./configure --prefix=/usr
     make
     cd ../..
+    sudo ln -s /usr/lib/x86_64-linux-gnu/libespeak-ng.so.1.1.49 /lib/libespeak-ng.so
     if [ $? -ne 0 ]; then
         echo "Failed to install espeak-ng"
         exit 1
