@@ -86,7 +86,7 @@ build_dependencies_for_mac_os() {
     brew install ronn
     brew install pcaudiolib
     mkdir -p ./espeak-ng/
-    curl -o ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
+    curl -L -o ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
     unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
     cd ./espeak-ng/espeak-ng-1.51.1/
     chmod +x autogen.sh
