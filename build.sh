@@ -19,7 +19,29 @@ build_dependencies_for_ubuntu() {
         exit 1
     fi
 
+    sudo apt-get install -y unzip
+    if [ $? -ne 0 ]; then
+        echo "Failed to install unzip"
+        exit 1
+    fi
+
     sudo apt-get install -y espeak-ng
+    sudo apt-get install -y make autoconf automake libtool pkg-config
+    sudo apt-get install -y gcc
+    sudo apt-get install -y libsonic-dev
+    sudo apt-get install -y ronn
+    sudo apt-get install -y kramdown
+    sudo apt-get install -y libpcaudio-dev
+    mkdir -p ./espeak-ng/
+    wget -O ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
+    unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
+    cd ./espeak-ng/espeak-ng-1.51.1/
+    chmod +x autogen.sh
+    ./autogen.sh
+    chmod +x configure
+    ./configure --prefix=/usr
+    make
+    cd ../..
     if [ $? -ne 0 ]; then
         echo "Failed to install espeak-ng"
         exit 1
@@ -29,12 +51,6 @@ build_dependencies_for_ubuntu() {
     wget -O ./libtorch/libtorch-2.0.0.zip https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.0.0%2Bcpu.zip
     if [ $? -ne 0 ]; then
         echo "Failed to download libtorch"
-        exit 1
-    fi
-
-    sudo apt-get install -y unzip
-    if [ $? -ne 0 ]; then
-        echo "Failed to install unzip"
         exit 1
     fi
 
