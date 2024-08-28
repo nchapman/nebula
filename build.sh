@@ -34,7 +34,7 @@ build_dependencies_for_ubuntu() {
     sudo apt-get install -y libpcaudio-dev
     mkdir -p ./espeak-ng/
     wget -O ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
-    unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
+    unzip -o ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
     cd ./espeak-ng/espeak-ng-1.51.1/
     chmod +x autogen.sh
     ./autogen.sh
@@ -55,7 +55,7 @@ build_dependencies_for_ubuntu() {
         exit 1
     fi
 
-    unzip ./libtorch/libtorch-2.0.0.zip -d ./libtorch/
+    unzip -o ./libtorch/libtorch-2.0.0.zip -d ./libtorch/
     if [ $? -ne 0 ]; then
         echo "Failed to unzip libtorch"
         exit 1
@@ -88,7 +88,7 @@ build_dependencies_for_mac_os() {
     brew install pcaudiolib
     mkdir -p ./espeak-ng/
     wget -O ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
-    unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
+    unzip -o ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
     cd ./espeak-ng/espeak-ng-1.51.1/
     mv CHANGELOG.md ChangeLog.md
     chmod +x autogen.sh
@@ -110,7 +110,7 @@ build_dependencies_for_mac_os() {
         exit 1
     fi
 
-    unzip ./libtorch/libtorch-2.0.0.zip -d ./libtorch/
+    unzip -o ./libtorch/libtorch-2.0.0.zip -d ./libtorch/
     if [ $? -ne 0 ]; then
         echo "Failed to unzip libtorch"
         exit 1
