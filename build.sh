@@ -68,7 +68,8 @@ build_dependencies_for_ubuntu() {
 }
 
 build_dependencies_for_mac_os() {
-    brew install llvm
+    brew install llvm@18.1.8
+    sudo ln -sf /opt/homebrew/Cellar/llvm/18.1.8/lib/libclang.dylib /usr/local/lib/libclang.dylib
     if [ $? -ne 0 ]; then
         echo "Failed to install clang"
         exit 1
