@@ -89,6 +89,7 @@ build_dependencies_for_mac_os() {
     curl -L -o ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
     unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
     cd ./espeak-ng/espeak-ng-1.51.1/
+    mv CHANGELOG.md ChangeLog.md
     chmod +x autogen.sh
     ./autogen.sh
     chmod +x configure
