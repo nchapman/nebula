@@ -80,21 +80,23 @@ build_dependencies_for_mac_os() {
         exit 1
     fi
 
+    brew install wget
     brew install espeak-ng
     brew install make autoconf automake libtool pkg-config
     brew install gcc
     brew install ronn
     brew install pcaudiolib
     mkdir -p ./espeak-ng/
-    curl -L -o ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
+    wget -O ./espeak-ng/espeak-ng.zip https://github.com/espeak-ng/espeak-ng/archive/refs/tags/1.51.1.zip
     unzip ./espeak-ng/espeak-ng.zip -d ./espeak-ng/
     cd ./espeak-ng/espeak-ng-1.51.1/
     mv CHANGELOG.md ChangeLog.md
     chmod +x autogen.sh
     ./autogen.sh
     chmod +x configure
-    ./configure --prefix=/usr
+    ./configure --exec-prefix=/usr/local/ --datarootdir=/usr/local --sysconfdir=/usr/local --sharedstatedir=/usr/local --localstatedir=/usr/local --includedir=/usr/local
     make
+    sudo make LIBDIR=/usr/local/lib install
     cd ../..
     if [ $? -ne 0 ]; then
         echo "Failed to install espeak-ng"
@@ -102,7 +104,7 @@ build_dependencies_for_mac_os() {
     fi
 
     mkdir -p ./libtorch/
-    curl -o ./libtorch/libtorch-2.0.0.zip https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.0.0%2Bcpu.zip
+    wget -O ./libtorch/libtorch-2.0.0.zip https://download.pytorch.org/libtorch/cpu/libtorch-shared-with-deps-2.0.0%2Bcpu.zip
     if [ $? -ne 0 ]; then
         echo "Failed to download libtorch"
         exit 1
