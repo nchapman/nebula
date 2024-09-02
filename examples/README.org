@@ -307,22 +307,16 @@ usage:
 
 * [[https://github.com/nchapman/nebula/blob/main/examples/text_to_speech.rs][text_to_speech]]
 ** set-up
-Unlike other examples, the TTS component currently requires various additional installations. We are working on minimizing this in the future, but for now, it is what it is. Before running an example, please go through the following steps.
-- Install Miniconda. Follow [[https://docs.anaconda.com/free/miniconda/miniconda-install/][this guide]]. Once done, *on Windows* open an Anaconda Prompt terminal and proceed in this command line for all further commands. On *other OS*, proceed with a regular terminal.
+Unlike other examples, the TTS component requires a few additional installations. Before running an example, please go through the following steps.
 - Install =rust nightly= by running the following command:
 #+BEGIN_SRC sh
 rustup toolchain install nightly
 #+END_SRC
-- *On Windows*, install C++ build tools by following [[https://github.com/bycloudai/InstallVSBuildToolsWindows][this tutorial]]. *On macOS/Ubuntu*, install LLVM instead. [[https://formulae.brew.sh/formula/llvm][Guide for macOS]]. [[https://medium.com/@donfiealex/mastering-the-process-installing-clang-llvm-on-ubuntu-22-04-bb9c69814517][Guide for Ubuntu]].
-- Install =espeak-ng= by following [[https://github.com/espeak-ng/espeak-ng/blob/master/docs/guide.md][this tutorial]].
-- Create a new conda environment and activate it:
+- *On Windows*, install C++ build tools by following [[https://github.com/bycloudai/InstallVSBuildToolsWindows][this tutorial]].
+- *On macOS/Ubuntu*, install all additional dependencies by running the following:
 #+BEGIN_SRC sh
-conda create -n nebula-tts-venv python=3.7
-conda activate nebula-tts-venv
-#+END_SRC
-- Install =torch= using =pip=:
-#+BEGIN_SRC sh
-pip install torch==1.13.0 torchvision==0.14.0 torchaudio==0.13.0
+chmod u+x build.sh
+./build.sh
 #+END_SRC
 ** models
 #+BEGIN_SRC bash
