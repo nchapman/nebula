@@ -342,3 +342,22 @@ impl StyleTTSBackend {
         mask_gt
     }
 }
+
+
+pub struct ParlerBackend {}
+
+impl ParlerBackend {
+    pub fn new(options: TTSOptions) -> anyhow::Result<Self> {
+        todo!()
+    }
+}
+
+impl TextToSpeechBackend for ParlerBackend {
+    fn train(&mut self, ref_samples: Vec<f32>) -> anyhow::Result<()> {
+        todo!()
+    }
+
+    fn predict(&mut self, text: String) -> anyhow::Result<Vec<f32>> {
+        todo!()
+    }
+}

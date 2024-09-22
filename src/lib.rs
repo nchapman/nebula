@@ -435,9 +435,7 @@ pub struct TextToSpeechModel {
 impl TextToSpeechModel {
     pub fn new(options: options::TTSOptions) -> anyhow::Result<Self> {
         let backend = backend::init_text_to_speech_backend(options)?;
-        anyhow::Ok(Self {
-            backend: Box::new(backend),
-        })
+        anyhow::Ok(Self {backend: backend})
     }
 
     pub fn train(&mut self, ref_samples: Vec<f32>) -> anyhow::Result<()> {
