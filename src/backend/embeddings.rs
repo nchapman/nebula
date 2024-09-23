@@ -488,9 +488,19 @@ impl EmbeddingsBackend for BertBackend {
 
         let token_ids = Tensor::stack(&token_ids, 0).unwrap();
         let token_type_ids = token_ids.zeros_like().unwrap();
+
+        let attention_mask = tokens
+            .iter()
+            .map(|tokens| {
+                let tokens = tokens.get_attention_mask().to_vec();
+                Ok(Tensor::new(tokens.as_slice(), &self.device).unwrap())
+            })
+            .collect::<Result<Vec<_>>>()?;
+        let attention_mask = Tensor::stack(&attention_mask, 0).unwrap();
+
         println!("running inference on batch {:?}", token_ids.shape());
         let embedding = self
-            .model.forward(&token_ids, &token_type_ids)
+            .model.forward(&token_ids, &token_type_ids, Some(&attention_mask))
             .unwrap();
         println!("generated embeddings {:?}", embedding.shape());
 
