@@ -1,3 +1,8 @@
+use std::{
+    io::{BufWriter, IntoInnerError},
+    string::FromUtf8Error,
+};
+
 use thiserror::Error;
 
 #[derive(Error, Debug)]
@@ -23,7 +28,8 @@ pub enum Error {
     #[cfg(feature = "llama")]
     #[error("{0}")]
     Predict(#[from] llama_cpp::PredictError),
-
+    #[error("not mmproj models not support images")]
+    ModelNotMmproj,
     #[error("{0} > {1}: the required kv cache size is not big enough either reduce n_len or increase n_ctx")]
     KVCacheNotBigEnough(usize, usize),
     #[error("the prompt is too long, it has more tokens than n_len")]
@@ -32,4 +38,14 @@ pub enum Error {
     MmprojNotDefined,
     #[error("{0}")]
     Unknown(String),
+    #[error("{0}")]
+    UnsupportedTemplate(String),
+    #[error("{0}")]
+    FromUtf8(#[from] FromUtf8Error),
+    #[error("{0}")]
+    IntoInner(#[from] IntoInnerError<BufWriter<Vec<u8>>>),
+    #[error("{0}")]
+    Io(#[from] std::io::Error),
+    #[error("{0}")]
+    Json(#[from] serde_json::Error),
 }

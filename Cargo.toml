@@ -10,9 +10,12 @@ serde = { version = "1", features = [ "derive" ] }
 strfmt = "*"
 lazy_static="1.5"
 resource-path = {path = "resource-path"}
+bon = "2.1"
+base64 = "0.22.1"
 
 #llama feature
 llama-cpp = { path="backends/llama_cpp/llama-cpp", optional = true }
+
 
 hf-hub = { version = "0.3.2" }
 tracing-subscriber = "0.3.18"
@@ -53,8 +56,9 @@ hf-hub = "0.3.2"
 indicatif = "0.17"
 
 [features]
-llama = ["llama-cpp"]
-llama-build = ["llama-cpp?/build"]
+default = ["llama"]
+llama = ["llama-cpp", "serde_json"]
+llama-build = ["llama-cpp?/build", "serde_json"]
 #default = ["embeddings"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 embeddings = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow", "itertools", "serde_json"]

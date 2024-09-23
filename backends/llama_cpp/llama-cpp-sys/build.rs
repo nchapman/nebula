@@ -1042,9 +1042,17 @@ fn main() {
         .allowlist_type("llama_model_params")
         .allowlist_type("clip_ctx")
         .allowlist_type("llama_grammar_element")
+        .allowlist_type("llama_logit_bias")
         .allowlist_type("llama_image_embed")
-        .allowlist_type("llama_grammar")
+        .allowlist_type("llama_sampler")
         .allowlist_type("ggml_log_level")
+        .allowlist_type("clip_image_u8")
+        .allowlist_type("llama_sampler_chain_params")
+        .allowlist_var("LLAMA_DEFAULT_SEED")
+        .allowlist_type(
+            "gpt_sampler_params
+",
+        )
         .derive_partialeq(true)
         .no_debug("llama_grammar_element")
         .prepend_enum_name(false)

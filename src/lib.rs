@@ -1,13 +1,12 @@
-#![allow(clippy::type_complexity)]
-#![allow(clippy::arc_with_non_send_sync)]
-#[cfg(feature = "llama")]
-use strfmt::strfmt;
+use options::Message;
 
+//#![allow(clippy::type_complexity)]
+//#![allow(clippy::arc_with_non_send_sync)]
 #[cfg(feature = "llama")]
 use crate::backend::Model as _;
 
 #[cfg(feature = "llama")]
-use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
+use std::{path::PathBuf, pin::Pin, sync::Mutex};
 
 #[cfg(feature = "whisper")]
 use std::path::PathBuf;
@@ -85,87 +84,37 @@ impl Model {
     }
 
     pub fn context(&self, options: options::ContextOptions) -> Result<Context> {
-        let mut ctx = Context {
-            options: options.clone(),
-            backend: self.backend.new_context(options.clone())?,
+        let ctx = Context {
+            _options: options.clone(),
+            backend: self.backend.new_context(options)?,
         };
-        options.ctx.into_iter().try_for_each(|m| {
-            let (prompt, bos) = match m.is_user {
-                true => {
-                    let mut vars = HashMap::new();
-                    vars.insert("prompt".to_string(), m.message);
-                    (strfmt(&options.user_format, &vars).unwrap(), true)
-                }
-                false => {
-                    let mut vars = HashMap::new();
-                    vars.insert("prompt".to_string(), m.message);
-                    (strfmt(&options.assistant_format, &vars).unwrap(), true)
-                }
-            };
-            eprintln!("{}", prompt);
-            ctx.eval_str(&prompt, bos)?;
-            Ok::<(), error::Error>(())
-        })?;
         Ok(ctx)
     }
 }
 
 #[cfg(feature = "llama")]
 pub struct Context {
-    options: options::ContextOptions,
+    _options: options::ContextOptions,
     backend: Pin<Box<Mutex<dyn backend::Context>>>,
 }
 
 #[cfg(feature = "llama")]
+#[bon::builder]
 pub struct Predict<'a> {
     context: &'a Context,
-    max_len: Option<usize>,
-    top_k: Option<i32>,
-    top_p: Option<f32>,
-    min_p: Option<f32>,
-    temperature: Option<f32>,
+    options: options::PredictOptions,
     token_callback: Option<std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>>,
 }
 
 #[cfg(feature = "llama")]
 impl<'a> Predict<'a> {
-    pub fn new(context: &Context) -> Predict {
+    pub fn new(context: &Context, options: options::PredictOptions) -> Predict {
         Predict {
             context,
-            max_len: None,
-            top_k: None,
-            top_p: None,
-            min_p: None,
-            temperature: None,
+            options,
             token_callback: None,
         }
     }
-
-    pub fn with_top_k(mut self, top_k: i32) -> Self {
-        self.top_k = Some(top_k);
-        self
-    }
-
-    pub fn with_max_len(mut self, max_len: usize) -> Self {
-        self.max_len = Some(max_len);
-        self
-    }
-
-    pub fn with_top_p(mut self, top_p: f32) -> Self {
-        self.top_p = Some(top_p);
-        self
-    }
-
-    pub fn with_min_p(mut self, min_p: f32) -> Self {
-        self.min_p = Some(min_p);
-        self
-    }
-
-    pub fn with_temp(mut self, temp: f32) -> Self {
-        self.temperature = Some(temp);
-        self
-    }
-
     pub fn with_token_callback(
         mut self,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
@@ -175,65 +124,28 @@ impl<'a> Predict<'a> {
     }
 
     pub fn predict(&mut self) -> Result<String> {
-        if let Some(callback) = self.token_callback.clone() {
-            self.context.backend.lock().unwrap().predict_with_callback(
-                callback,
-                self.max_len,
-                self.top_k,
-                self.top_p,
-                self.min_p,
-                self.temperature,
-                &self.context.options.stop_tokens,
-            )?;
+        if let Some(callback) = self.options.token_callback.clone() {
+            self.context
+                .backend
+                .lock()
+                .unwrap()
+                .predict_with_callback(&self.options, callback)?;
             Ok("".to_string())
         } else {
-            self.context.backend.lock().unwrap().predict(
-                self.max_len,
-                self.top_k,
-                self.top_p,
-                self.min_p,
-                self.temperature,
-                &self.context.options.stop_tokens,
-            )
+            self.context.backend.lock().unwrap().predict(&self.options)
         }
     }
 }
 
 #[cfg(feature = "llama")]
 impl Context {
-    pub fn eval_str(&mut self, prompt: &str, add_bos: bool) -> Result<()> {
-        let mut vars = HashMap::new();
-        vars.insert("prompt".to_string(), prompt);
-        let prompt = strfmt(&self.options.prompt_format, &vars).unwrap();
-        self.backend.lock().unwrap().eval_str(&prompt, add_bos)?;
+    pub fn eval(&mut self, msgs: Vec<Message>) -> Result<()> {
+        self.backend.lock().unwrap().eval(msgs)?;
         Ok(())
     }
 
-    pub fn eval_image(&mut self, image: Vec<u8>, prompt: &str) -> Result<()> {
-        if let Some((s1, s2)) = &self.options.prompt_format_with_image.split_once("{image}") {
-            log::debug!("s1: {:?}", s1);
-            log::debug!("s2: {:?}", s2);
-            let mut vars = HashMap::new();
-            vars.insert("prompt".to_string(), prompt);
-            let prompt = strfmt(s2, &vars).unwrap();
-            log::debug!("prompt: {:?}", prompt);
-            let mut bb = self.backend.lock().unwrap();
-            bb.eval_str(s1, true)?;
-            log::debug!("complete eval \"{s1}\"");
-            bb.eval_image(image)?;
-            log::debug!("complete eval image");
-            bb.eval_str(&prompt, false)?;
-            log::debug!("complete eval \"{prompt}\"");
-        } else {
-            let mut bb = self.backend.lock().unwrap();
-            bb.eval_image(image)?;
-            bb.eval_str(prompt, true)?;
-        };
-        Ok(())
-    }
-
-    pub fn predict(&mut self) -> Predict {
-        Predict::new(self)
+    pub fn predict(&mut self, options: options::PredictOptions) -> Predict {
+        Predict::new(self, options)
     }
 }
 
@@ -245,7 +157,7 @@ impl Drop for Model {
 #[cfg(test)]
 #[cfg(feature = "llama")]
 mod test {
-    use std::{io::Read, path::PathBuf};
+    use std::path::PathBuf;
 
     struct TestModel {
         pub _repo: String,
@@ -299,17 +211,19 @@ mod test {
         let test_model = TestModel::new(model_repo, model_file_name);
         eprintln!("{}", test_model.filename.display());
         let model_options = super::options::ModelOptions::default();
-        let prompt = "Write simple Rust programm.";
+        let prompt = r###"{"role": "user", "message": "Write simple Rust programm."}"###;
         let model = super::Model::new(test_model.filename.clone(), model_options);
         assert!(model.is_ok());
         let model = model.unwrap();
-        let ctx_options = super::options::ContextOptions::default();
+        let ctx_options = super::options::ContextOptions::builder().build();
         let ctx = model.context(ctx_options);
         assert!(ctx.is_ok());
         let mut ctx = ctx.unwrap();
-        let eval_res = ctx.eval_str(&prompt, true);
-        assert!(eval_res.is_ok());
-        let answer = ctx.predict().predict();
+        let eval_result = ctx.eval(vec![prompt.try_into().unwrap()]);
+        assert!(eval_result.is_ok());
+        let answer = ctx
+            .predict(super::options::PredictOptions::default())
+            .predict();
         assert!(answer.is_ok());
         let answer = answer.unwrap();
         println!("{answer}");
@@ -334,41 +248,41 @@ mod test {
         test: ("TheBloke/evolvedSeeker_1_3-GGUF","evolvedseeker_1_3.Q2_K.gguf"),
         }
 
-    fn _main_with_model_and_mmproj(
-        model_repo: &str,
-        model_file_name: &str,
-        mmproj_file_name: &str,
-    ) {
-        let image_path = std::env::var("NEBULA_IMAGE").unwrap();
-        let model_options = super::options::ModelOptions::default();
-        let prompt = "Write simple Rust programm.";
-        let test_model = TestModel::new(model_repo, model_file_name)._with_mmproj(mmproj_file_name);
-        let model = super::Model::new_with_mmproj(
-            test_model.filename.clone(),
-            test_model._mmproj.clone().unwrap(),
-            model_options,
-        );
-        assert!(model.is_ok());
-        let model = model.unwrap();
-        let ctx_options = super::options::ContextOptions::default();
-        let ctx = model.context(ctx_options);
+    //     fn _main_with_model_and_mmproj(
+    //         model_repo: &str,
+    //         model_file_name: &str,
+    //         mmproj_file_name: &str,
+    //     ) {
+    //         let image_path = std::env::var("NEBULA_IMAGE").unwrap();
+    //         let model_options = super::options::ModelOptions::default();
+    //         let prompt = "Write simple Rust programm.";
+    //         let test_model = TestModel::new(model_repo, model_file_name)._with_mmproj(mmproj_file_name);
+    //         let model = super::Model::new_with_mmproj(
+    //             test_model.filename.clone(),
+    //             test_model._mmproj.clone().unwrap(),
+    //             model_options,
+    //         );
+    //         assert!(model.is_ok());
+    //         let model = model.unwrap();
+    //         let ctx_options = super::options::ContextOptions::default();
+    //         let ctx = model.context(ctx_options);
 
-        assert!(ctx.is_ok());
-        let mut ctx = ctx.unwrap();
+    //         assert!(ctx.is_ok());
+    //         let mut ctx = ctx.unwrap();
 
-        let mut image_bytes = vec![];
-        let f = std::fs::File::open(&image_path);
-        assert!(f.is_ok());
-        let mut f = f.unwrap();
-        let read_res = f.read_to_end(&mut image_bytes);
-        assert!(read_res.is_ok());
-        let eval_res = ctx.eval_image(image_bytes, &prompt);
-        assert!(eval_res.is_ok());
-        let answer = ctx.predict().predict();
-        assert!(answer.is_ok());
-        let answer = answer.unwrap();
-        println!("{answer}");
-    }
+    //         let mut image_bytes = vec![];
+    //         let f = std::fs::File::open(&image_path);
+    //         assert!(f.is_ok());
+    //         let mut f = f.unwrap();
+    // //        let read_res = f.read_to_end(&mut image_bytes);
+    // //        assert!(read_res.is_ok());
+    // //        let eval_res = ctx.eval_image(image_bytes, &prompt);
+    // //        assert!(eval_res.is_ok());
+    //         let answer = ctx.predict().predict();
+    //         assert!(answer.is_ok());
+    //         let answer = answer.unwrap();
+    //         println!("{answer}");
+    //     }
 
     macro_rules! models_with_mmproj_tests {
         ($($name:ident: ($value:expr, $value2:expr, $value3:expr),)*) => {

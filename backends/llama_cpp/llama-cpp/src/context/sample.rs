@@ -1,7 +1,6 @@
 //! Sampling functions for the context.
 
 use crate::context::LlamaContext;
-use crate::grammar::LlamaGrammar;
 use crate::token::data_array::LlamaTokenDataArray;
 use crate::token::LlamaToken;
 
@@ -9,34 +8,6 @@ use crate::token::LlamaToken;
 pub mod sampler;
 
 impl LlamaContext {
-    /// Accept a token into the grammar.
-    pub fn grammar_accept_token(&mut self, grammar: &mut LlamaGrammar, token: LlamaToken) {
-        unsafe {
-            llama_cpp_sys::llama_grammar_accept_token(
-                self.context.context.as_ptr(),
-                grammar.grammar.as_ptr(),
-                token.0,
-            );
-        }
-    }
-
-    /// Perform grammar sampling.
-    pub fn sample_grammar(
-        &mut self,
-        llama_token_data_array: &mut LlamaTokenDataArray,
-        llama_grammar: &LlamaGrammar,
-    ) {
-        unsafe {
-            llama_token_data_array.modify_as_c_llama_token_data_array(|c_llama_token_data_array| {
-                llama_cpp_sys::llama_sample_grammar(
-                    self.context.context.as_ptr(),
-                    c_llama_token_data_array,
-                    llama_grammar.grammar.as_ptr(),
-                );
-            });
-        }
-    }
-
     /// See [`LlamaTokenDataArray::sample_temp`]
     pub fn sample_temp(&mut self, token_data: &mut LlamaTokenDataArray, temperature: f32) {
         token_data.sample_temp(Some(self), temperature);
@@ -59,6 +30,7 @@ impl LlamaContext {
                 .cast::<llama_cpp_sys::llama_token_data>(),
             size: token_data.data.len(),
             sorted: token_data.sorted,
+            selected: 0,
         };
         let token = unsafe {
             llama_cpp_sys::llama_sample_token_greedy(
@@ -79,6 +51,7 @@ impl LlamaContext {
                 .cast::<llama_cpp_sys::llama_token_data>(),
             size: token_data.data.len(),
             sorted: token_data.sorted,
+            selected: 0,
         };
         let token = unsafe {
             llama_cpp_sys::llama_sample_token(

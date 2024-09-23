@@ -17,12 +17,7 @@ jobs:
     strategy:
       matrix:
         include:
-          - build: linux-arm64
-            arch: aarch64
-            platform: ubuntu-latest
-
-          - build: linux-x86_64
-            arch: x86_64
+          - build: linux
             platform: ubuntu-latest
 
           - build: macos

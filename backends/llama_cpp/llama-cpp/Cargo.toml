@@ -10,6 +10,9 @@ tracing = "0.1"
 log = "0.4.21"
 stdio-override = { git = "https://github.com/elichai/stdio-override.git", rev = "a6712588"}
 gag = "1"
+ringbuffer= { version = "0.15", feature = ["alloc"]}
+bon = "2.1"
+
 
 [dev-dependencies]
 openssl-sys = { version = "0.9.103", features = ["vendored"] }

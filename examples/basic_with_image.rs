@@ -1,4 +1,4 @@
-use std::io::{Read, Write};
+use std::{io::Write, sync::Arc};
 
 use nebula::{
     options::{ContextOptions, ModelOptions},
@@ -49,7 +49,7 @@ fn main() {
     );
     pb.set_position(0);
     let pbb = pb.clone();
-    let model_options = ModelOptions::default().with_n_gpu_layers(10);
+    let model_options = ModelOptions::builder().n_gpu_layers(10).build();
     let model = Model::new_with_mmproj_with_callback(
         model_file_name,
         mmproj_model_file_name,
@@ -63,31 +63,29 @@ fn main() {
     .unwrap();
     pb.finish_with_message("done");
 
-    let context_options = ContextOptions::default().with_n_ctx(6000);
+    let context_options = ContextOptions::builder().n_ctx(6000).build();
     let mut ctx = model.context(context_options).unwrap();
 
-    //read image
-    let mut image_bytes = vec![];
-    let mut f = std::fs::File::open(&image_file_name).unwrap();
-    f.read_to_end(&mut image_bytes).unwrap();
-
     //eval data
-    ctx.eval_image(image_bytes, &prompt).unwrap();
-
-    //generate predict
-
-    //    let answer = ctx.predict(n_len).unwrap();
-    //    println!("{answer}");
-
-    //or
-    ctx.predict()
-        .with_token_callback(Box::new(|token| {
-            print!("{}", token);
-            std::io::stdout().flush().unwrap();
-            true
-        }))
-        .with_max_len(n_len)
-        .predict()
+    ctx.eval(vec![serde_json::json!({
+        "role": "user",
+        "images": [image_file_name],
+        "message": prompt
+    })
+    .try_into()
+    .unwrap()])
         .unwrap();
+    ctx.predict(
+        nebula::options::PredictOptions::builder()
+            .token_callback(Arc::new(Box::new(|token| {
+                print!("{}", token);
+                std::io::stdout().flush().unwrap();
+                true
+            })))
+            .max_len(n_len)
+            .build(),
+    )
+    .predict()
+    .unwrap();
     println!("");
 }

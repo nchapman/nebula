@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::{io::Write, sync::Arc};
 
 use nebula::{
     options::{ContextOptions, ModelOptions},
@@ -44,7 +44,7 @@ fn main() {
     );
     pb.set_position(0);
     let pbb = pb.clone();
-    let model_options = ModelOptions::default().with_n_gpu_layers(10);
+    let model_options = ModelOptions::builder().n_gpu_layers(10).build();
     let model = Model::new_with_progress_callback(model_file_name, model_options, move |a| {
         pbb.set_position((a * 1000.0) as u64);
         std::thread::sleep(std::time::Duration::from_millis(12));
@@ -57,20 +57,27 @@ fn main() {
 
     let mut ctx = model.context(ctx_options).unwrap();
 
-    ctx.eval_str(&prompt, true).unwrap();
+    ctx.eval(vec![serde_json::json!({
+        "role": "user",
+        "message": prompt
+    })
+    .try_into()
+    .unwrap()])
+        .unwrap();
 
-    let mut p = ctx
-        .predict()
-        .with_token_callback(Box::new(|token| {
+    let mut po = nebula::options::PredictOptions::builder()
+        .token_callback(Arc::new(Box::new(|token| {
             print!("{}", token);
             std::io::stdout().flush().unwrap();
             true
-        }))
-        .with_temp(0.8);
-    if let Some(n_len) = n_len {
-        p = p.with_max_len(n_len);
-    }
+        })))
+        .temp(0.8);
+    let po = if let Some(ss) = n_len {
+        po.max_len(ss).build()
+    } else {
+        po.build()
+    };
+    let mut p = ctx.predict(po);
     p.predict().unwrap();
-
     println!("");
 }

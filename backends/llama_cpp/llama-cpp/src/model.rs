@@ -5,13 +5,14 @@ use std::path::Path;
 use std::ptr::NonNull;
 use std::sync::Arc;
 
+use crate::clip::ClipContext;
 use crate::context::params::LlamaContextParams;
 use crate::context::LlamaContext;
 use crate::llama_backend::LlamaBackend;
 use crate::model::params::LlamaModelParams;
 use crate::token::LlamaToken;
 use crate::token_type::LlamaTokenType;
-use crate::{LlamaContextLoadError, LlamaModelLoadError, StringToTokenError, TokenToStringError};
+use crate::{LLamaCppError, LlamaModelLoadError, StringToTokenError, TokenToStringError};
 
 pub mod params;
 
@@ -33,10 +34,11 @@ impl Drop for LlamaModelInternal {
 
 /// A safe wrapper around `llama_model`.
 #[derive(Debug, Clone)]
-#[repr(transparent)]
+//#[repr(transparent)]
 #[allow(clippy::module_name_repetitions)]
 pub struct LlamaModel {
     pub(crate) model: Arc<LlamaModelInternal>,
+    pub(crate) clip_ctx: Option<ClipContext>,
 }
 
 /// How to determine if we should prepend a bos token to tokens
@@ -71,7 +73,7 @@ impl LlamaModel {
     ) -> impl Iterator<Item = (LlamaToken, Result<String, TokenToStringError>)> + '_ {
         (0..self.n_vocab())
             .map(LlamaToken::new)
-            .map(|llama_token| (llama_token, self.token_to_str(llama_token)))
+            .map(|llama_token| (llama_token, self.token_to_str(&llama_token)))
     }
 
     /// Get the beginning of stream token.
@@ -88,6 +90,10 @@ impl LlamaModel {
         LlamaToken(token)
     }
 
+    pub fn token_is_eog(&self, id: LlamaToken) -> bool {
+        unsafe { llama_cpp_sys::llama_token_is_eog(self.model.model.as_ptr(), id.0) }
+    }
+
     /// Get the newline token.
     #[must_use]
     pub fn token_nl(&self) -> LlamaToken {
@@ -100,8 +106,15 @@ impl LlamaModel {
     /// # Errors
     ///
     /// See [`TokenToStringError`] for more information.
-    pub fn token_to_str(&self, token: LlamaToken) -> Result<String, TokenToStringError> {
-        self.token_to_str_with_size(token, 32)
+    pub fn token_to_str_with_special(
+        &self,
+        token: &LlamaToken,
+        special: bool,
+    ) -> Result<String, TokenToStringError> {
+        self.token_to_str_with_size(token, 32, special)
+    }
+    pub fn token_to_str(&self, token: &LlamaToken) -> Result<String, TokenToStringError> {
+        self.token_to_str_with_size(token, 32, false)
     }
 
     /// Convert a vector of tokens to a single string.
@@ -111,7 +124,7 @@ impl LlamaModel {
     /// See [`TokenToStringError`] for more information.
     pub fn tokens_to_str(&self, tokens: &[LlamaToken]) -> Result<String, TokenToStringError> {
         let mut builder = String::with_capacity(tokens.len() * 4);
-        for str in tokens.iter().copied().map(|t| self.token_to_str(t)) {
+        for str in tokens.iter().copied().map(|t| self.token_to_str(&t)) {
             builder += &str?;
         }
         Ok(builder)
@@ -180,7 +193,7 @@ impl LlamaModel {
                     buffer.as_mut_ptr(),
                     -size,
                     add_bos,
-                    true,
+                    false,
                 )
             }
         } else {
@@ -200,9 +213,9 @@ impl LlamaModel {
     ///
     /// If the token type is not known to this library.
     #[must_use]
-    pub fn token_type(&self, LlamaToken(id): LlamaToken) -> LlamaTokenType {
+    pub fn token_type(&self, LlamaToken(id): &LlamaToken) -> LlamaTokenType {
         let token_type =
-            unsafe { llama_cpp_sys::llama_token_get_attr(self.model.model.as_ptr(), id) };
+            unsafe { llama_cpp_sys::llama_token_get_attr(self.model.model.as_ptr(), *id) };
         LlamaTokenType::try_from(token_type).expect("token type is valid")
     }
 
@@ -223,17 +236,18 @@ impl LlamaModel {
     /// - if the returned size from llama-cpp does not fit into a [`usize`]. (this should never happen)
     pub fn token_to_str_with_size(
         &self,
-        token: LlamaToken,
+        token: &LlamaToken,
         buffer_size: usize,
+        special: bool,
     ) -> Result<String, TokenToStringError> {
-        if token == self.token_nl() {
+        if token == &self.token_nl() {
             return Ok(String::from("\n"));
         }
 
-        match self.token_type(token) {
+        match self.token_type(&token) {
             LlamaTokenType::Normal | LlamaTokenType::UserDefined => {}
             LlamaTokenType::Control => {
-                if token == self.token_bos() || token == self.token_eos() {
+                if token == &self.token_bos() || token == &self.token_eos() {
                     return Ok(String::new());
                 }
             }
@@ -250,7 +264,13 @@ impl LlamaModel {
         let len = c_int::try_from(len).expect("length fits into c_int");
         let buf = string.into_raw();
         let size = unsafe {
-            llama_cpp_sys::llama_token_to_piece(self.model.model.as_ptr(), token.0, buf, len, false)
+            llama_cpp_sys::llama_token_to_piece(
+                self.model.model.as_ptr(),
+                token.0,
+                buf,
+                len,
+                special,
+            )
         };
 
         match size {
@@ -292,6 +312,33 @@ impl LlamaModel {
         unsafe { llama_cpp_sys::llama_n_embd(self.model.model.as_ptr()) }
     }
 
+    pub fn meta_val_str(&self, key: &str) -> Result<Option<String>, LLamaCppError> {
+        let key_c_string = CString::new(key)?;
+        let model_template = CString::new(vec![b'*'; 2048])?;
+        let len = model_template.as_bytes().len();
+        let len = c_int::try_from(len).expect("length fits into c_int");
+        let buf = model_template.into_raw();
+        let res = unsafe {
+            llama_cpp_sys::llama_model_meta_val_str(
+                self.model.model.as_ref(),
+                key_c_string.as_ptr(),
+                buf,
+                len as usize,
+            )
+        };
+        match res {
+            0 => Ok(None),
+            i if i.is_negative() => Err(LLamaCppError::InsufficientBufferSpace(i)),
+            size => {
+                let string = unsafe { CString::from_raw(buf) };
+                let mut bytes = string.into_bytes();
+                let len = usize::try_from(size).expect("size is positive and fits into usize");
+                bytes.truncate(len);
+                Ok(Some(String::from_utf8(bytes)?))
+            }
+        }
+    }
+
     /// loads a model from a file.
     ///
     /// # Errors
@@ -323,7 +370,13 @@ impl LlamaModel {
         tracing::debug!(?path, "Loaded model");
         Ok(LlamaModel {
             model: Arc::new(LlamaModelInternal { model }),
+            clip_ctx: None,
         })
+    }
+
+    pub fn with_mmproj(mut self, path: impl AsRef<Path>) -> Result<Self, LlamaModelLoadError> {
+        self.clip_ctx = Some(ClipContext::load(path)?);
+        Ok(self)
     }
 
     /// Create a new context from this model.
@@ -337,20 +390,8 @@ impl LlamaModel {
         &self,
         _: &LlamaBackend,
         params: LlamaContextParams,
-    ) -> Result<LlamaContext, LlamaContextLoadError> {
-        let context_params = params.context_params;
-        #[cfg(any(target_os = "linux", target_os = "macos"))]
-        let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
-        #[cfg(any(target_os = "windows"))]
-        let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
-        let context = unsafe {
-            llama_cpp_sys::llama_new_context_with_model(self.model.model.as_ptr(), context_params)
-        };
-        #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
-        drop(guard);
-        let context = NonNull::new(context).ok_or(LlamaContextLoadError::NullReturn)?;
-
-        Ok(LlamaContext::new(self, context, params.embeddings()))
+    ) -> crate::Result<LlamaContext> {
+        LlamaContext::new(self, params)
     }
 }
 
