@@ -396,7 +396,7 @@ impl ParlerBackend {
         let config: ParlerConfig = serde_json::from_reader(std::fs::File::open(config)?)?;
         let mut model = ParlerModel::new(&config, vb)?;
 
-        let empty_vec: Vec<u32> = Vec::new();
+        let empty_vec: Vec<u32> = vec![0];
         let description_tokens = CandleTensor::new(empty_vec, &device)?;
 
         Ok(Self { config, model, tokenizer, device, description_tokens})

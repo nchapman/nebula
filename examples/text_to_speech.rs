@@ -5,20 +5,18 @@ use nebula::{
 use hound::{WavReader, WavSpec, SampleFormat, WavWriter};
 use rubato::{Resampler, SincFixedIn, SincInterpolationType, SincInterpolationParameters, WindowFunction, ResampleError};
 use std::path::{Path, PathBuf};
+use candle_examples::wav::write_pcm_as_wav;
 
 fn main() -> anyhow::Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    let model_type = if args.len() < 2 {
+    let model_type_str = if args.len() < 2 {
         "".to_string()
     } else {
         args[1].clone()
     };
-    let model_type = match model_type.as_str() {
-        "style" => TTSModelType::Style,
-        "parler-mini" => TTSModelType::ParlerMini,
-        "parler-large" => TTSModelType::ParlerLarge,
-        _ => TTSModelType::Style,
-    };
+    let model_type_str = model_type_str.as_str();
+
+    let model_type = get_model_type_from_str(model_type_str);
     println!("Model type: {:?}", model_type);
 
     let tts_options = TTSOptions::default().with_model_type(model_type);
@@ -30,11 +28,30 @@ fn main() -> anyhow::Result<()> {
 
     let text = String::from("Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?");
     let generated_audio_sample = model.predict(text)?;
-    write_samples_to_test_file(generated_audio_sample)?;
+
+    let model_type = get_model_type_from_str(model_type_str);
+    println!("Model type (repeated): {:?}", model_type);
+    match model_type {
+        TTSModelType::Style => { write_samples_to_test_file(generated_audio_sample)?; },
+        TTSModelType::ParlerMini | TTSModelType::ParlerLarge => {
+            let mut output = std::fs::File::create("test.wav")?;
+            write_pcm_as_wav(&mut output, &generated_audio_sample, 44100)?;
+        },
+        _ => { panic!("This model type is not implemented yet!") }
+    }
 
     Ok(())
 }
 
+fn get_model_type_from_str(model_type_str: &str) -> TTSModelType {
+    let model_type = match model_type_str {
+        "style" => TTSModelType::Style,
+        "parler-mini" => TTSModelType::ParlerMini,
+        "parler-large" => TTSModelType::ParlerLarge,
+        _ => TTSModelType::Style,
+    };
+    model_type
+}
 
 fn get_samples_from_audio_path(audio_path: PathBuf) -> anyhow::Result<Vec<f32>> {
     let (wave, channels, sample_rate, bits_per_sample) = load_audio(audio_path);
