@@ -1,3 +1,4 @@
+use anyhow::Ok;
 use tch::{self, IndexOp, Tensor};
 use std::path::{Path, PathBuf};
 use punkt::{SentenceTokenizer, TrainingData};
@@ -6,8 +7,11 @@ use fancy_regex::Regex;
 use hf_hub::{api::sync::Api, Repo, RepoType};
 use candle_nn::VarBuilder;
 use candle_transformers::models::parler_tts::{Config as ParlerConfig, Model as ParlerModel};
+use candle_transformers::generation::LogitsProcessor;
 use candle_examples::{hub_load_safetensors, device};
-use candle_core::Device as CandleDevice;
+use candle_core::{
+    Device as CandleDevice, Tensor as CandleTensor, DType as CandleDType, IndexOp as CandleIndexOp
+};
 use tokenizers::Tokenizer;
 
 mod treebank_word_tokenizer;
@@ -350,9 +354,11 @@ impl StyleTTSBackend {
 
 
 pub struct ParlerBackend {
+    config: ParlerConfig,
     model: ParlerModel,
     tokenizer: Tokenizer,
     device: CandleDevice,
+    description_tokens: CandleTensor,
 }
 
 impl ParlerBackend {
@@ -385,20 +391,63 @@ impl ParlerBackend {
             _ => { panic!("This device is not available for this model!") }
         };
 
-        let vb = unsafe { VarBuilder::from_mmaped_safetensors(&model_files, DType::F32, &device)? };
+        let vb = unsafe {
+            VarBuilder::from_mmaped_safetensors(&model_files, CandleDType::F32, &device)?
+        };
         let config: ParlerConfig = serde_json::from_reader(std::fs::File::open(config)?)?;
         let mut model = ParlerModel::new(&config, vb)?;
 
-        Ok(Self { model, tokenizer, device })
+        let empty_vec: Vec<u32> = Vec::new();
+        let description_tokens = CandleTensor::new(empty_vec, &device)?;
+
+        Ok(Self { config, model, tokenizer, device, description_tokens})
+    }
+
+    pub fn train_from_description(&mut self, description: String) -> anyhow::Result<()> {
+        let description_tokens = self.tokenizer
+            .encode(description, true)
+            .map_err(anyhow::Error::msg)?
+            .get_ids()
+            .to_vec();
+        self.description_tokens = CandleTensor::new(description_tokens, &self.device)?.unsqueeze(0)?;
+        Ok(())
     }
 }
 
 impl TextToSpeechBackend for ParlerBackend {
     fn train(&mut self, ref_samples: Vec<f32>) -> anyhow::Result<()> {
-        todo!()
+        println!("Training from reference samples is not available for this model.");
+        println!("Please use train_from_description.");
+        println!("Exitting from training process...");
+        Ok(())
     }
 
     fn predict(&mut self, text: String) -> anyhow::Result<Vec<f32>> {
-        todo!()
+        let prompt_tokens = self.tokenizer
+            .encode(text, true)
+            .map_err(anyhow::Error::msg)?
+            .get_ids()
+            .to_vec();
+        let prompt_tokens = CandleTensor::new(prompt_tokens, &self.device)?
+            .unsqueeze(0)?;
+        let lp = LogitsProcessor::new(
+            0, Some(0.0), Some(1.0),
+        );
+        let codes = self.model.generate(
+            &prompt_tokens, &self.description_tokens, lp, 512
+        )?;
+        let codes = codes.to_dtype(CandleDType::I64)?;
+        codes.save_safetensors("codes", "out.safetensors")?;
+        let codes = codes.unsqueeze(0)?;
+        let pcm = self.model
+            .audio_encoder
+            .decode_codes(&codes.to_device(&self.device)?)?;
+        println!("{pcm}");
+        let pcm = pcm.i((0, 0))?;
+        let pcm = candle_examples::audio::normalize_loudness(
+            &pcm, 24_000, true
+        )?;
+        let pcm = pcm.to_vec1::<f32>()?;
+        Ok(pcm)
     }
 }
