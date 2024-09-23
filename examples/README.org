@@ -318,17 +318,29 @@ rustup toolchain install nightly
 chmod u+x build.sh
 ./build.sh
 #+END_SRC
+** usage
+#+BEGIN_SRC bash
+usage:
+	cargo +nightly r --release --example text_to_speech --features tts -- <model_type>
+#+END_SRC
+After successful running, you should find a file =test.wav= with an audio sequence pronouncing the following =Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?=.
 ** models
+*** StyleTTS2
 #+BEGIN_SRC bash
     mkdir models
     cd models
     mkdir torch-scripts
     cd ..
 #+END_SRC
-After running these commands, download models from [[https://drive.google.com/file/d/15UCvTNTwSacP_e7ZjNzib4iiHSegkM8Q/view?usp=sharing][my Google Drive]] manually. Unpack the =*.pt= files into =models/torch-scripts= folder.
-** usage
+After running these commands, download models from [[https://drive.google.com/file/d/15UCvTNTwSacP_e7ZjNzib4iiHSegkM8Q/view?usp=sharing][my Google Drive]] manually. Unpack the =*.pt= files into =models/torch-scripts= folder. Then run:
 #+BEGIN_SRC bash
-usage:
-	cargo +nightly r --release --example text_to_speech --features tts
+    cargo +nightly r --release --example text_to_speech --features tts -- style
 #+END_SRC
-After successful running, you should find a file =test.wav= with an audio sequence pronouncing the following =Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?=.
+*** Parler-mini
+#+BEGIN_SRC bash
+    cargo +nightly r --release --example text_to_speech --features tts -- parler-mini
+#+END_SRC
+*** Parler-large
+#+BEGIN_SRC bash
+    cargo +nightly r --release --example text_to_speech --features tts -- parler-large
+#+END_SRC
