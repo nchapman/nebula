@@ -499,7 +499,8 @@ impl Default for EmbeddingsOptions {
 #[derive(Debug)]
 pub enum TTSModelType {
     Style,
-    Parler,
+    ParlerMini,
+    ParlerLarge,
 }
 
 #[cfg(feature = "tts")]

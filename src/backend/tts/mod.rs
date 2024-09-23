@@ -3,7 +3,12 @@ use std::path::{Path, PathBuf};
 use punkt::{SentenceTokenizer, TrainingData};
 use punkt::params::Standard;
 use fancy_regex::Regex;
-
+use hf_hub::{api::sync::Api, Repo, RepoType};
+use candle_nn::VarBuilder;
+use candle_transformers::models::parler_tts::{Config as ParlerConfig, Model as ParlerModel};
+use candle_examples::{hub_load_safetensors, device};
+use candle_core::Device as CandleDevice;
+use tokenizers::Tokenizer;
 
 mod treebank_word_tokenizer;
 mod phonemizer;
@@ -12,7 +17,7 @@ use treebank_word_tokenizer::TreebankWordTokenizer;
 use phonemizer::text_to_phonemes;
 use text_cleaner::TextCleaner;
 
-use crate::options::{TTSOptions, TTSDevice};
+use crate::options::{TTSOptions, TTSDevice, TTSModelType};
 use super::TextToSpeechBackend;
 
 const MEAN: f64 = -4.0;
@@ -344,11 +349,47 @@ impl StyleTTSBackend {
 }
 
 
-pub struct ParlerBackend {}
+pub struct ParlerBackend {
+    model: ParlerModel,
+    tokenizer: Tokenizer,
+    device: CandleDevice,
+}
 
 impl ParlerBackend {
     pub fn new(options: TTSOptions) -> anyhow::Result<Self> {
-        todo!()
+        let api = hf_hub::api::sync::Api::new()?;
+        let model_id = match options.model_type {
+            TTSModelType::ParlerMini => "parler-tts/parler-tts-mini-v1".to_string(),
+            TTSModelType::ParlerLarge =>  "parler-tts/parler-tts-large-v1".to_string(),
+            _ => { panic!("This model type is not implemented yet!") }
+        };
+        let revision = "main".to_string();
+        let repo = api.repo(hf_hub::Repo::with_revision(
+            model_id,
+            hf_hub::RepoType::Model,
+            revision,
+        ));
+        let model_files = match options.model_type {
+            TTSModelType::ParlerMini => vec![repo.get("model.safetensors")?],
+            TTSModelType::ParlerLarge  => {
+                candle_examples::hub_load_safetensors(&repo, "model.safetensors.index.json")?
+            },
+            _ => { panic!("This model type is not implemented yet!") }
+        };
+        let config = repo.get("config.json")?;
+        let tokenizer = repo.get("tokenizer.json")?;
+        let tokenizer = Tokenizer::from_file(tokenizer).map_err(anyhow::Error::msg)?;
+        let device = match options.device {
+            TTSDevice::Cpu => device(true)?,
+            TTSDevice::Cuda => device(false)?,
+            _ => { panic!("This device is not available for this model!") }
+        };
+
+        let vb = unsafe { VarBuilder::from_mmaped_safetensors(&model_files, DType::F32, &device)? };
+        let config: ParlerConfig = serde_json::from_reader(std::fs::File::open(config)?)?;
+        let mut model = ParlerModel::new(&config, vb)?;
+
+        Ok(Self { model, tokenizer, device })
     }
 }
 

@@ -120,7 +120,8 @@ pub fn init_text_to_speech_backend(
 ) -> anyhow::Result<Box<dyn TextToSpeechBackend>> {
     match options.model_type {
         TTSModelType::Style => anyhow::Ok(Box::new(tts::StyleTTSBackend::new(options)?)),
-        TTSModelType::Parler => anyhow::Ok(Box::new(tts::ParlerBackend::new(options)?)),
+        TTSModelType::ParlerMini => anyhow::Ok(Box::new(tts::ParlerBackend::new(options)?)),
+        TTSModelType::ParlerLarge => anyhow::Ok(Box::new(tts::ParlerBackend::new(options)?)),
         _ => { panic!("This model type is not implemented yet!") }
     }
 }
