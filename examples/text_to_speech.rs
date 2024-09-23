@@ -1,5 +1,5 @@
 use nebula::{
-    options::TTSOptions,
+    options::{TTSOptions, TTSModelType},
     TextToSpeechModel,
 };
 use hound::{WavReader, WavSpec, SampleFormat, WavWriter};
@@ -7,11 +7,25 @@ use rubato::{Resampler, SincFixedIn, SincInterpolationType, SincInterpolationPar
 use std::path::{Path, PathBuf};
 
 fn main() -> anyhow::Result<()> {
+    let args: Vec<String> = std::env::args().collect();
+    let model_type = if args.len() < 2 {
+        "".to_string()
+    } else {
+        args[1].clone()
+    };
+    let model_type = match model_type.as_str() {
+        "style" => TTSModelType::Style,
+        "parler-mini" => TTSModelType::ParlerMini,
+        "parler-large" => TTSModelType::ParlerLarge,
+        _ => TTSModelType::Style,
+    };
+    println!("Model type: {:?}", model_type);
+
+    let tts_options = TTSOptions::default().with_model_type(model_type);
+    let mut model = TextToSpeechModel::new(tts_options)?;
+
     let ref_audio_path = Path::new("samples").join("resampled_ref.wav");
     let ref_samples = get_samples_from_audio_path(ref_audio_path)?;
-
-    let tts_options = TTSOptions::default();
-    let mut model = TextToSpeechModel::new(tts_options)?;
     model.train(ref_samples)?;
 
     let text = String::from("Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?");

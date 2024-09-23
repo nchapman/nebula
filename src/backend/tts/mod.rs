@@ -1,4 +1,3 @@
-use anyhow::Ok;
 use tch::{self, IndexOp, Tensor};
 use std::path::{Path, PathBuf};
 use punkt::{SentenceTokenizer, TrainingData};
@@ -412,13 +411,19 @@ impl ParlerBackend {
         self.description_tokens = CandleTensor::new(description_tokens, &self.device)?.unsqueeze(0)?;
         Ok(())
     }
+
+    pub fn train_from_default_description(&mut self) -> anyhow::Result<()> {
+        let default_description = "A female speaker delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speaker's voice sounding clear and very close up.".to_string();
+        self.train_from_description(default_description)?;
+        Ok(())
+    }
 }
 
 impl TextToSpeechBackend for ParlerBackend {
     fn train(&mut self, ref_samples: Vec<f32>) -> anyhow::Result<()> {
         println!("Training from reference samples is not available for this model.");
-        println!("Please use train_from_description.");
-        println!("Exitting from training process...");
+        println!("Training from default description will be used instead.");
+        self.train_from_default_description()?;
         Ok(())
     }
 
