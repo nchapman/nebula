@@ -48,7 +48,7 @@ pub enum LLamaCppError {
     #[error("{0}")]
     FromUtf8(#[from] FromUtf8Error),
     #[error("{0}")]
-    InsufficientBufferSpace(i32),
+    InsufficientBufferSpace(i32, usize),
     /// There was an error while decoding a batch.
     #[error("{0}")]
     DecodeError(#[from] DecodeError),
@@ -237,7 +237,7 @@ pub enum TokenToStringError {
     UnknownTokenType,
     /// There was insufficient buffer space to convert the token to a string.
     #[error("Insufficient Buffer Space {0}")]
-    InsufficientBufferSpace(c_int),
+    InsufficientBufferSpace(c_int, usize),
     /// The token was not valid utf8.
     #[error("FromUtf8Error {0}")]
     FromUtf8Error(#[from] FromUtf8Error),

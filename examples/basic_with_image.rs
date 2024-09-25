@@ -65,16 +65,31 @@ fn main() {
 
     let context_options = ContextOptions::builder().n_ctx(6000).build();
     let mut ctx = model.context(context_options).unwrap();
-
+    eprintln!("{image_file_name}");
     //eval data
-    ctx.eval(vec![serde_json::json!({
-        "role": "user",
-        "images": [image_file_name],
-        "message": prompt
-    })
-    .try_into()
-    .unwrap()])
-        .unwrap();
+    ctx.eval(vec![
+        serde_json::json!({
+            "role": "user",
+            "images": [image_file_name],
+            "content": prompt
+        })
+        .try_into()
+        .unwrap(),
+        serde_json::json!({
+            "role": "assistant",
+            "content": "The image displays a close-up of a red fox with a mix of white and black fur, standing on a lush green field. The fox is staring straight ahead, capturing the viewer's attention. The field is surrounded by trees, which adds to the overall natural beauty of the scene."
+        })
+        .try_into()
+        .unwrap(),
+        serde_json::json!({
+            "role": "user",
+            "images": ["/home/andrey/screenshot.png"],
+            "content": "what is on this image?"
+        })
+        .try_into()
+        .unwrap(),
+    ])
+    .unwrap();
     ctx.predict(
         nebula::options::PredictOptions::builder()
             .token_callback(Arc::new(Box::new(|token| {

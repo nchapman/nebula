@@ -55,13 +55,14 @@ pub enum Templated {
 
 #[derive(Clone)]
 pub struct Llama {
+    name: String,
     model: LlamaModel,
     mmproj: Option<ClipContext>,
 }
 
 impl Llama {
     pub fn new(
-        model: impl Into<PathBuf>,
+        model_path: impl Into<PathBuf>,
         options: ModelOptions,
         callback: Option<impl FnMut(f32) -> bool + 'static>,
     ) -> Result<Self> {
@@ -70,9 +71,10 @@ impl Llama {
             lmp = lmp.with_load_process_callback(cb);
         }
         let model_params = Box::pin(lmp);
-        let model =
-            LlamaModel::load_from_file(&LLAMA_BACKEND, Path::new(&model.into()), &model_params)?;
+        let mm: PathBuf = model_path.into();
+        let model = LlamaModel::load_from_file(&LLAMA_BACKEND, Path::new(&mm), &model_params)?;
         Ok(Self {
+            name: mm.to_str().unwrap().to_string(),
             model,
             mmproj: None,
         })
@@ -101,7 +103,7 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.images.is_empty() {
-                            write!(buf, "<|im_start|>{}\n{}<|im_end|>\n", msg.role, msg.message)?;
+                            write!(buf, "<|im_start|>{}\n{}<|im_end|>\n", msg.role, msg.content)?;
                         } else {
                             write!(buf, "<|im_start|>{}\n", msg.role)?;
                             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
@@ -109,7 +111,7 @@ impl Llama {
                                 res.push(Templated::Image(im.0));
                             });
                             buf = BufWriter::new(Vec::new());
-                            write!(buf, "{}<|im_end|>\n", msg.message)?;
+                            write!(buf, "{}<|im_end|>\n", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -134,9 +136,9 @@ impl Llama {
             write!(buf, "[INST]")?;
             let buf = msgs.into_iter().try_fold(buf, |mut buf, msg| {
                 let content = if strip_message {
-                    msg.message.trim().to_string()
+                    msg.content.trim().to_string()
                 } else {
-                    msg.message
+                    msg.content
                 };
                 if !is_inside_turn {
                     is_inside_turn = true;
@@ -192,7 +194,7 @@ impl Llama {
                             });
                             buf = BufWriter::new(Vec::new());
                         }
-                        write!(buf, "{}<|end|>\n", msg.message)?;
+                        write!(buf, "{}<|end|>\n", msg.content)?;
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
@@ -213,7 +215,7 @@ impl Llama {
                             });
                             buf = BufWriter::new(Vec::new());
                         }
-                        write!(buf, "{}<|endoftext|>\n", msg.message)?;
+                        write!(buf, "{}<|endoftext|>\n", msg.content)?;
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
@@ -234,7 +236,7 @@ impl Llama {
                         });
                         buf = BufWriter::new(Vec::new());
                     }
-                    write!(buf, "{}</s>\n", msg.message)?;
+                    write!(buf, "{}</s>\n", msg.content)?;
                     Ok::<_, crate::error::Error>(buf)
                 },
             )?;
@@ -254,7 +256,7 @@ impl Llama {
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.role == Role::System {
                             // there is no system message for gemma, but we will merge it with user prompt, so nothing is broken
-                            system_prompt = msg.message.trim().to_string();
+                            system_prompt = msg.content.trim().to_string();
                         } else {
                             write!(
                                 buf,
@@ -276,7 +278,7 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}<end_of_turn>\n", msg.message.trim())?;
+                            write!(buf, "{}<end_of_turn>\n", msg.content.trim())?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -293,7 +295,7 @@ impl Llama {
                 .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                     if msg.role == Role::System {
                         // there is no system message support, we will merge it with user prompt
-                        system_prompt = msg.message;
+                        system_prompt = msg.content;
                     } else if msg.role == Role::User {
                         write!(buf, "Human: ")?;
                         if !system_prompt.is_empty() && msg.role == Role::User {
@@ -307,9 +309,9 @@ impl Llama {
                             });
                             buf = BufWriter::new(Vec::new());
                         }
-                        write!(buf, "{}\n\nAssistant: </s>", msg.message)?;
+                        write!(buf, "{}\n\nAssistant: </s>", msg.content)?;
                     } else {
-                        write!(buf, "{}</s>", msg.message)?;
+                        write!(buf, "{}</s>", msg.content)?;
                     }
                     Ok::<_, crate::error::Error>(buf)
                 })?;
@@ -321,7 +323,7 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.role == Role::System {
-                            write!(buf, "{}<|end_of_turn|>", msg.message)?;
+                            write!(buf, "{}<|end_of_turn|>", msg.content)?;
                         } else {
                             write!(
                                 buf,
@@ -335,7 +337,7 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}<|end_of_turn|>", msg.message)?;
+                            write!(buf, "{}<|end_of_turn|>", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -355,9 +357,9 @@ impl Llama {
                         if msg.role == Role::System {
                             // Orca-Vicuna variant uses a system prefix
                             if template == "vicuna-orca" || template.contains("SYSTEM: ") {
-                                write!(buf, "SYSTEM: {}\n", msg.message)?;
+                                write!(buf, "SYSTEM: {}\n", msg.content)?;
                             } else {
-                                write!(buf, "{}\n\n", msg.message)?;
+                                write!(buf, "{}\n\n", msg.content)?;
                             }
                         } else if msg.role == Role::User {
                             write!(buf, "USER: ")?;
@@ -368,9 +370,9 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n", msg.message)?;
+                            write!(buf, "{}\n", msg.content)?;
                         } else {
-                            write!(buf, "ASSISTANT: {}</s>\n", msg.message)?;
+                            write!(buf, "ASSISTANT: {}</s>\n", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -387,7 +389,7 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.role == Role::System {
-                            write!(buf, "{}", msg.message)?;
+                            write!(buf, "{}", msg.content)?;
                         } else if msg.role == Role::User {
                             write!(buf, "### Instruction:\n")?;
                             if !msg.images.is_empty() {
@@ -397,9 +399,9 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n", msg.message)?;
+                            write!(buf, "{}\n", msg.content)?;
                         } else {
-                            write!(buf, "### Response:\n{}\n<|EOT|>\n", msg.message)?;
+                            write!(buf, "### Response:\n{}\n<|EOT|>\n", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -419,7 +421,7 @@ impl Llama {
                             write!(
                                 buf,
                                 "<|START_OF_TURN_TOKEN|><|SYSTEM_TOKEN|>{}<|END_OF_TURN_TOKEN|>",
-                                msg.message.trim(),
+                                msg.content.trim(),
                             )?;
                         } else if msg.role == Role::User {
                             write!(buf, "<|START_OF_TURN_TOKEN|><|USER_TOKEN|>")?;
@@ -430,12 +432,12 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}<|END_OF_TURN_TOKEN|>", msg.message.trim())?;
+                            write!(buf, "{}<|END_OF_TURN_TOKEN|>", msg.content.trim())?;
                         } else {
                             write!(
                                 buf,
                                 "<|START_OF_TURN_TOKEN|><|CHATBOT_TOKEN|>{}<|END_OF_TURN_TOKEN|>",
-                                msg.message
+                                msg.content
                             )?;
                         }
                         Ok::<_, crate::error::Error>(buf)
@@ -461,12 +463,12 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}<|eot_id|>", msg.message.trim())?;
+                            write!(buf, "{}<|eot_id|>", msg.content.trim())?;
                         } else {
                             write!(
                                 buf,
                                 "<|start_header_id|>{}<|end_header_id|>\n\n{}<|eot_id|>",
-                                msg.role, msg.message
+                                msg.role, msg.content
                             )?;
                         }
                         Ok::<_, crate::error::Error>(buf)
@@ -490,9 +492,9 @@ impl Llama {
                         });
                         buf = BufWriter::new(Vec::new());
                     }
-                    write!(buf, "{}", msg.message)?;
+                    write!(buf, "{}", msg.content)?;
                 } else {
-                    write!(buf, "<|{}|>\n {}", msg.role, msg.message)?;
+                    write!(buf, "<|{}|>\n {}", msg.role, msg.content)?;
                 }
                 Ok::<_, crate::error::Error>(buf)
             })?;
@@ -515,9 +517,9 @@ impl Llama {
                         });
                         buf = BufWriter::new(Vec::new());
                     }
-                    write!(buf, "{}", msg.message)?;
+                    write!(buf, "{}", msg.content)?;
                 } else {
-                    write!(buf, "<|{}|>\n {}", msg.role, msg.message)?;
+                    write!(buf, "<|{}|>\n {}", msg.role, msg.content)?;
                 }
                 Ok::<_, crate::error::Error>(buf)
             })?;
@@ -540,9 +542,9 @@ impl Llama {
                             });
                             buf = BufWriter::new(Vec::new());
                         }
-                        write!(buf, "{}<AI>", msg.message.trim())?;
+                        write!(buf, "{}<AI>", msg.content.trim())?;
                     } else {
-                        write!(buf, "{}", msg.message.trim())?;
+                        write!(buf, "{}", msg.content.trim())?;
                     }
                     Ok::<_, crate::error::Error>(buf)
                 })?;
@@ -556,7 +558,7 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.role == Role::System {
-                            write!(buf, "{}\n\n", msg.message)?;
+                            write!(buf, "{}\n\n", msg.content)?;
                         } else if msg.role == Role::User {
                             write!(buf, "User: :")?;
                             if !msg.images.is_empty() {
@@ -566,9 +568,9 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n\n", msg.message)?;
+                            write!(buf, "{}\n\n", msg.content)?;
                         } else {
-                            write!(buf, "Assistant: {}<｜end▁of▁sentence｜>", msg.message)?;
+                            write!(buf, "Assistant: {}<｜end▁of▁sentence｜>", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -588,7 +590,7 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.role == Role::System {
-                            write!(buf, "[|system|]{}[|endofturn|]\n", msg.message.trim())?;
+                            write!(buf, "[|system|]{}[|endofturn|]\n", msg.content.trim())?;
                         } else if msg.role == Role::User {
                             write!(buf, "[|user|]")?;
                             if !msg.images.is_empty() {
@@ -598,9 +600,9 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n", msg.message.trim())?;
+                            write!(buf, "{}\n", msg.content.trim())?;
                         } else {
-                            write!(buf, "[|assistant|]{}[|endofturn|]\n", msg.message.trim())?;
+                            write!(buf, "[|assistant|]{}[|endofturn|]\n", msg.content.trim())?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -616,6 +618,9 @@ impl Llama {
 }
 
 impl Model for Llama {
+    fn name(&self) -> Result<&str> {
+        Ok(&self.name)
+    }
     fn with_mmproj(&mut self, mmproj: PathBuf) -> Result<()> {
         let clip_context = ClipContext::load(Path::new(&mmproj))?;
         self.mmproj = Some(clip_context);

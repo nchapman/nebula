@@ -78,7 +78,7 @@ impl<'de> Deserialize<'de> for Image {
 
 #[derive(Clone, Debug, serde::Deserialize)]
 pub struct Message {
-    pub message: String,
+    pub content: String,
     pub role: Role,
     #[serde(default)]
     pub images: Vec<Image>,
@@ -220,7 +220,7 @@ impl Into<SamplingParams> for PredictOptions {
     }
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, serde::Deserialize)]
 #[bon::builder]
 pub struct ContextOptions {
     #[builder(default)]

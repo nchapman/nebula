@@ -275,7 +275,9 @@ impl LlamaModel {
 
         match size {
             0 => Err(TokenToStringError::UnknownTokenType),
-            i if i.is_negative() => Err(TokenToStringError::InsufficientBufferSpace(i)),
+            i if i.is_negative() => {
+                Err(TokenToStringError::InsufficientBufferSpace(i, len as usize))
+            }
             size => {
                 let string = unsafe { CString::from_raw(buf) };
                 let mut bytes = string.into_bytes();
@@ -314,7 +316,7 @@ impl LlamaModel {
 
     pub fn meta_val_str(&self, key: &str) -> Result<Option<String>, LLamaCppError> {
         let key_c_string = CString::new(key)?;
-        let model_template = CString::new(vec![b'*'; 2048])?;
+        let model_template = CString::new(vec![b'*'; 10 * 10000])?;
         let len = model_template.as_bytes().len();
         let len = c_int::try_from(len).expect("length fits into c_int");
         let buf = model_template.into_raw();
@@ -327,8 +329,8 @@ impl LlamaModel {
             )
         };
         match res {
-            0 => Ok(None),
-            i if i.is_negative() => Err(LLamaCppError::InsufficientBufferSpace(i)),
+            //            0 => Ok(None),
+            i if i.is_negative() => Ok(None),
             size => {
                 let string = unsafe { CString::from_raw(buf) };
                 let mut bytes = string.into_bytes();

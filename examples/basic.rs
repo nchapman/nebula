@@ -59,7 +59,7 @@ fn main() {
 
     ctx.eval(vec![serde_json::json!({
         "role": "user",
-        "message": prompt
+        "content": prompt
     })
     .try_into()
     .unwrap()])

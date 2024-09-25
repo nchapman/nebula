@@ -684,11 +684,10 @@ mod windows {
             "BUILD_SHARED_LIBS" => "on",
             "GGML_NATIVE" => "off",
             "GGML_OPENMP" => "off",
+            "CMAKE_POSITION_INDEPENDENT_CODE" => "on",
             "LLAMA_SERVER_VERBOSE" => "off",
             "CMAKE_BUILD_TYPE" => "Release"
         };
-        static ref COMMON_CPU_DEFS: std::collections::HashMap<&'static str, &'static str> = maplit::hashmap!{
-            "CMAKE_POSITION_INDEPENDENT_CODE" => "on"};
         static ref ARCH: String = std::env::consts::ARCH.to_string();
         static ref DIST_BASE: String = {
             let dist_base = format!("../dist/windows-{}", std::env::consts::ARCH);
@@ -696,7 +695,7 @@ mod windows {
             dist_base
         };
 
-        static ref CUDA_DIR: (Option<String>, Option<String>) = {
+        static ref CUDA_DIR: (Option<String>, Option<String>, Option<String>) = {
             match std::env::var("CUDA_LIB_DIR"){
                 Err(_) => {
                     match powershell_script::run("(get-command -ea 'silentlycontinue' nvcc).path"){
@@ -704,18 +703,22 @@ mod windows {
                             let path = path.stdout().unwrap();
                             let mut lib_path = std::path::PathBuf::from(path.clone());
                             lib_path.pop();
+                            let mut main_path = std::path::PathBuf::from(path.clone());
+                            main_path.pop();
+                            main_path.pop();
+                            main_path.pop();
                             let mut include_path = std::path::PathBuf::from(path);
                             include_path.pop();
                             include_path.pop();
-                            (Some(lib_path.into_os_string().into_string().unwrap()), Some(include_path.into_os_string().into_string().unwrap()))
+                            (Some(main_path.into_os_string().into_string().unwrap()), Some(lib_path.into_os_string().into_string().unwrap()), Some(include_path.into_os_string().into_string().unwrap()))
                         }
                         Err(_) => {
-                            (None, None)
+                            (None, None, None)
                         }
                     }
                 }
                 Ok(cuda_lib_dir) => {
-                    (Some(cuda_lib_dir), None)
+                    (None, Some(cuda_lib_dir), None)
                 }
             }
         };
@@ -908,7 +911,7 @@ mod windows {
         _cmake_defs: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
     ) {
-        if let (Some(cuda_lib_dir), Some(cuda_include_dir)) = &*CUDA_DIR {
+        if let (Some(cuda_dir), Some(cuda_lib_dir), Some(cuda_include_dir)) = &*CUDA_DIR {
             let mut nvcc = std::path::PathBuf::from(cuda_lib_dir);
             nvcc.push("nvcc.exe");
             let nvcc = nvcc.into_os_string().into_string().unwrap();
@@ -933,7 +936,10 @@ mod windows {
                         "GGML_CUDA" => "ON",
                         "GGML_AVX" => "on",
                         "GGML_AVX2" => "off",
+                        "CUDAToolkit_ROOT" => &cuda_dir,
                         "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
+                        "CMAKE_CUDA_COMPILLER" => &nvcc,
+                        "CMAKE_GENERATOR_TOOLSET" => format!("cuda={}", &cuda_dir),
                         "CMAKE_CUDA_FLAGS" => "-t8",
                         "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES,
                     }

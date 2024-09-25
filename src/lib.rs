@@ -1,10 +1,14 @@
-use options::Message;
+use actix_web::{App, HttpResponse, HttpServer, Responder};
+use options::{ContextOptions, Message, PredictOptions};
+use serde::Deserialize;
+use tokio::sync::RwLock;
 
 //#![allow(clippy::type_complexity)]
 //#![allow(clippy::arc_with_non_send_sync)]
 #[cfg(feature = "llama")]
 use crate::backend::Model as _;
 
+use std::{net::IpAddr, sync::Arc};
 #[cfg(feature = "llama")]
 use std::{path::PathBuf, pin::Pin, sync::Mutex};
 
@@ -23,8 +27,9 @@ pub fn init(resource_path: std::path::PathBuf) -> Result<()> {
 }
 
 #[cfg(feature = "llama")]
+#[derive(Clone)]
 pub struct Model {
-    backend: Pin<Box<dyn backend::Model>>,
+    backend: Arc<Pin<Box<dyn backend::Model>>>,
 }
 
 #[cfg(feature = "llama")]
@@ -39,7 +44,7 @@ impl Model {
             None::<Box<dyn FnMut(f32) -> bool + 'static>>,
         )?;
         Ok(Self {
-            backend: Box::pin(backend),
+            backend: Arc::new(Box::pin(backend)),
         })
     }
 
@@ -50,7 +55,7 @@ impl Model {
     ) -> Result<Self> {
         let backend = backend::init(model, options, Some(Box::new(callback)))?;
         Ok(Self {
-            backend: Box::pin(backend),
+            backend: Arc::new(Box::pin(backend)),
         })
     }
 
@@ -66,7 +71,7 @@ impl Model {
         )?;
         backend.with_mmproj(mmproj.into())?;
         Ok(Self {
-            backend: Box::pin(backend),
+            backend: Arc::new(Box::pin(backend)),
         })
     }
 
@@ -79,7 +84,7 @@ impl Model {
         let mut backend = backend::init(model, options, Some(Box::new(callback)))?;
         backend.with_mmproj(mmproj.into())?;
         Ok(Self {
-            backend: Box::pin(backend),
+            backend: Arc::new(Box::pin(backend)),
         })
     }
 
@@ -153,6 +158,120 @@ impl Context {
 impl Drop for Model {
     fn drop(&mut self) {}
 }
+
+fn default_f32_1() -> f32{
+    1.0
+}
+
+#[cfg(feature = "llama-http")]
+#[derive(Deserialize)]
+struct CompletionRequest {
+    #[serde(default)]
+    frequency_penalty: f32,
+    max_completion_tokens: Option<i32>,
+    #[serde(default)]
+    presence_penalty: f32,
+    seed: Option<u32>,
+    #[serde(default = "default_f32_1")]
+    temperature: f32,
+    #[serde(default = "default_f32_1")]
+    top_p: f32,
+    _model: String,
+    messages: Vec<Message>,
+}
+
+
+#[cfg(feature = "llama-http")]
+#[actix_web::post("/v1/completions")]
+async fn complitions(state: actix_web::web::Data<AppState>, json: actix_web::web::Json<CompletionRequest>) -> Result<impl Responder> {
+    let data = json.into_inner();
+    let mut ctx = state.model.read().await.context(state.context_options.clone())?;
+    ctx.eval(data.messages)?;
+    let mut predict_options = PredictOptions::builder()
+        .penalty_freq(data.frequency_penalty)
+        .penalty_present(data.presence_penalty)
+        .temp(data.temperature)
+        .top_p(data.top_p)
+        .build();
+    if let Some(ss) = data.seed{
+        predict_options.seed = ss;
+    }
+    predict_options.max_len = data.max_completion_tokens;
+    Ok(HttpResponse::Ok().json(serde_json::json!({
+        "id": "chatcmpl",
+        "object": "chat.completion",
+        "created": 1677652288,
+        "model": state.model.read().await.backend.name()?,
+        "system_fingerprint": "fp",
+        "choices": [{
+            "index": 0,
+            "message": {
+                "role": "assistant",
+                "content": ctx.predict(predict_options).predict()?
+            },
+            "logprobs": null,
+            "finish_reason": "stop"
+        }],
+        "usage": {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+            "total_tokens": 0,
+            "completion_tokens_details": {
+                "reasoning_tokens": 0
+            }
+        }
+    })))
+}
+
+struct AppState {
+    context_options: ContextOptions,
+    model: Arc<RwLock<Model>>,
+}
+
+#[cfg(feature = "llama-http")]
+pub struct Server {
+    host: IpAddr,
+    port: u16,
+    model: Model,
+    context_options: ContextOptions
+}
+
+#[cfg(feature = "llama-http")]
+impl Server {
+    pub fn new(host: IpAddr, port: u16, model: Model, context_options: ContextOptions) -> Self{
+        Self{
+            host,
+            port,
+            model,
+            context_options
+        }
+
+    }
+
+    pub fn run(&self) -> Result<()>{
+        let mm = Arc::new(RwLock::new(self.model.clone()));
+        let context_options = self.context_options.clone();
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()?
+            .block_on(async move{
+                HttpServer::new(move || {
+                    App::new()
+                        .app_data(actix_web::web::Data::new(AppState {
+                            context_options: context_options.clone(),
+                            model: mm.clone(),
+                        }))
+                        .service(complitions)
+                })
+                    .bind((self.host, self.port))?
+                    .run()
+                    .await
+            })?;
+            Ok(())
+    }
+}
+
+
 
 #[cfg(test)]
 #[cfg(feature = "llama")]

@@ -16,6 +16,9 @@ base64 = "0.22.1"
 #llama feature
 llama-cpp = { path="backends/llama_cpp/llama-cpp", optional = true }
 
+#llama-http
+actix-web = { version = "4", optional = true}
+tokio = { version = "1", features = ["full"], optional = true }
 
 hf-hub = { version = "0.3.2" }
 tracing-subscriber = "0.3.18"
@@ -56,9 +59,10 @@ hf-hub = "0.3.2"
 indicatif = "0.17"
 
 [features]
-default = ["llama"]
+default = ["llama-http"]
 llama = ["llama-cpp", "serde_json"]
 llama-build = ["llama-cpp?/build", "serde_json"]
+llama-http = ["llama", "actix-web", "tokio"]
 #default = ["embeddings"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 embeddings = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow", "itertools", "serde_json"]

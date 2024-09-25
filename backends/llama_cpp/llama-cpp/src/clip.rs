@@ -1,5 +1,5 @@
 use crate::ClipError;
-use std::{ffi::CString, path::Path, ptr::NonNull, sync::Arc};
+use std::{ffi::CString, io::Write, path::Path, ptr::NonNull, sync::Arc};
 
 pub struct ImageEmbed {
     pub(crate) embed: NonNull<llama_cpp_sys::llava_image_embed>,
@@ -41,11 +41,11 @@ impl ClipContext {
 
         let cstr = CString::new(path)?;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
-        let guard = stdio_override::StdoutOverride::from_file("/dev/null").unwrap();
+        let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         #[cfg(any(target_os = "windows"))]
         let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
         #[cfg(debug_assertions)]
-        let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 1) };
+        let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 0) };
         #[cfg(not(debug_assertions))]
         let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 0) };
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]

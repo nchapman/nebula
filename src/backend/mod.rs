@@ -47,7 +47,8 @@ pub trait Context: Send {
 }
 
 #[cfg(feature = "llama")]
-pub trait Model: Send {
+pub trait Model: Send + Sync {
+    fn name(&self) -> Result<&str>;
     fn with_mmproj(&mut self, mmproj: PathBuf) -> Result<()>;
     fn new_context(&self, opions: ContextOptions) -> Result<Pin<Box<Mutex<dyn Context>>>>;
 }

@@ -49,3 +49,5 @@ pub enum Error {
     #[error("{0}")]
     Json(#[from] serde_json::Error),
 }
+
+impl actix_web::error::ResponseError for Error {}
