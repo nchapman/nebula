@@ -182,7 +182,7 @@ struct CompletionRequest {
 
 
 #[cfg(feature = "llama-http")]
-#[actix_web::post("/v1/completions")]
+#[actix_web::post("/v1/chat/completions")]
 async fn complitions(state: actix_web::web::Data<AppState>, json: actix_web::web::Json<CompletionRequest>) -> Result<impl Responder> {
     let data = json.into_inner();
     let mut ctx = state.model.read().await.context(state.context_options.clone())?;
@@ -238,9 +238,9 @@ pub struct Server {
 
 #[cfg(feature = "llama-http")]
 impl Server {
-    pub fn new(host: IpAddr, port: u16, model: Model, context_options: ContextOptions) -> Self{
+    pub fn new(host: impl Into<IpAddr>, port: u16, model: Model, context_options: ContextOptions) -> Self{
         Self{
-            host,
+            host: host.into(),
             port,
             model,
             context_options

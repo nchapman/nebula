@@ -50,6 +50,23 @@ impl<'de> Visitor<'de> for ImageVisitor {
         formatter.write_str("string with either file name or base64 encoded image")
     }
 
+    fn visit_str<E>(self, v: &str) -> Result<Self::Value, E>
+    where
+        E: serde::de::Error,
+    {
+        if let Ok(mut f) = std::fs::File::open(v) {
+            let mut image_bytes = vec![];
+            if let Ok(_) = f.read_to_end(&mut image_bytes) {
+                return Ok(Image(image_bytes));
+            }
+        }
+        match BASE64_STANDARD.decode(v) {
+            Ok(ss) => return Ok(Image(ss)),
+            Err(e) => eprintln!("{e}"),
+        }
+        Err(E::custom("can`t parse image`"))
+    }
+
     fn visit_string<E>(self, value: String) -> Result<Self::Value, E>
     where
         E: serde::de::Error,
@@ -60,8 +77,9 @@ impl<'de> Visitor<'de> for ImageVisitor {
                 return Ok(Image(image_bytes));
             }
         }
-        if let Ok(ss) = BASE64_STANDARD.decode(&value) {
-            return Ok(Image(ss));
+        match BASE64_STANDARD.decode(&value) {
+            Ok(ss) => return Ok(Image(ss)),
+            Err(e) => eprintln!("{e}"),
         }
         Err(E::custom("can`t parse image`"))
     }
@@ -72,7 +90,7 @@ impl<'de> Deserialize<'de> for Image {
     where
         D: Deserializer<'de>,
     {
-        deserializer.deserialize_string(ImageVisitor)
+        deserializer.deserialize_any(ImageVisitor)
     }
 }
 
