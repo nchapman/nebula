@@ -84,6 +84,77 @@ impl Llama {
         Ok(self.model.token_is_eog(id))
     }
 
+    pub fn template_stops(&self, template: Option<String>) -> Result<Vec<&'static str>> {
+        let template: Cow<str> = if let Some(tt) = template {
+            tt.into()
+        } else if let Some(tt) = self.model.meta_val_str("tokenizer.chat_template")? {
+            tt.into()
+        } else {
+            "chatml".into()
+        };
+        if template == "chatml" || template.contains("<|im_start|>") {
+            Ok(vec!["<|im_start|>", "<|im_end|>"])
+        } else if template == "llama2" || template == "mistral" || template.contains("[INST]") {
+            Ok(vec!["[INST]", "[/INST]", "<<SYS>>", "<</SYS>>"])
+        } else if template == "phi3"
+            || (template.contains("<|assistant|>") && template.contains("<|end|>"))
+        {
+            Ok(vec!["<|end|>", "<|system|>", "<|user|>", "<|assistant|>"])
+        } else if template == "zephyr" || template.contains("<|user|>") {
+            Ok(vec!["<|system|>", "</s>", "<|user|>", "<|assistant|>"])
+        } else if template == "monarch" || template.contains("bos_token + message['role']") {
+            Ok(vec![])
+        } else if template == "gemma"
+            || template == "gemma2"
+            || template.contains("<start_of_turn>")
+        {
+            Ok(vec!["<start_of_turn>", "<end_of_turn>"])
+        } else if template == "orion" || template.contains("'\\n\\nAssistant: ' + eos_token") {
+            Ok(vec![])
+        } else if template == "openchat" || template.contains("GPT4 Correct ") {
+            Ok(vec!["<|end_of_turn|>"])
+        } else if template == "vicuna"
+            || template == "vicuna-orca"
+            || (template.contains("USER: ") && template.contains("ASSISTANT: "))
+        {
+            Ok(vec!["USER:", "ASSISTANT:"])
+        } else if template == "deepseek"
+            || (template.contains("### Instruction:") && template.contains("<|EOT|>"))
+        {
+            Ok(vec![])
+        } else if template == "command-r"
+            || (template.contains("<|START_OF_TURN_TOKEN|>") && template.contains("<|USER_TOKEN|>"))
+        {
+            Ok(vec![])
+        } else if template == "llama3"
+            || (template.contains("<|start_header_id|>") && template.contains("<|end_header_id|>"))
+        {
+            Ok(vec![
+                "<|start_header_id|>",
+                "<|end_header_id|>",
+                "<|eot_id|>",
+            ])
+        } else if template == "chatglm3" || template.contains("[gMASK]sop") {
+            Ok(vec![])
+        } else if template == "chatglm4" || template.contains("[gMASK]<sop>") {
+            Ok(vec![])
+        } else if template == "minicpm" || template.contains("<用户>") {
+            Ok(vec![])
+        } else if template == "deepseek2"
+            || template.contains("'Assistant: ' + message['content'] + eos_token")
+        {
+            Ok(vec![])
+        } else if template == "exaone3"
+            || (template.contains("[|system|]")
+                && template.contains("[|assistant|]")
+                && template.contains("[|endofturn|]"))
+        {
+            Ok(vec![])
+        } else {
+            Err(crate::error::Error::UnsupportedTemplate(template.into()))
+        }
+    }
+
     pub fn apply_template(
         &self,
         msgs: Vec<Message>,
@@ -103,20 +174,20 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.images.is_empty() {
-                            write!(buf, "<|im_start|>{}\n{}<|im_end|>\n", msg.role, msg.content)?;
+                            writeln!(buf, "<|im_start|>{}\n{}<|im_end|>", msg.role, msg.content)?;
                         } else {
-                            write!(buf, "<|im_start|>{}\n", msg.role)?;
+                            writeln!(buf, "<|im_start|>{}", msg.role)?;
                             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
                             msg.images.into_iter().for_each(|im| {
                                 res.push(Templated::Image(im.0));
                             });
                             buf = BufWriter::new(Vec::new());
-                            write!(buf, "{}<|im_end|>\n", msg.content)?;
+                            writeln!(buf, "{}<|im_end|>", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
-                write!(buf, "<|im_start|>assistant\n")?;
+                writeln!(buf, "<|im_start|>assistant")?;
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
@@ -153,7 +224,7 @@ impl Llama {
                         write!(buf, "<<SYS>>\n{}\n<</SYS>>\n\n", content)?;
                     } else {
                         // if the model does not support system message, we still include it in the first message, but without <<SYS>>
-                        write!(buf, "\n")?;
+                        writeln!(buf)?;
                     }
                 } else if msg.role == Role::User {
                     if !msg.images.is_empty() {
@@ -186,7 +257,7 @@ impl Llama {
             let mut buf =
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
-                        write!(buf, "<|{}|>\n", msg.role)?;
+                        writeln!(buf, "<|{}|>", msg.role)?;
                         if !msg.images.is_empty() {
                             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
                             msg.images.into_iter().for_each(|im| {
@@ -194,11 +265,11 @@ impl Llama {
                             });
                             buf = BufWriter::new(Vec::new());
                         }
-                        write!(buf, "{}<|end|>\n", msg.content)?;
+                        writeln!(buf, "{}<|end|>", msg.content)?;
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
-                write!(buf, "<|assistant|>\n")?;
+                writeln!(buf, "<|assistant|>")?;
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
@@ -207,7 +278,7 @@ impl Llama {
             let mut buf =
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
-                        write!(buf, "<|{}|>\n", msg.role)?;
+                        writeln!(buf, "<|{}|>", msg.role)?;
                         if !msg.images.is_empty() {
                             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
                             msg.images.into_iter().for_each(|im| {
@@ -215,11 +286,11 @@ impl Llama {
                             });
                             buf = BufWriter::new(Vec::new());
                         }
-                        write!(buf, "{}<|endoftext|>\n", msg.content)?;
+                        writeln!(buf, "{}<|endoftext|>", msg.content)?;
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
-                write!(buf, "<|assistant|>\n")?;
+                writeln!(buf, "<|assistant|>")?;
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
@@ -228,7 +299,7 @@ impl Llama {
             let mut buf = msgs.into_iter().enumerate().try_fold(
                 BufWriter::new(Vec::new()),
                 |mut buf, (i, msg)| {
-                    write!(buf, "{}{}\n", if i == 0 { "" } else { "<s>" }, msg.role)?;
+                    writeln!(buf, "{}{}", if i == 0 { "" } else { "<s>" }, msg.role)?;
                     if !msg.images.is_empty() {
                         res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
                         msg.images.into_iter().for_each(|im| {
@@ -236,12 +307,12 @@ impl Llama {
                         });
                         buf = BufWriter::new(Vec::new());
                     }
-                    write!(buf, "{}</s>\n", msg.content)?;
+                    writeln!(buf, "{}</s>", msg.content)?;
                     Ok::<_, crate::error::Error>(buf)
                 },
             )?;
             if add_ass {
-                write!(buf, "<s>assistant\n")?;
+                writeln!(buf, "<s>assistant")?;
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
@@ -258,9 +329,9 @@ impl Llama {
                             // there is no system message for gemma, but we will merge it with user prompt, so nothing is broken
                             system_prompt = msg.content.trim().to_string();
                         } else {
-                            write!(
+                            writeln!(
                                 buf,
-                                "<start_of_turn>{}\n",
+                                "<start_of_turn>{}",
                                 if msg.role == Role::Assistant {
                                     "model".to_string()
                                 } else {
@@ -278,12 +349,12 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}<end_of_turn>\n", msg.content.trim())?;
+                            writeln!(buf, "{}<end_of_turn>", msg.content.trim())?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
-                write!(buf, "<start_of_turn>model\n")?;
+                writeln!(buf, "<start_of_turn>model")?;
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
@@ -357,7 +428,7 @@ impl Llama {
                         if msg.role == Role::System {
                             // Orca-Vicuna variant uses a system prefix
                             if template == "vicuna-orca" || template.contains("SYSTEM: ") {
-                                write!(buf, "SYSTEM: {}\n", msg.content)?;
+                                writeln!(buf, "SYSTEM: {}", msg.content)?;
                             } else {
                                 write!(buf, "{}\n\n", msg.content)?;
                             }
@@ -370,9 +441,9 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n", msg.content)?;
+                            writeln!(buf, "{}", msg.content)?;
                         } else {
-                            write!(buf, "ASSISTANT: {}</s>\n", msg.content)?;
+                            writeln!(buf, "ASSISTANT: {}</s>", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -391,7 +462,7 @@ impl Llama {
                         if msg.role == Role::System {
                             write!(buf, "{}", msg.content)?;
                         } else if msg.role == Role::User {
-                            write!(buf, "### Instruction:\n")?;
+                            writeln!(buf, "### Instruction:")?;
                             if !msg.images.is_empty() {
                                 res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
                                 msg.images.into_iter().for_each(|im| {
@@ -399,14 +470,14 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n", msg.content)?;
+                            writeln!(buf, "{}", msg.content)?;
                         } else {
                             write!(buf, "### Response:\n{}\n<|EOT|>\n", msg.content)?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
             if add_ass {
-                write!(buf, "### Response:\n")?;
+                writeln!(buf, "### Response:")?;
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
@@ -590,7 +661,7 @@ impl Llama {
                 msgs.into_iter()
                     .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
                         if msg.role == Role::System {
-                            write!(buf, "[|system|]{}[|endofturn|]\n", msg.content.trim())?;
+                            writeln!(buf, "[|system|]{}[|endofturn|]", msg.content.trim())?;
                         } else if msg.role == Role::User {
                             write!(buf, "[|user|]")?;
                             if !msg.images.is_empty() {
@@ -600,9 +671,9 @@ impl Llama {
                                 });
                                 buf = BufWriter::new(Vec::new());
                             }
-                            write!(buf, "{}\n", msg.content.trim())?;
+                            writeln!(buf, "{}", msg.content.trim())?;
                         } else {
-                            write!(buf, "[|assistant|]{}[|endofturn|]\n", msg.content.trim())?;
+                            writeln!(buf, "[|assistant|]{}[|endofturn|]", msg.content.trim())?;
                         }
                         Ok::<_, crate::error::Error>(buf)
                     })?;
@@ -669,7 +740,7 @@ impl<'a> LlamaContext {
 
     fn eval_image(&mut self, image: &[u8]) -> Result<()> {
         let embedded_image = if let Some(clip_context) = &self.model.mmproj {
-            clip_context.embed_image(self.options.n_threads, &image)?
+            clip_context.embed_image(self.options.n_threads, image)?
         } else {
             return Err(crate::error::Error::MmprojNotDefined);
         };
@@ -684,10 +755,11 @@ impl Context for LlamaContext {
     fn eval(&mut self, messages: Vec<Message>) -> Result<()> {
         let templated_message = self.model.apply_template(messages, None, true)?;
         templated_message.into_iter().try_for_each(|m| {
-            Ok::<_, crate::error::Error>(match m {
+            match m {
                 Templated::Str(st) => self.eval_str(&st, false)?,
                 Templated::Image(st) => self.eval_image(&st)?,
-            })
+            }
+            Ok::<_, crate::error::Error>(())
         })?;
         Ok(())
     }
@@ -725,7 +797,6 @@ impl Context for LlamaContext {
                 break;
             }
             let token_str = self.ctx.token_to_piece(&token_id)?;
-            //eprint!("{token_str}");
             token_callback(token_str);
         }
         Ok(())

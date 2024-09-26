@@ -1,4 +1,4 @@
-use std::{io::Write, net::IpAddr, sync::Arc};
+use std::net::IpAddr;
 
 use nebula::{
     options::{ContextOptions, ModelOptions},

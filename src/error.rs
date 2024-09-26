@@ -50,4 +50,5 @@ pub enum Error {
     Json(#[from] serde_json::Error),
 }
 
+#[cfg(feature = "llama-http")]
 impl actix_web::error::ResponseError for Error {}
