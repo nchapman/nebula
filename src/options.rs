@@ -54,6 +54,7 @@ impl<'de> Visitor<'de> for ImageVisitor {
     where
         E: serde::de::Error,
     {
+        log::debug!("{v}");
         match std::fs::File::open(v) {
             Ok(mut f) => {
                 let mut image_bytes = vec![];
@@ -75,6 +76,7 @@ impl<'de> Visitor<'de> for ImageVisitor {
     where
         E: serde::de::Error,
     {
+        log::debug!("{value}");
         match std::fs::File::open(&value) {
             Ok(mut f) => {
                 let mut image_bytes = vec![];
