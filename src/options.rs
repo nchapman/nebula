@@ -56,13 +56,14 @@ impl<'de> Visitor<'de> for ImageVisitor {
     {
         if let Ok(mut f) = std::fs::File::open(v) {
             let mut image_bytes = vec![];
-            if let Ok(_) = f.read_to_end(&mut image_bytes) {
-                return Ok(Image(image_bytes));
+            match f.read_to_end(&mut image_bytes) {
+                Ok(_ib) => return Ok(Image(image_bytes)),
+                Err(e) => log::warn!("{e}"),
             }
         }
         match BASE64_STANDARD.decode(v) {
             Ok(ss) => return Ok(Image(ss)),
-            Err(e) => eprintln!("{e}"),
+            Err(e) => log::warn!("{e}"),
         }
         Err(E::custom("can`t parse image`"))
     }
@@ -75,12 +76,12 @@ impl<'de> Visitor<'de> for ImageVisitor {
             let mut image_bytes = vec![];
             match f.read_to_end(&mut image_bytes) {
                 Ok(_ib) => return Ok(Image(image_bytes)),
-                Err(e) => eprintln!("{e}"),
+                Err(e) => log::warn!("{e}"),
             }
         }
         match BASE64_STANDARD.decode(&value) {
             Ok(ss) => return Ok(Image(ss)),
-            Err(e) => eprintln!("{e}"),
+            Err(e) => log::warn!("{e}"),
         }
         Err(E::custom("can`t parse image`"))
     }
