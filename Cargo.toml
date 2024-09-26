@@ -10,7 +10,7 @@ serde = { version = "1", features = [ "derive" ] }
 strfmt = "*"
 lazy_static="1.5"
 resource-path = {path = "resource-path"}
-bon = "2.1"
+bon = "2.2"
 base64 = "0.22.1"
 
 #llama feature

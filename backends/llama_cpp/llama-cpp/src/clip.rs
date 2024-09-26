@@ -1,5 +1,5 @@
 use crate::ClipError;
-use std::{ffi::CString, io::Write, path::Path, ptr::NonNull, sync::Arc};
+use std::{ffi::CString, path::Path, ptr::NonNull, sync::Arc};
 
 pub struct ImageEmbed {
     pub(crate) embed: NonNull<llama_cpp_sys::llava_image_embed>,

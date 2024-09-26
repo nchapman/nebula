@@ -17,8 +17,7 @@ pub enum SamplerType {
     Temperature = 6,
 }
 
-#[derive(Debug, Clone)]
-#[bon::builder]
+#[derive(Debug, Clone, bon::Builder)]
 pub struct SamplingParams {
     #[builder(default = llama_cpp_sys::LLAMA_DEFAULT_SEED)]
     pub seed: u32,

@@ -4,7 +4,7 @@ use serde::{de::Visitor, Deserialize, Deserializer};
 use serde_json::Value;
 use std::{fmt::Display, io::Read};
 
-#[bon::builder]
+#[derive(bon::Builder)]
 pub struct ModelOptions {
     #[builder(default)]
     pub cpu: bool,
@@ -151,8 +151,7 @@ impl Into<llama_cpp::sample::SamplerType> for SamplerType {
     }
 }
 
-#[derive(Clone)]
-#[bon::builder]
+#[derive(Clone, bon::Builder)]
 pub struct PredictOptions {
     #[builder(default = 0)]
     pub seed: u32,
@@ -248,8 +247,7 @@ impl Into<SamplingParams> for PredictOptions {
     }
 }
 
-#[derive(Clone, Debug, serde::Deserialize)]
-#[bon::builder]
+#[derive(Clone, Debug, serde::Deserialize, bon::Builder)]
 pub struct ContextOptions {
     #[builder(default)]
     pub seed: u32,
@@ -265,7 +263,7 @@ impl Default for ContextOptions {
     }
 }
 
-#[bon::builder]
+#[derive(bon::Builder)]
 pub struct NebulaOptions {
     #[builder(default = -1)]
     pub seed: i32,

@@ -104,7 +104,7 @@ pub struct Context {
 }
 
 #[cfg(feature = "llama")]
-#[bon::builder]
+#[derive(bon::Builder)]
 pub struct Predict<'a> {
     context: &'a Context,
     options: options::PredictOptions,
