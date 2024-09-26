@@ -54,12 +54,15 @@ impl<'de> Visitor<'de> for ImageVisitor {
     where
         E: serde::de::Error,
     {
-        if let Ok(mut f) = std::fs::File::open(v) {
-            let mut image_bytes = vec![];
-            match f.read_to_end(&mut image_bytes) {
-                Ok(_ib) => return Ok(Image(image_bytes)),
-                Err(e) => log::warn!("{e}"),
+        match std::fs::File::open(v) {
+            Ok(mut f) => {
+                let mut image_bytes = vec![];
+                match f.read_to_end(&mut image_bytes) {
+                    Ok(_ib) => return Ok(Image(image_bytes)),
+                    Err(e) => log::warn!("{e}"),
+                }
             }
+            Err(e) => log::warn!("{e}"),
         }
         match BASE64_STANDARD.decode(v) {
             Ok(ss) => return Ok(Image(ss)),
@@ -72,12 +75,15 @@ impl<'de> Visitor<'de> for ImageVisitor {
     where
         E: serde::de::Error,
     {
-        if let Ok(mut f) = std::fs::File::open(&value) {
-            let mut image_bytes = vec![];
-            match f.read_to_end(&mut image_bytes) {
-                Ok(_ib) => return Ok(Image(image_bytes)),
-                Err(e) => log::warn!("{e}"),
+        match std::fs::File::open(&value) {
+            Ok(mut f) => {
+                let mut image_bytes = vec![];
+                match f.read_to_end(&mut image_bytes) {
+                    Ok(_ib) => return Ok(Image(image_bytes)),
+                    Err(e) => log::warn!("{e}"),
+                }
             }
+            Err(e) => log::warn!("{e}"),
         }
         match BASE64_STANDARD.decode(&value) {
             Ok(ss) => return Ok(Image(ss)),
