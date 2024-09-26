@@ -1056,10 +1056,7 @@ fn main() {
         .allowlist_type("clip_image_u8")
         .allowlist_type("llama_sampler_chain_params")
         .allowlist_var("LLAMA_DEFAULT_SEED")
-        .allowlist_type(
-            "gpt_sampler_params
-",
-        )
+        .allowlist_type("gpt_sampler_params")
         .derive_partialeq(true)
         .no_debug("llama_grammar_element")
         .prepend_enum_name(false)
