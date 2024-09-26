@@ -1082,4 +1082,8 @@ fn main() {
     #[cfg(feature = "build")]
     #[cfg(target_os = "linux")]
     linux::bbuild();
+
+    #[cfg(feature = "build")]
+    #[cfg(target_os = "windows")]
+    windows::bbuild();
 }
