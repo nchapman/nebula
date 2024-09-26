@@ -1,6 +1,8 @@
+#[cfg(feature = "llama-http")]
 use actix_web::{App, HttpResponse, HttpServer, Responder};
 use options::{ContextOptions, Message, PredictOptions};
 use serde::Deserialize;
+#[cfg(feature = "llama-http")]
 use tokio::sync::RwLock;
 
 //#![allow(clippy::type_complexity)]
