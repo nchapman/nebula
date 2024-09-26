@@ -73,8 +73,9 @@ impl<'de> Visitor<'de> for ImageVisitor {
     {
         if let Ok(mut f) = std::fs::File::open(&value) {
             let mut image_bytes = vec![];
-            if let Ok(_) = f.read_to_end(&mut image_bytes) {
-                return Ok(Image(image_bytes));
+            match f.read_to_end(&mut image_bytes) {
+                Ok(_ib) => return Ok(Image(image_bytes)),
+                Err(e) => eprintln!("{e}"),
             }
         }
         match BASE64_STANDARD.decode(&value) {
