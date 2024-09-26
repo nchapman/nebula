@@ -706,10 +706,10 @@ mod windows {
                             let mut main_path = std::path::PathBuf::from(path.clone());
                             main_path.pop();
                             main_path.pop();
-                            main_path.pop();
                             let mut include_path = std::path::PathBuf::from(path);
                             include_path.pop();
                             include_path.pop();
+                            include_path.push("include");
                             (Some(main_path.into_os_string().into_string().unwrap()), Some(lib_path.into_os_string().into_string().unwrap()), Some(include_path.into_os_string().into_string().unwrap()))
                         }
                         Err(_) => {
