@@ -24,12 +24,12 @@ use std::string::FromUtf8Error;
 
 pub mod clip;
 pub mod context;
-pub mod grammar;
+//pub mod grammar;
 pub mod llama_backend;
 pub mod llama_batch;
 pub mod model;
-//pub mod sample;
-pub mod timing;
+pub mod sample;
+//pub mod timing;
 pub mod token;
 pub mod token_type;
 
@@ -43,6 +43,12 @@ pub enum LLamaCppError {
     /// is idempotent.
     #[error("BackendAlreadyInitialized")]
     BackendAlreadyInitialized,
+    #[error("{0}")]
+    Nul(#[from] NulError),
+    #[error("{0}")]
+    FromUtf8(#[from] FromUtf8Error),
+    #[error("{0}")]
+    InsufficientBufferSpace(i32, usize),
     /// There was an error while decoding a batch.
     #[error("{0}")]
     DecodeError(#[from] DecodeError),
@@ -60,8 +66,16 @@ pub enum LLamaCppError {
     EmbeddingError(#[from] EmbeddingsError),
     #[error["{0}"]]
     ClipError(#[from] ClipError),
+    #[error["{0}"]]
+    Predict(#[from] PredictError),
+    #[error("{0}")]
+    TokenToString(#[from] TokenToStringError),
     #[error("{0}")]
     Sys(#[from] llama_cpp_sys::Error),
+    #[error("sampler_init_grammar")]
+    SamplerInitGramar,
+    #[error("sampler_init_chain")]
+    SamplerInitChain,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -107,6 +121,14 @@ pub enum DecodeError {
 /// Failed to decode a batch.
 #[derive(Debug, thiserror::Error)]
 pub enum PredictError {
+    #[error("")]
+    ClipImageU8Init,
+    #[error("")]
+    LoadImageFromBytes,
+    #[error("")]
+    ImageEmbed,
+    #[error("")]
+    ImagesWithoutMMProj,
     #[error("{0}")]
     Decode(#[from] DecodeError),
     #[error("{0}")]
@@ -154,6 +176,8 @@ pub enum LlamaModelLoadError {
     PathToStrError(PathBuf),
     #[error("{0}")]
     Sys(#[from] llama_cpp_sys::Error),
+    #[error("{0}")]
+    Clip(#[from] ClipError),
 }
 
 /// get the time (in microseconds) according to llama.cpp
@@ -213,7 +237,7 @@ pub enum TokenToStringError {
     UnknownTokenType,
     /// There was insufficient buffer space to convert the token to a string.
     #[error("Insufficient Buffer Space {0}")]
-    InsufficientBufferSpace(c_int),
+    InsufficientBufferSpace(c_int, usize),
     /// The token was not valid utf8.
     #[error("FromUtf8Error {0}")]
     FromUtf8Error(#[from] FromUtf8Error),

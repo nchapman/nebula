@@ -2,7 +2,7 @@
 #![allow(non_camel_case_types)]
 #![allow(non_snake_case)]
 
-use std::fmt::{Debug, Formatter};
+use std::fmt::Debug;
 
 mod cpu;
 #[cfg(any(target_os = "windows", target_os = "linux"))]
@@ -561,6 +561,20 @@ macro_rules! get_and_load_from_llava
 }
 
 get_and_load_from_llava!(
+    clip_image_u8_init() -> *mut clip_image_u8,
+    clip_image_u8_free(clip: *mut clip_image_u8) -> (),
+    clip_image_load_from_bytes(
+        image_bytes: *const ::std::os::raw::c_uchar,
+        image_bytes_length: ::std::os::raw::c_int,
+        image: *mut clip_image_u8
+    ) -> bool,
+    llava_image_embed_make_with_clip_img(
+        clip_context: *const clip_ctx,
+        n_threads: i32,
+        img: *const clip_image_u8,
+        img_embed_out: *mut *mut f32,
+        n_img_pos: *mut i32
+    ) -> bool,
     clip_model_load(
         fname: *const ::std::os::raw::c_char,
         verbocity: ::std::os::raw::c_int
@@ -593,6 +607,31 @@ get_and_load_from_llama!(
         n_tokens_max: i32,
         add_special: bool,
         parse_special: bool) -> i32,
+    llama_sampler_chain_default_params() -> llama_sampler_chain_params,
+    llama_sampler_init_grammar(model: *const llama_model, grammar_str: *const char, grammar_root: *const char) -> *mut llama_sampler,
+    llama_sampler_chain_add(chain: *mut llama_sampler, smpl: *const llama_sampler) -> (),
+    llama_sampler_init_logit_bias(n_vocab: i32, n_logit_bias: i32, logit_bias: *const llama_logit_bias) -> *mut llama_sampler,
+    llama_sampler_init_penalties(n_vocab: i32, special_eos_id: llama_token, linefeed_id: llama_token, penalty_last_n: i32, penalty_repeat: f32, penalty_freq: f32, penalty_present: f32, penalize_nl: bool, ignore_eos: bool) -> *mut llama_sampler,
+    llama_model_meta_val_str(model: *const llama_model, key: *const ::std::os::raw::c_char, buf: *mut ::std::os::raw::c_char, bs: usize) -> i32,
+    llama_token_is_eog(model: *const llama_model, id: i32) -> bool,
+    llama_sampler_init_top_k(k: i32) -> *mut llama_sampler,
+    llama_sampler_init_top_p(p: f32, min_keep: usize) -> *mut llama_sampler,
+    llama_sampler_init_min_p(p: f32, min_keep: usize) -> *mut llama_sampler,
+    llama_sampler_init_tail_free(z: f32, min_keep: usize) -> *mut llama_sampler,
+    llama_sampler_init_typical(p: f32, min_keep: usize) -> *mut llama_sampler,
+    llama_sampler_init_temp_ext(t: f32, delta: f32, exponent: f32) -> *mut llama_sampler,
+    llama_sampler_init_softmax() -> *mut llama_sampler,
+    llama_sampler_init_dist(seed: u32) -> *mut llama_sampler,
+    llama_sampler_init_temp(temp: f32) -> *mut llama_sampler,
+    llama_sampler_init_mirostat(n_vocab: i32, seed: u32, tau: f32, eta: f32, m: i32) -> *mut llama_sampler,
+    llama_sampler_init_greedy() -> *mut llama_sampler,
+    llama_sampler_init_mirostat_v2(seed: u32, tau: f32, eta: f32) -> *mut llama_sampler,
+    llama_sampler_chain_init(params: llama_sampler_chain_params) -> *mut llama_sampler,
+    llama_sampler_free(smpl: *mut llama_sampler) -> (),
+    llama_sampler_accept(smpl: *mut llama_sampler, token: llama_token) -> (),
+    llama_sampler_reset(smpl: *mut llama_sampler) -> (),
+    llama_get_model(ctx: *const llama_context) -> *mut llama_model,
+    llama_sampler_apply(smpl: *mut llama_sampler, cur_p: *const llama_token_data_array) -> (),
     llama_token_get_attr(model: *const llama_model, token: llama_token) -> llama_token_attr,
     llama_token_nl(model: *const llama_model) -> llama_token,
     llama_token_eos(model: *const llama_model) -> llama_token,
@@ -603,15 +642,7 @@ get_and_load_from_llama!(
     llama_backend_free() -> (),
     llama_log_set(log_callback: ggml_log_callback, user_data: *mut ::std::os::raw::c_void) -> (),
     llama_numa_init(numa: ggml_numa_strategy) -> (),
-    llama_grammar_free(grammar: *mut llama_grammar) -> (),
     llama_backend_init() -> (),
-    llama_grammar_init(
-        rules: *mut *const llama_grammar_element,
-        n_rules: usize,
-        start_rule_index: usize
-    ) -> *mut llama_grammar,
-    llama_grammar_copy(grammar: *const llama_grammar) -> *mut llama_grammar,
-    llama_get_timings(ctx: *mut llama_context) -> llama_timings,
     llama_reset_timings(ctx: *mut llama_context) -> (),
     llama_get_logits_ith(ctx: *mut llama_context, i: i32) -> *mut f32,
     llama_get_embeddings_ith(ctx: *mut llama_context, i: i32) -> *mut f32,
@@ -640,16 +671,6 @@ get_and_load_from_llama!(
         ctx: *mut llama_context,
         candidates: *mut llama_token_data_array
     ) -> llama_token,
-    llama_sample_grammar(
-        ctx: *mut llama_context,
-        candidates: *mut llama_token_data_array,
-        grammar: *const llama_grammar
-    ) -> (),
-    llama_grammar_accept_token(
-        ctx: *mut llama_context,
-        grammar: *mut llama_grammar,
-        token: llama_token
-    ) -> (),
     llama_context_default_params() -> llama_context_params,
     llama_kv_cache_view_free(view: *mut llama_kv_cache_view) -> (),
     llama_kv_cache_view_update(ctx: *const llama_context, view: *mut llama_kv_cache_view) -> (),
@@ -772,25 +793,3 @@ get_and_load_from_llama!(
     llama_batch_init(n_tokens: i32, embd: i32, n_seq_max: i32) -> llama_batch,
     llama_batch_free(batch: llama_batch) -> ()
 );
-
-impl Debug for llama_grammar_element {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        fn type_to_str(r#type: llama_gretype) -> &'static str {
-            match r#type {
-                LLAMA_GRETYPE_END => "END",
-                LLAMA_GRETYPE_ALT => "ALT",
-                LLAMA_GRETYPE_RULE_REF => "RULE_REF",
-                LLAMA_GRETYPE_CHAR => "CHAR",
-                LLAMA_GRETYPE_CHAR_NOT => "CHAR_NOT",
-                LLAMA_GRETYPE_CHAR_RNG_UPPER => "CHAR_RNG_UPPER",
-                LLAMA_GRETYPE_CHAR_ALT => "CHAR_ALT",
-                _ => "Unknown",
-            }
-        }
-
-        f.debug_struct("llama_grammar_element")
-            .field("type", &type_to_str(self.type_))
-            .field("value", &self.value)
-            .finish()
-    }
-}

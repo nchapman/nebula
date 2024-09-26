@@ -12,6 +12,7 @@ use std::ptr;
 pub struct LlamaTokenDataArray {
     /// the underlying data
     pub data: Vec<LlamaTokenData>,
+    pub selected: i64,
     /// is the data sorted?
     pub sorted: bool,
 }
@@ -31,8 +32,12 @@ impl LlamaTokenDataArray {
     /// assert_eq!(array.sorted, false);
     /// ```
     #[must_use]
-    pub fn new(data: Vec<LlamaTokenData>, sorted: bool) -> Self {
-        Self { data, sorted }
+    pub fn new(data: Vec<LlamaTokenData>, selected: i64, sorted: bool) -> Self {
+        Self {
+            data,
+            selected,
+            sorted,
+        }
     }
 
     /// Create a new `LlamaTokenDataArray` from an iterator and weather or not the data is sorted.
@@ -50,7 +55,7 @@ impl LlamaTokenDataArray {
     where
         T: IntoIterator<Item = LlamaTokenData>,
     {
-        Self::new(data.into_iter().collect(), sorted)
+        Self::new(data.into_iter().collect(), -1, sorted)
     }
 }
 
@@ -75,6 +80,7 @@ impl LlamaTokenDataArray {
             data,
             size,
             sorted: self.sorted,
+            selected: self.selected,
         };
         let result = modify(&mut c_llama_token_data_array);
         assert!(
@@ -83,6 +89,7 @@ impl LlamaTokenDataArray {
         );
         assert!(c_llama_token_data_array.size <= size, "size increased");
         self.data.set_len(c_llama_token_data_array.size);
+        self.selected = c_llama_token_data_array.selected;
         self.sorted = c_llama_token_data_array.sorted;
         result
     }

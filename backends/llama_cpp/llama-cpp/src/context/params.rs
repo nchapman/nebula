@@ -75,37 +75,6 @@ unsafe impl Send for LlamaContextParams {}
 unsafe impl Sync for LlamaContextParams {}
 
 impl LlamaContextParams {
-    /// Set the seed of the context
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use llama_cpp_2::context::params::LlamaContextParams;
-    /// let params = LlamaContextParams::default();
-    /// let params = params.with_seed(1234);
-    /// assert_eq!(params.seed(), 1234);
-    /// ```
-    #[must_use]
-    pub fn with_seed(mut self, seed: u32) -> Self {
-        self.context_params.seed = seed;
-        self
-    }
-
-    /// Get the seed of the context
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use llama_cpp_2::context::params::LlamaContextParams;
-    /// let params = LlamaContextParams::default()
-    ///     .with_seed(1234);
-    /// assert_eq!(params.seed(), 1234);
-    /// ```
-    #[must_use]
-    pub fn seed(&self) -> u32 {
-        self.context_params.seed
-    }
-
     /// Set the side of the context
     ///
     /// # Examples
@@ -264,7 +233,7 @@ impl LlamaContextParams {
     /// assert_eq!(params.n_threads(), 4);
     /// ```
     #[must_use]
-    pub fn n_threads(&self) -> u32 {
+    pub fn n_threads(&self) -> i32 {
         self.context_params.n_threads
     }
 
@@ -277,7 +246,7 @@ impl LlamaContextParams {
     /// assert_eq!(params.n_threads_batch(), 4);
     /// ```
     #[must_use]
-    pub fn n_threads_batch(&self) -> u32 {
+    pub fn n_threads_batch(&self) -> i32 {
         self.context_params.n_threads_batch
     }
 
@@ -292,7 +261,7 @@ impl LlamaContextParams {
     /// assert_eq!(params.n_threads(), 8);
     /// ```
     #[must_use]
-    pub fn with_n_threads(mut self, n_threads: u32) -> Self {
+    pub fn with_n_threads(mut self, n_threads: i32) -> Self {
         self.context_params.n_threads = n_threads;
         self
     }
@@ -308,7 +277,7 @@ impl LlamaContextParams {
     /// assert_eq!(params.n_threads_batch(), 8);
     /// ```
     #[must_use]
-    pub fn with_n_threads_batch(mut self, n_threads: u32) -> Self {
+    pub fn with_n_threads_batch(mut self, n_threads: i32) -> Self {
         self.context_params.n_threads_batch = n_threads;
         self
     }

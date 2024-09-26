@@ -1,6 +1,5 @@
-use std::{ffi::CString, path::Path, ptr::NonNull, sync::Arc};
-
 use crate::ClipError;
+use std::{ffi::CString, path::Path, ptr::NonNull, sync::Arc};
 
 pub struct ImageEmbed {
     pub(crate) embed: NonNull<llama_cpp_sys::llava_image_embed>,
@@ -18,6 +17,7 @@ impl Drop for ImageEmbed {
     }
 }
 
+#[derive(Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub struct ClipContextInternal {
     pub(crate) context: NonNull<llama_cpp_sys::clip_ctx>,
@@ -25,7 +25,7 @@ pub struct ClipContextInternal {
 unsafe impl Send for ClipContextInternal {}
 unsafe impl Sync for ClipContextInternal {}
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 #[allow(clippy::module_name_repetitions)]
 pub struct ClipContext {
     pub(crate) context: Arc<ClipContextInternal>,
@@ -45,7 +45,7 @@ impl ClipContext {
         #[cfg(any(target_os = "windows"))]
         let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
         #[cfg(debug_assertions)]
-        let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 1) };
+        let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 0) };
         #[cfg(not(debug_assertions))]
         let clip = unsafe { llama_cpp_sys::clip_model_load(cstr.as_ptr(), 0) };
         #[cfg(any(target_os = "linux", target_os = "macos", target_os = "windows"))]
@@ -62,7 +62,7 @@ impl ClipContext {
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
         #[cfg(any(target_os = "windows"))]
-        let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
+        let guard = stdio_override::StdoutOverride::from_file("nul").unwrap();
         let embed = unsafe {
             llama_cpp_sys::llava_image_embed_make_with_bytes(
                 self.context.context.as_ptr(),
