@@ -137,19 +137,21 @@ pub enum SamplerType {
     Temperature = 6,
 }
 
-impl Into<llama_cpp::sample::SamplerType> for SamplerType {
-    fn into(self) -> llama_cpp::sample::SamplerType {
-        match self {
-            Self::None => llama_cpp::sample::SamplerType::None,
-            Self::TopK => llama_cpp::sample::SamplerType::TopK,
-            Self::TopP => llama_cpp::sample::SamplerType::TopP,
-            Self::MinP => llama_cpp::sample::SamplerType::MinP,
-            Self::TfsZ => llama_cpp::sample::SamplerType::TfsZ,
-            Self::TypicalP => llama_cpp::sample::SamplerType::TypicalP,
-            Self::Temperature => llama_cpp::sample::SamplerType::Temperature,
+impl From<SamplerType> for llama_cpp::sample::SamplerType {
+    fn from(val: SamplerType) -> Self {
+        match val {
+            SamplerType::None => llama_cpp::sample::SamplerType::None,
+            SamplerType::TopK => llama_cpp::sample::SamplerType::TopK,
+            SamplerType::TopP => llama_cpp::sample::SamplerType::TopP,
+            SamplerType::MinP => llama_cpp::sample::SamplerType::MinP,
+            SamplerType::TfsZ => llama_cpp::sample::SamplerType::TfsZ,
+            SamplerType::TypicalP => llama_cpp::sample::SamplerType::TypicalP,
+            SamplerType::Temperature => llama_cpp::sample::SamplerType::Temperature,
         }
     }
 }
+
+pub type TokenCallback = dyn Fn(String) -> bool + Send + 'static;
 
 #[derive(Clone, bon::Builder)]
 pub struct PredictOptions {
@@ -206,7 +208,7 @@ pub struct PredictOptions {
     pub samplers: Vec<SamplerType>,
     #[builder(default = "".to_string())]
     pub grammar: String,
-    pub token_callback: Option<std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>>,
+    pub token_callback: Option<std::sync::Arc<Box<TokenCallback>>>,
     pub max_len: Option<i32>,
 }
 
@@ -216,32 +218,32 @@ impl Default for PredictOptions {
     }
 }
 
-impl Into<SamplingParams> for PredictOptions {
-    fn into(self) -> SamplingParams {
+impl From<PredictOptions> for SamplingParams {
+    fn from(val: PredictOptions) -> SamplingParams {
         SamplingParams {
-            seed: self.seed,
-            n_prev: self.n_prev,
-            n_probs: self.n_probs,
-            min_keep: self.min_keep,
-            top_k: self.top_k,
-            top_p: self.top_p,
-            min_p: self.min_p,
-            tfs_z: self.tfs_z,
-            typ_p: self.typ_p,
-            temp: self.temp,
-            dynatemp_range: self.dynatemp_range,
-            dynatemp_exponent: self.dynatemp_exponent,
-            penalty_last_n: self.penalty_last_n,
-            penalty_repeat: self.penalty_repeat,
-            penalty_freq: self.penalty_freq,
-            penalty_present: self.penalty_present,
-            mirostat: self.mirostat,
-            mirostat_tau: self.mirostat_tau,
-            mirostat_eta: self.mirostat_eta,
-            penalize_nl: self.penalize_nl,
-            ignore_eos: self.ignore_eos,
-            samplers: self.samplers.into_iter().map(|s| s.into()).collect(),
-            grammar: self.grammar,
+            seed: val.seed,
+            n_prev: val.n_prev,
+            n_probs: val.n_probs,
+            min_keep: val.min_keep,
+            top_k: val.top_k,
+            top_p: val.top_p,
+            min_p: val.min_p,
+            tfs_z: val.tfs_z,
+            typ_p: val.typ_p,
+            temp: val.temp,
+            dynatemp_range: val.dynatemp_range,
+            dynatemp_exponent: val.dynatemp_exponent,
+            penalty_last_n: val.penalty_last_n,
+            penalty_repeat: val.penalty_repeat,
+            penalty_freq: val.penalty_freq,
+            penalty_present: val.penalty_present,
+            mirostat: val.mirostat,
+            mirostat_tau: val.mirostat_tau,
+            mirostat_eta: val.mirostat_eta,
+            penalize_nl: val.penalize_nl,
+            ignore_eos: val.ignore_eos,
+            samplers: val.samplers.into_iter().map(|s| s.into()).collect(),
+            grammar: val.grammar,
             logit_bias: vec![],
         }
     }

@@ -1,6 +1,6 @@
 #[cfg(feature = "llama-http")]
 use actix_web::{App, HttpResponse, HttpServer, Responder};
-use options::{ContextOptions, Message, PredictOptions};
+use options::{ContextOptions, Message, PredictOptions, TokenCallback};
 use serde::Deserialize;
 #[cfg(feature = "llama-http")]
 use tokio::sync::RwLock;
@@ -110,7 +110,7 @@ pub struct Context {
 pub struct Predict<'a> {
     context: &'a Context,
     options: options::PredictOptions,
-    token_callback: Option<std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>>,
+    token_callback: Option<Box<TokenCallback>>,
 }
 
 #[cfg(feature = "llama")]
@@ -126,7 +126,7 @@ impl<'a> Predict<'a> {
         mut self,
         token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
     ) -> Self {
-        self.token_callback = Some(std::sync::Arc::new(token_callback));
+        self.token_callback = Some(token_callback);
         self
     }
 
@@ -278,7 +278,7 @@ impl Server {
 #[cfg(test)]
 #[cfg(feature = "llama")]
 mod test {
-    use std::path::PathBuf;
+    use std::{io::Write, path::PathBuf};
 
     struct TestModel {
         pub _repo: String,
@@ -332,7 +332,7 @@ mod test {
         let test_model = TestModel::new(model_repo, model_file_name);
         eprintln!("{}", test_model.filename.display());
         let model_options = super::options::ModelOptions::default();
-        let prompt = r###"{"role": "user", "message": "Write simple Rust programm."}"###;
+        let prompt = r###"{"role": "user", "content": "Write simple Rust programm."}"###;
         let model = super::Model::new(test_model.filename.clone(), model_options);
         assert!(model.is_ok());
         let model = model.unwrap();
@@ -343,7 +343,11 @@ mod test {
         let eval_result = ctx.eval(vec![prompt.try_into().unwrap()]);
         assert!(eval_result.is_ok());
         let answer = ctx
-            .predict(super::options::PredictOptions::default())
+            .predict(super::options::PredictOptions::builder().token_callback(std::sync::Arc::new(Box::new(|token| {
+            print!("{}", token);
+            std::io::stdout().flush().unwrap();
+            true
+        }))).build())
             .predict();
         assert!(answer.is_ok());
         let answer = answer.unwrap();

@@ -65,7 +65,7 @@ fn main() {
     .unwrap()])
         .unwrap();
 
-    let mut po = nebula::options::PredictOptions::builder()
+    let po = nebula::options::PredictOptions::builder()
         .token_callback(Arc::new(Box::new(|token| {
             print!("{}", token);
             std::io::stdout().flush().unwrap();
