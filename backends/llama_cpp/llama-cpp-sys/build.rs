@@ -812,7 +812,7 @@ mod windows {
         cmake_defs: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
     ) {
-        let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+        let cmake_defs: std::collections::HashMap<&str, &str> = CMAKE_DEFS
             .iter()
             .chain(
                 maplit::hashmap! {
@@ -845,7 +845,7 @@ mod windows {
         cmake_defs: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
     ) {
-        let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+        let cmake_defs: std::collections::HashMap<&str, &str> = CMAKE_DEFS
             .iter()
             .chain(
                 maplit::hashmap! {
@@ -878,7 +878,7 @@ mod windows {
         cmake_defs: &std::collections::HashMap<&str, &str>,
         targets: &[&str],
     ) {
-        let cmake_defs: std::collections::HashMap<&str, &str> = COMMON_CPU_DEFS
+        let cmake_defs: std::collections::HashMap<&str, &str> = CMAKE_DEFS
             .iter()
             .chain(
                 maplit::hashmap! {
@@ -939,7 +939,7 @@ mod windows {
                         "CUDAToolkit_ROOT" => &cuda_dir,
                         "CUDAToolkit_INCLUDE_DIR" => &cuda_include_dir,
                         "CMAKE_CUDA_COMPILLER" => &nvcc,
-                        "CMAKE_GENERATOR_TOOLSET" => format!("cuda={}", &cuda_dir),
+                        "CMAKE_GENERATOR_TOOLSET" => &format!("cuda={}", &cuda_dir),
                         "CMAKE_CUDA_FLAGS" => "-t8",
                         "CMAKE_CUDA_ARCHITECTURES" => &*CMAKE_CUDA_ARCHITECTURES,
                     }
