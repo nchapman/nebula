@@ -225,6 +225,7 @@ async fn complitions(state: actix_web::web::Data<AppState>, json: actix_web::web
     })))
 }
 
+#[cfg(feature = "llama-http")]
 struct AppState {
     context_options: ContextOptions,
     model: Arc<RwLock<Model>>,
