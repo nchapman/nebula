@@ -522,3 +522,10 @@ impl Default for TTSOptions {
         }
     }
 }
+
+#[cfg(feature = "text-to-image")]
+#[derive(Debug)]
+pub enum TextToImageModelType {
+    StableDiffusion,
+    Wuerstchen,
+}
