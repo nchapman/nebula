@@ -42,7 +42,7 @@ pub trait Context: Send {
     fn predict_with_callback(
         &mut self,
         params: &PredictOptions,
-        token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
+        token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + Sync + Sync + 'static>>,
     ) -> Result<()>;
 }
 

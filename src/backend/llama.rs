@@ -809,7 +809,7 @@ impl<'a> LlamaContext {
         mut n_sent_text: usize,
         mut generated_string: String,
         token: LlamaToken,
-        callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
+        callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + Sync + 'static>>,
     ) -> Result<(bool, String, usize)> {
         let mut text_to_send = "".to_string();
         let token_str = self.ctx.token_to_piece(&token)?;
@@ -911,7 +911,7 @@ impl Context for LlamaContext {
     fn predict_with_callback(
         &mut self,
         params: &PredictOptions,
-        token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
+        token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + Sync + 'static>>,
     ) -> Result<()> {
         let mut generated_text = "".to_string();
         let mut n_sent_text = 0;

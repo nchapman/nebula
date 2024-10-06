@@ -124,7 +124,7 @@ impl<'a> Predict<'a> {
     }
     pub fn with_token_callback(
         mut self,
-        token_callback: Box<dyn Fn(String) -> bool + Send + 'static>,
+        token_callback: Box<dyn Fn(String) -> bool + Send + Sync + 'static>,
     ) -> Self {
         self.token_callback = Some(token_callback);
         self

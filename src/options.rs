@@ -204,7 +204,7 @@ impl From<SamplerType> for llama_cpp::sample::SamplerType {
     }
 }
 
-pub type TokenCallback = dyn Fn(String) -> bool + Send + 'static;
+pub type TokenCallback = dyn Fn(String) -> bool + Send + Sync + 'static;
 
 #[derive(Clone, bon::Builder, serde::Deserialize)]
 pub struct PredictOptions {
