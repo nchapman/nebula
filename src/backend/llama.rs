@@ -118,10 +118,11 @@ impl Llama {
             || (template.contains("USER: ") && template.contains("ASSISTANT: "))
         {
             Ok(vec!["USER:", "ASSISTANT:"])
-        } else if template == "deepseek"
-            || (template.contains("### Instruction:") && template.contains("<|EOT|>"))
+        } else if false
+            && (template == "deepseek"
+                || (template.contains("### Instruction:") && template.contains("<|EOT|>")))
         {
-            Ok(vec![])
+            Ok(vec!["<|EOT|>"])
         } else if template == "command-r"
             || (template.contains("<|START_OF_TURN_TOKEN|>") && template.contains("<|USER_TOKEN|>"))
         {
@@ -151,7 +152,7 @@ impl Llama {
         {
             Ok(vec![])
         } else {
-            Err(crate::error::Error::UnsupportedTemplate(template.into()))
+            self.template_stops(Some("chatml".to_string()))
         }
     }
 
@@ -452,8 +453,9 @@ impl Llama {
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
-        } else if template == "deepseek"
-            || (template.contains("### Instruction:") && template.contains("<|EOT|>"))
+        } else if false
+            && (template == "deepseek"
+                || (template.contains("### Instruction:") && template.contains("<|EOT|>")))
         {
             // deepseek-ai/deepseek-coder-33b-instruct
             let mut buf =
@@ -683,7 +685,9 @@ impl Llama {
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
         } else {
-            Err(crate::error::Error::UnsupportedTemplate(template.into()))
+            //            log::info!("unsupported template {}, used chatml instead", template);
+            //            Err(crate::error::Error::UnsupportedTemplate(template.into()))
+            self.apply_template(msgs, Some("chatml".to_string()), add_ass)
         }
     }
 }
@@ -749,6 +753,132 @@ impl<'a> LlamaContext {
             .eval_embed_image(embedded_image, 2048, &mut self.n_curr)?;
         Ok(())
     }
+
+    fn find_partial_stop_pos(&self, stop: &str, text: &str) -> Result<Option<usize>> {
+        if !text.is_empty() && !stop.is_empty() {
+            let text_last_char = text.chars().last().unwrap();
+            Ok(stop.char_indices().rev().find_map(|(i, ch)| {
+                if ch == text_last_char {
+                    let current_partial = stop[..i + 1].to_string();
+                    if text.ends_with(&current_partial) {
+                        return Some(text.len() - i - 1);
+                    }
+                }
+                None
+            }))
+        } else {
+            Ok(None)
+        }
+    }
+
+    fn find_stopping_string(
+        &self,
+        text: &str,
+        last_token_size: usize,
+        is_stop_type_full: bool,
+    ) -> Result<(bool, Option<usize>)> {
+        let mut has_stop_token = true;
+        let mut stop_pos = None;
+        for w in self.model.template_stops(None)? {
+            let mut pos = None;
+            if is_stop_type_full {
+                let tmp = w.len() + last_token_size;
+                let from_pos = if text.len() > tmp {
+                    text.len() - tmp
+                } else {
+                    0
+                };
+                if let Some(p) = text[from_pos..].find(w) {
+                    pos = Some(from_pos + p);
+                }
+            } else {
+                pos = self.find_partial_stop_pos(w, text)?;
+            }
+            if pos != stop_pos && (stop_pos.is_none() || pos < stop_pos) {
+                if is_stop_type_full {
+                    has_stop_token = false;
+                }
+                stop_pos = pos;
+            }
+        }
+        Ok((has_stop_token, stop_pos))
+    }
+
+    fn process_token(
+        &self,
+        mut n_sent_text: usize,
+        mut generated_string: String,
+        token: LlamaToken,
+        callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
+    ) -> Result<(bool, String, usize)> {
+        let mut text_to_send = "".to_string();
+        let token_str = self.ctx.token_to_piece(&token)?;
+        if !self.model.token_is_eog(token)? {
+            generated_string += &token_str;
+        }
+        let mut has_next_token = true;
+        let mut incomplete = false;
+        for i in 1..std::cmp::min(5, generated_string.len() + 1) {
+            let c = generated_string.as_bytes()[generated_string.len() - i];
+            if (c & 0xC0) == 0x80 {
+                // continuation byte: 10xxxxxx
+                continue;
+            }
+            if (c & 0xE0) == 0xC0 {
+                // 2-byte character: 110xxxxx ...
+                incomplete = i < 2;
+            } else if (c & 0xF0) == 0xE0 {
+                // 3-byte character: 1110xxxx ...
+                incomplete = i < 3;
+            } else if (c & 0xF8) == 0xF0 {
+                // 4-byte character: 11110xxx ...
+                incomplete = i < 4;
+            }
+            // else 1-byte character or invalid byte
+            break;
+        }
+        if !incomplete {
+            let mut pos = std::cmp::min(n_sent_text, generated_string.len());
+            if !self.model.token_is_eog(token)? {
+                let str_test = generated_string[pos..].to_string();
+                let is_stop_full;
+                let (h, mut stop_pos) =
+                    self.find_stopping_string(&str_test, token_str.len(), true)?;
+                has_next_token = h;
+                if let Some(sp) = &stop_pos {
+                    is_stop_full = true;
+                    generated_string = generated_string[pos + sp..].to_string();
+                    pos = std::cmp::min(n_sent_text, generated_string.len());
+                } else {
+                    is_stop_full = false;
+                    (has_next_token, stop_pos) =
+                        self.find_stopping_string(&str_test, token_str.len(), false)?;
+                }
+                if stop_pos.is_none()
+                    || (!has_next_token
+                        && !is_stop_full
+                        && stop_pos.is_some()
+                        && stop_pos.unwrap() > 0)
+                {
+                    text_to_send = generated_string[pos..].to_string();
+                    n_sent_text += text_to_send.len();
+                }
+            } else {
+                text_to_send = generated_string[pos..].to_string();
+                n_sent_text += text_to_send.len();
+            }
+            if !callback(text_to_send) {
+                return Ok((false, generated_string, n_sent_text));
+            }
+        }
+        if incomplete {
+            has_next_token = true;
+        }
+        if self.model.token_is_eog(token)? {
+            has_next_token = false;
+        }
+        Ok((has_next_token, generated_string, n_sent_text))
+    }
 }
 
 impl Context for LlamaContext {
@@ -783,6 +913,8 @@ impl Context for LlamaContext {
         params: &PredictOptions,
         token_callback: std::sync::Arc<Box<dyn Fn(String) -> bool + Send + 'static>>,
     ) -> Result<()> {
+        let mut generated_text = "".to_string();
+        let mut n_sent_text = 0;
         let mut sampler = Sampler::new(&self.model.model, params.clone().into())?;
         let stop = if let Some(mm) = params.max_len {
             mm as usize
@@ -793,11 +925,19 @@ impl Context for LlamaContext {
             let token_id = sampler.sample(&self.ctx, -1, false)?;
             sampler.accept(token_id, true)?;
             self.ctx.eval_id(token_id, &mut self.n_curr)?;
-            if self.model.token_is_eog(token_id)? {
+            let (has_next_token, g, n) = self.process_token(
+                n_sent_text,
+                generated_text,
+                token_id,
+                token_callback.clone(),
+            )?;
+            generated_text = g;
+            n_sent_text = n;
+            if !has_next_token {
                 break;
             }
-            let token_str = self.ctx.token_to_piece(&token_id)?;
-            token_callback(token_str);
+            //            let token_str = self.ctx.token_to_piece(&token_id)?;
+            //            token_callback(token_str);
         }
         Ok(())
     }

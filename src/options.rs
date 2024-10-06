@@ -4,11 +4,64 @@ use serde::{de::Visitor, Deserialize, Deserializer};
 use serde_json::Value;
 use std::{fmt::Display, io::Read};
 
-#[derive(bon::Builder)]
+fn default_i32_minus_1() -> i32 {
+    -1
+}
+
+fn default_i32_64() -> i32 {
+    64
+}
+
+fn default_i32_40() -> i32 {
+    40
+}
+
+fn default_f32_0_95() -> f32 {
+    0.95
+}
+
+fn default_f32_0_05() -> f32 {
+    0.05
+}
+
+fn default_f32_1_0() -> f32 {
+    1.0
+}
+
+fn default_f32_5_0() -> f32 {
+    5.0
+}
+
+fn default_f32_0_8() -> f32 {
+    0.8
+}
+
+fn default_f32_0_1() -> f32 {
+    0.1
+}
+
+fn default_usize_2048() -> usize {
+    2048
+}
+
+fn default_samplers() -> Vec<SamplerType> {
+    vec![
+        SamplerType::TopK,
+        SamplerType::TfsZ,
+        SamplerType::TypicalP,
+        SamplerType::TopP,
+        SamplerType::MinP,
+        SamplerType::Temperature,
+    ]
+}
+
+#[derive(bon::Builder, serde::Deserialize)]
 pub struct ModelOptions {
     #[builder(default)]
+    #[serde(default)]
     pub cpu: bool,
     #[builder(default = -1)]
+    #[serde(default = "default_i32_minus_1")]
     pub n_gpu_layers: i32,
 }
 
@@ -126,7 +179,7 @@ impl TryFrom<Value> for Message {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Deserialize)]
 pub enum SamplerType {
     None = 0,
     TopK = 1,
@@ -153,61 +206,78 @@ impl From<SamplerType> for llama_cpp::sample::SamplerType {
 
 pub type TokenCallback = dyn Fn(String) -> bool + Send + 'static;
 
-#[derive(Clone, bon::Builder)]
+#[derive(Clone, bon::Builder, serde::Deserialize)]
 pub struct PredictOptions {
-    #[builder(default = 0)]
+    #[builder(default)]
+    #[serde(default)]
     pub seed: u32,
-    #[builder(default = 64)]
+    #[builder(default = default_i32_64())]
+    #[serde(default = "default_i32_64")]
     pub n_prev: i32,
-    #[builder(default = 0)]
+    #[builder(default)]
+    #[serde(default)]
     pub n_probs: i32,
-    #[builder(default = 0)]
+    #[builder(default)]
+    #[serde(default)]
     pub min_keep: i32,
-    #[builder(default = 40)]
+    #[builder(default = default_i32_40())]
+    #[serde(default = "default_i32_40")]
     pub top_k: i32,
-    #[builder(default = 0.95)]
+    #[builder(default = default_f32_0_95())]
+    #[serde(default = "default_f32_0_95")]
     pub top_p: f32,
-    #[builder(default = 0.05)]
+    #[builder(default = default_f32_0_05())]
+    #[serde(default = "default_f32_0_05")]
     pub min_p: f32,
-    #[builder(default = 1.0)]
+    #[builder(default = default_f32_1_0())]
+    #[serde(default = "default_f32_1_0")]
     pub tfs_z: f32,
-    #[builder(default = 1.0)]
+    #[builder(default = default_f32_1_0())]
+    #[serde(default = "default_f32_1_0")]
     pub typ_p: f32,
-    #[builder(default = 0.8)]
+    #[builder(default = default_f32_0_8())]
+    #[serde(default = "default_f32_0_8")]
     pub temp: f32,
-    #[builder(default = 0.0)]
+    #[builder(default)]
+    #[serde(default)]
     pub dynatemp_range: f32,
-    #[builder(default = 1.0)]
+    #[builder(default = default_f32_1_0())]
+    #[serde(default = "default_f32_1_0")]
     pub dynatemp_exponent: f32,
-    #[builder(default = 64)]
+    #[builder(default = default_i32_64())]
+    #[serde(default = "default_i32_64")]
     pub penalty_last_n: i32,
-    #[builder(default = 1.0)]
+    #[builder(default = default_f32_1_0())]
+    #[serde(default = "default_f32_1_0")]
     pub penalty_repeat: f32,
-    #[builder(default = 0.0)]
+    #[builder(default)]
+    #[serde(default)]
     pub penalty_freq: f32,
-    #[builder(default = 0.0)]
+    #[builder(default)]
+    #[serde(default)]
     pub penalty_present: f32,
-    #[builder(default = 0)]
+    #[builder(default)]
+    #[serde(default)]
     pub mirostat: i32,
-    #[builder(default = 5.0)]
+    #[builder(default = default_f32_5_0())]
+    #[serde(default = "default_f32_5_0")]
     pub mirostat_tau: f32,
-    #[builder(default = 0.1)]
+    #[builder(default = default_f32_0_1())]
+    #[serde(default = "default_f32_0_1")]
     pub mirostat_eta: f32,
-    #[builder(default = false)]
+    #[builder(default)]
+    #[serde(default)]
     pub penalize_nl: bool,
-    #[builder(default = false)]
+    #[builder(default)]
+    #[serde(default)]
     pub ignore_eos: bool,
-    #[builder(default = vec![
-        SamplerType::TopK,
-        SamplerType::TfsZ,
-        SamplerType::TypicalP,
-        SamplerType::TopP,
-        SamplerType::MinP,
-        SamplerType::Temperature,
-    ])]
+    #[builder(default = default_samplers())]
+    #[serde(default = "default_samplers")]
     pub samplers: Vec<SamplerType>,
-    #[builder(default = "".to_string())]
+    #[builder(default)]
+    #[serde(default)]
     pub grammar: String,
+    #[serde(skip_deserializing)]
     pub token_callback: Option<std::sync::Arc<Box<TokenCallback>>>,
     pub max_len: Option<i32>,
 }
@@ -252,10 +322,13 @@ impl From<PredictOptions> for SamplingParams {
 #[derive(Clone, Debug, serde::Deserialize, bon::Builder)]
 pub struct ContextOptions {
     #[builder(default)]
+    #[serde(default)]
     pub seed: u32,
-    #[builder(default = 2048)]
+    #[builder(default = default_usize_2048())]
+    #[serde(default = "default_usize_2048")]
     pub n_ctx: usize,
     #[builder(default = num_cpus::get())]
+    #[serde(default = "num_cpus::get")]
     pub n_threads: usize,
 }
 
