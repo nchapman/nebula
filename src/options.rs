@@ -529,3 +529,39 @@ pub enum TextToImageModelType {
     StableDiffusion,
     Wuerstchen,
 }
+
+#[cfg(feature = "text-to-image")]
+pub struct TextToImageOptions {
+    pub cpu: bool,
+    pub model_type: TextToImageModelType,
+    pub tokenizer: Option<String>,
+}
+
+#[cfg(feature = "text-to-image")]
+impl TextToImageOptions {
+    pub fn with_cpu(mut self, cpu: bool) -> Self {
+        self.cpu = cpu;
+        self
+    }
+
+    pub fn with_model_type(mut self, model_type: TextToImageModelType) -> Self {
+        self.model_type = model_type;
+        self
+    }
+
+    pub fn with_tokenizer(mut self, tokenizer: Option<String>) -> Self {
+        self.tokenizer = tokenizer;
+        self
+    }
+}
+
+#[cfg(feature = "text-to-image")]
+impl Default for TextToImageOptions {
+    fn default() -> Self {
+        Self {
+            cpu: true,
+            model_type: TextToImageModelType::StableDiffusion,
+            tokenizer: None,
+        }
+    }    
+}
