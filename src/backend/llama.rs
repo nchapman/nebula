@@ -118,11 +118,11 @@ impl Llama {
             || (template.contains("USER: ") && template.contains("ASSISTANT: "))
         {
             Ok(vec!["USER:", "ASSISTANT:"])
-        } else if false
-            && (template == "deepseek"
-                || (template.contains("### Instruction:") && template.contains("<|EOT|>")))
-        {
-            Ok(vec!["<|EOT|>"])
+        //        } else if false
+        //            && (template == "deepseek"
+        //                || (template.contains("### Instruction:") && template.contains("<|EOT|>")))
+        //        {
+        //            Ok(vec!["<|EOT|>"])
         } else if template == "command-r"
             || (template.contains("<|START_OF_TURN_TOKEN|>") && template.contains("<|USER_TOKEN|>"))
         {
@@ -135,17 +135,15 @@ impl Llama {
                 "<|end_header_id|>",
                 "<|eot_id|>",
             ])
-        } else if template == "chatglm3" || template.contains("[gMASK]sop") {
-            Ok(vec![])
-        } else if template == "chatglm4" || template.contains("[gMASK]<sop>") {
-            Ok(vec![])
-        } else if template == "minicpm" || template.contains("<用户>") {
-            Ok(vec![])
-        } else if template == "deepseek2"
+        } else if template == "chatglm3"
+            || template.contains("[gMASK]sop")
+            || template == "chatglm4"
+            || template.contains("[gMASK]<sop>")
+            || template == "minicpm"
+            || template.contains("<用户>")
+            || template == "deepseek2"
             || template.contains("'Assistant: ' + message['content'] + eos_token")
-        {
-            Ok(vec![])
-        } else if template == "exaone3"
+            || template == "exaone3"
             || (template.contains("[|system|]")
                 && template.contains("[|assistant|]")
                 && template.contains("[|endofturn|]"))
@@ -453,36 +451,36 @@ impl Llama {
             }
             res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
             Ok(res)
-        } else if false
-            && (template == "deepseek"
-                || (template.contains("### Instruction:") && template.contains("<|EOT|>")))
-        {
-            // deepseek-ai/deepseek-coder-33b-instruct
-            let mut buf =
-                msgs.into_iter()
-                    .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
-                        if msg.role == Role::System {
-                            write!(buf, "{}", msg.content)?;
-                        } else if msg.role == Role::User {
-                            writeln!(buf, "### Instruction:")?;
-                            if !msg.images.is_empty() {
-                                res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
-                                msg.images.into_iter().for_each(|im| {
-                                    res.push(Templated::Image(im.0));
-                                });
-                                buf = BufWriter::new(Vec::new());
-                            }
-                            writeln!(buf, "{}", msg.content)?;
-                        } else {
-                            write!(buf, "### Response:\n{}\n<|EOT|>\n", msg.content)?;
-                        }
-                        Ok::<_, crate::error::Error>(buf)
-                    })?;
-            if add_ass {
-                writeln!(buf, "### Response:")?;
-            }
-            res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
-            Ok(res)
+        // } else if false
+        //     && (template == "deepseek"
+        //         || (template.contains("### Instruction:") && template.contains("<|EOT|>")))
+        // {
+        //     // deepseek-ai/deepseek-coder-33b-instruct
+        //     let mut buf =
+        //         msgs.into_iter()
+        //             .try_fold(BufWriter::new(Vec::new()), |mut buf, msg| {
+        //                 if msg.role == Role::System {
+        //                     write!(buf, "{}", msg.content)?;
+        //                 } else if msg.role == Role::User {
+        //                     writeln!(buf, "### Instruction:")?;
+        //                     if !msg.images.is_empty() {
+        //                         res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
+        //                         msg.images.into_iter().for_each(|im| {
+        //                             res.push(Templated::Image(im.0));
+        //                         });
+        //                         buf = BufWriter::new(Vec::new());
+        //                     }
+        //                     writeln!(buf, "{}", msg.content)?;
+        //                 } else {
+        //                     write!(buf, "### Response:\n{}\n<|EOT|>\n", msg.content)?;
+        //                 }
+        //                 Ok::<_, crate::error::Error>(buf)
+        //             })?;
+        //     if add_ass {
+        //         writeln!(buf, "### Response:")?;
+        //     }
+        //     res.push(Templated::Str(String::from_utf8(buf.into_inner()?)?));
+        //     Ok(res)
         } else if template == "command-r"
             || (template.contains("<|START_OF_TURN_TOKEN|>") && template.contains("<|USER_TOKEN|>"))
         {
