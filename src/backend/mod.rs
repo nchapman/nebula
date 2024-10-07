@@ -9,7 +9,7 @@ use crate::{options::AutomaticSpeechRecognitionOptions, Result};
 use std::path::PathBuf;
 
 #[cfg(feature = "tts")]
-use crate::options::TTSOptions;
+use crate::options::{TTSOptions, TTSModelType};
 
 #[cfg(feature = "llama")]
 use crate::{
@@ -105,6 +105,11 @@ pub trait TextToSpeechBackend {
 #[cfg(feature = "tts")]
 pub fn init_text_to_speech_backend(
     options: TTSOptions,
-) -> anyhow::Result<impl TextToSpeechBackend> {
-    anyhow::Ok(tts::StyleTTSBackend::new(options)?)
+) -> anyhow::Result<Box<dyn TextToSpeechBackend>> {
+    match options.model_type {
+        TTSModelType::Style => anyhow::Ok(Box::new(tts::StyleTTSBackend::new(options)?)),
+        TTSModelType::ParlerMini => anyhow::Ok(Box::new(tts::ParlerBackend::new(options)?)),
+        TTSModelType::ParlerLarge => anyhow::Ok(Box::new(tts::ParlerBackend::new(options)?)),
+        _ => { panic!("This model type is not implemented yet!") }
+    }
 }

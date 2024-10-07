@@ -3,7 +3,15 @@ use std::path::{Path, PathBuf};
 use punkt::{SentenceTokenizer, TrainingData};
 use punkt::params::Standard;
 use fancy_regex::Regex;
-
+use hf_hub::{api::sync::Api, Repo, RepoType};
+use candle_nn::VarBuilder;
+use candle_transformers::models::parler_tts::{Config as ParlerConfig, Model as ParlerModel};
+use candle_transformers::generation::LogitsProcessor;
+use candle_examples::{hub_load_safetensors, device};
+use candle_core::{
+    Device as CandleDevice, Tensor as CandleTensor, DType as CandleDType, IndexOp as CandleIndexOp
+};
+use tokenizers::Tokenizer;
 
 mod treebank_word_tokenizer;
 mod phonemizer;
@@ -12,7 +20,7 @@ use treebank_word_tokenizer::TreebankWordTokenizer;
 use phonemizer::text_to_phonemes;
 use text_cleaner::TextCleaner;
 
-use crate::options::{TTSOptions, TTSDevice};
+use crate::options::{TTSOptions, TTSDevice, TTSModelType};
 use super::TextToSpeechBackend;
 
 const MEAN: f64 = -4.0;
@@ -340,5 +348,111 @@ impl StyleTTSBackend {
         let mask_gt = mask.gt_tensor(&lengths.unsqueeze(1));
 
         mask_gt
+    }
+}
+
+
+pub struct ParlerBackend {
+    config: ParlerConfig,
+    model: ParlerModel,
+    tokenizer: Tokenizer,
+    device: CandleDevice,
+    description_tokens: CandleTensor,
+}
+
+impl ParlerBackend {
+    pub fn new(options: TTSOptions) -> anyhow::Result<Self> {
+        let api = hf_hub::api::sync::Api::new()?;
+        let model_id = match options.model_type {
+            TTSModelType::ParlerMini => "parler-tts/parler-tts-mini-v1".to_string(),
+            TTSModelType::ParlerLarge =>  "parler-tts/parler-tts-large-v1".to_string(),
+            _ => { panic!("This model type is not implemented yet!") }
+        };
+        let revision = "main".to_string();
+        let repo = api.repo(hf_hub::Repo::with_revision(
+            model_id,
+            hf_hub::RepoType::Model,
+            revision,
+        ));
+        let model_files = match options.model_type {
+            TTSModelType::ParlerMini => vec![repo.get("model.safetensors")?],
+            TTSModelType::ParlerLarge  => {
+                candle_examples::hub_load_safetensors(&repo, "model.safetensors.index.json")?
+            },
+            _ => { panic!("This model type is not implemented yet!") }
+        };
+        let config = repo.get("config.json")?;
+        let tokenizer = repo.get("tokenizer.json")?;
+        let tokenizer = Tokenizer::from_file(tokenizer).map_err(anyhow::Error::msg)?;
+        let device = match options.device {
+            TTSDevice::Cpu => device(true)?,
+            TTSDevice::Cuda => device(false)?,
+            _ => { panic!("This device is not available for this model!") }
+        };
+
+        let vb = unsafe {
+            VarBuilder::from_mmaped_safetensors(&model_files, CandleDType::F32, &device)?
+        };
+        let config: ParlerConfig = serde_json::from_reader(std::fs::File::open(config)?)?;
+        let mut model = ParlerModel::new(&config, vb)?;
+
+        let empty_vec: Vec<u32> = vec![0];
+        let description_tokens = CandleTensor::new(empty_vec, &device)?;
+
+        Ok(Self { config, model, tokenizer, device, description_tokens})
+    }
+
+    pub fn train_from_description(&mut self, description: String) -> anyhow::Result<()> {
+        let description_tokens = self.tokenizer
+            .encode(description, true)
+            .map_err(anyhow::Error::msg)?
+            .get_ids()
+            .to_vec();
+        self.description_tokens = CandleTensor::new(description_tokens, &self.device)?.unsqueeze(0)?;
+        Ok(())
+    }
+
+    pub fn train_from_default_description(&mut self) -> anyhow::Result<()> {
+        let default_description = "A female speaker delivers a slightly expressive and animated speech with a moderate speed and pitch. The recording is of very high quality, with the speaker's voice sounding clear and very close up.".to_string();
+        self.train_from_description(default_description)?;
+        Ok(())
+    }
+}
+
+impl TextToSpeechBackend for ParlerBackend {
+    fn train(&mut self, ref_samples: Vec<f32>) -> anyhow::Result<()> {
+        println!("Training from reference samples is not available for this model.");
+        println!("Training from default description will be used instead.");
+        self.train_from_default_description()?;
+        Ok(())
+    }
+
+    fn predict(&mut self, text: String) -> anyhow::Result<Vec<f32>> {
+        let prompt_tokens = self.tokenizer
+            .encode(text, true)
+            .map_err(anyhow::Error::msg)?
+            .get_ids()
+            .to_vec();
+        let prompt_tokens = CandleTensor::new(prompt_tokens, &self.device)?
+            .unsqueeze(0)?;
+        let lp = LogitsProcessor::new(
+            0, Some(0.0), Some(1.0),
+        );
+        let codes = self.model.generate(
+            &prompt_tokens, &self.description_tokens, lp, 512
+        )?;
+        let codes = codes.to_dtype(CandleDType::I64)?;
+        codes.save_safetensors("codes", "out.safetensors")?;
+        let codes = codes.unsqueeze(0)?;
+        let pcm = self.model
+            .audio_encoder
+            .decode_codes(&codes.to_device(&self.device)?)?;
+        println!("{pcm}");
+        let pcm = pcm.i((0, 0))?;
+        let pcm = candle_examples::audio::normalize_loudness(
+            &pcm, 24_000, true
+        )?;
+        let pcm = pcm.to_vec1::<f32>()?;
+        Ok(pcm)
     }
 }

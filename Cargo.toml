@@ -36,12 +36,12 @@ rubato = { version = "0.15.0", optional = true }
 simple_logger = "5"
 
 #embeddings feature
-candle-core = { version = "0.5.1", optional = true }
-candle-transformers = { version = "0.5.1", optional = true }
-candle-nn = { version = "0.5.1", optional = true }
-candle-examples = { version = "0.5.1", optional = true }
-serde_json = { version = "1.0.117", optional = true }
-tokenizers = { version = "0.19.1", optional = true }
+candle-core = { version = "0.7.0", optional = true }
+candle-transformers = { version = "0.7.0", optional = true }
+candle-nn = { version = "0.7.0", optional = true }
+candle-examples = { version = "0.7.0", optional = true }
+serde_json = { version = "1.0.128", optional = true }
+tokenizers = { version = "0.20.0", optional = true }
 itertools = { version = "0.13.0", optional = true }
 
 #TTS feature
@@ -66,7 +66,7 @@ llama-http = ["llama", "actix-web", "tokio"]
 #default = ["embeddings"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 embeddings = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow", "itertools", "serde_json"]
-tts = ["anyhow", "espeakng-sys", "fancy-regex", "ffi-support", "hound", "once_cell", "punkt", "regex", "rubato", "tch"]
+tts = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow", "serde_json", "espeakng-sys", "fancy-regex", "ffi-support", "hound", "once_cell", "punkt", "regex", "rubato", "tch"]
 
 
 [[example]]
