@@ -535,6 +535,7 @@ pub struct TextToImageOptions {
     pub cpu: bool,
     pub model_type: TextToImageModelType,
     pub tokenizer: Option<String>,
+    pub samples_count: usize,
 }
 
 #[cfg(feature = "text-to-image")]
@@ -553,6 +554,11 @@ impl TextToImageOptions {
         self.tokenizer = tokenizer;
         self
     }
+
+    pub fn with_samples_count(mut self, samples_count: usize) -> Self {
+        self.samples_count = samples_count;
+        self
+    }
 }
 
 #[cfg(feature = "text-to-image")]
@@ -562,6 +568,7 @@ impl Default for TextToImageOptions {
             cpu: true,
             model_type: TextToImageModelType::StableDiffusion,
             tokenizer: None,
+            samples_count: 1 as usize
         }
     }    
 }
