@@ -12,6 +12,9 @@ use std::{collections::HashMap, path::PathBuf, pin::Pin, sync::Mutex};
 #[cfg(feature = "whisper")]
 use std::path::PathBuf;
 
+#[cfg(feature = "text-to-image")]
+use candle_core::Tensor as CandleTensor;
+
 pub mod error;
 pub mod options;
 pub type Result<T> = std::result::Result<T, error::Error>;
@@ -446,5 +449,26 @@ impl TextToSpeechModel {
 
     pub fn predict(&mut self, text: String) -> anyhow::Result<Vec<f32>> {
         anyhow::Ok(self.backend.predict(text)?)
+    }
+}
+
+#[cfg(feature = "text-to-image")]
+pub struct TextToImageModel {
+    backend: Box<dyn backend::TextToImageBackend>,
+}
+
+#[cfg(feature = "text-to-image")]
+impl TextToImageModel {
+    pub fn new(options: options::TextToImageOptions) -> anyhow::Result<Self> {
+        let backend = backend::init_text_to_image_backend(options)?;
+        anyhow::Ok(
+            Self {
+                backend: backend,
+            }
+        )
+    }
+
+    pub fn generate(&mut self, prompt: String) -> anyhow::Result<CandleTensor> {
+        anyhow::Ok(self.backend.generate(prompt)?)
     }
 }
