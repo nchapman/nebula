@@ -3,7 +3,8 @@ use actix_web::{App, HttpResponse, HttpServer, Responder};
 use options::{ContextOptions, Message, PredictOptions, TokenCallback};
 use serde::Deserialize;
 #[cfg(feature = "llama-http")]
-use tokio::sync::RwLock;
+use tokio::{sync::RwLock, runtime::{Handle, Runtime}};
+
 
 //#![allow(clippy::type_complexity)]
 //#![allow(clippy::arc_with_non_send_sync)]
@@ -240,6 +241,19 @@ pub struct Server {
 }
 
 #[cfg(feature = "llama-http")]
+fn get_runtime_handle() -> Result<(Handle, Option<Runtime>)> {
+    match Handle::try_current() {
+        Ok(h) => Ok((h, None)),
+        Err(_) => {
+              let rt = tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()?;
+              Ok((rt.handle().clone(), Some(rt)))
+            }
+    }
+}
+
+#[cfg(feature = "llama-http")]
 impl Server {
     pub fn new(host: impl Into<IpAddr>, port: u16, model: Model, context_options: ContextOptions) -> Self{
         Self{
@@ -251,25 +265,19 @@ impl Server {
 
     }
 
-    pub fn run(&self) -> Result<()>{
+    pub async fn run(self) -> Result<()>{
         let mm = Arc::new(RwLock::new(self.model.clone()));
         let context_options = self.context_options.clone();
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()?
-            .block_on(async move{
-                HttpServer::new(move || {
-                    App::new()
-                        .app_data(actix_web::web::Data::new(AppState {
-                            context_options: context_options.clone(),
-                            model: mm.clone(),
-                        }))
-                        .service(complitions)
-                })
-                    .bind((self.host, self.port))?
-                    .run()
-                    .await
-            })?;
+        HttpServer::new(move || {
+            App::new()
+                .app_data(actix_web::web::Data::new(AppState {
+                    context_options: context_options.clone(),
+                    model: mm.clone(),
+                }))
+                .service(complitions)
+        })
+            .bind((self.host, self.port))?
+            .run().await?;
             Ok(())
     }
 }

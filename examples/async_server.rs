@@ -16,7 +16,8 @@ struct Args {
     mmproj: Option<String>,
 }
 
-fn main() {
+#[tokio::main]
+async fn main() {
     simple_logger::SimpleLogger::new()
         .with_level(log::LevelFilter::Debug)
         .init()
@@ -66,5 +67,5 @@ fn main() {
         model,
         ctx_options,
     );
-    server.run().unwrap();
+    server.run().await.unwrap();
 }

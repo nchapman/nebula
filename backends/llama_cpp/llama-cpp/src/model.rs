@@ -114,7 +114,7 @@ impl LlamaModel {
         self.token_to_str_with_size(token, 32, special)
     }
     pub fn token_to_str(&self, token: &LlamaToken) -> Result<String, TokenToStringError> {
-        self.token_to_str_with_size(token, 32, false)
+        self.token_to_str_with_size(token, 32, true)
     }
 
     /// Convert a vector of tokens to a single string.
