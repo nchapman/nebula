@@ -138,8 +138,8 @@ pub fn init_text_to_image_backend(
         options: TextToImageOptions
 ) -> anyhow::Result<Box<dyn TextToImageBackend>> {
     match options.model_type {
-        TextToImageModelType::StableDiffusion => Ok(Box::new(text_to_image::StableDiffusionBackend::new(options)?)),
-        TextToImageModelType::Wuerstchen => todo!(),
+        TextToImageModelType::StableDiffusion => anyhow::Ok(Box::new(text_to_image::StableDiffusionBackend::new(options)?)),
+        TextToImageModelType::Wuerstchen => anyhow::Ok(Box::new(text_to_image::WuerstchenBackend::new(options)?)),
         _ => { panic!("This model type is not implemented yet!") }
     }
 }
