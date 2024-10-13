@@ -332,3 +332,19 @@ usage:
 	cargo +nightly r --release --example text_to_speech --features tts
 #+END_SRC
 After successful running, you should find a file =test.wav= with an audio sequence pronouncing the following =Hi! My name is Nick Chapman! Nice to meet you and all the best! I build an amazing Rust project called nebula. Would you like to participate?=.
+
+* [[https://github.com/nchapman/nebula/blob/PUL-383-integrate-image-generation-models/examples/text_to_image.rs][text_to_image]]
+** usage
+#+BEGIN_SRC bash
+usage:
+	cargo r --release --example text_to_image --features text-to-image -- <model_type>
+#+END_SRC
+** models
+*** stable-diffusion
+#+BEGIN_SRC bash
+cargo r --release --example text_to_image --features text-to-image -- stable-diffusion
+#+END_SRC
+*** wuerstchen
+#+BEGIN_SRC bash
+cargo r --release --example text_to_image --features text-to-image -- wuerstchen
+#+END_SRC
