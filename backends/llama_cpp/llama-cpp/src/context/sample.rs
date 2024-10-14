@@ -4,9 +4,6 @@ use crate::context::LlamaContext;
 use crate::token::data_array::LlamaTokenDataArray;
 use crate::token::LlamaToken;
 
-#[cfg(feature = "sampler")]
-pub mod sampler;
-
 impl LlamaContext {
     /// See [`LlamaTokenDataArray::sample_temp`]
     pub fn sample_temp(&mut self, token_data: &mut LlamaTokenDataArray, temperature: f32) {

@@ -3,7 +3,7 @@ use actix_web::{App, HttpResponse, HttpServer, Responder};
 use options::{ContextOptions, Message, PredictOptions, TokenCallback};
 use serde::Deserialize;
 #[cfg(feature = "llama-http")]
-use tokio::{sync::RwLock, runtime::{Handle, Runtime}};
+use tokio::sync::RwLock;
 
 
 //#![allow(clippy::type_complexity)]
@@ -238,19 +238,6 @@ pub struct Server {
     port: u16,
     model: Model,
     context_options: ContextOptions
-}
-
-#[cfg(feature = "llama-http")]
-fn get_runtime_handle() -> Result<(Handle, Option<Runtime>)> {
-    match Handle::try_current() {
-        Ok(h) => Ok((h, None)),
-        Err(_) => {
-              let rt = tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()?;
-              Ok((rt.handle().clone(), Some(rt)))
-            }
-    }
 }
 
 #[cfg(feature = "llama-http")]

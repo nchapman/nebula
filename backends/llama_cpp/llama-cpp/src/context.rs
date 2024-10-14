@@ -68,7 +68,7 @@ impl LlamaContext {
         let context_params = params.context_params;
         #[cfg(any(target_os = "linux", target_os = "macos"))]
         let guard = stdio_override::StderrOverride::from_file("/dev/null").unwrap();
-        #[cfg(any(target_os = "windows"))]
+        #[cfg(target_os = "windows")]
         let guard = stdio_override::StderrOverride::from_file("nul").unwrap();
         let context = unsafe {
             llama_cpp_sys::llama_new_context_with_model(
