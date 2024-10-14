@@ -53,5 +53,10 @@ jobs:
         if: matrix.platform == 'ubuntu-latest'
         run: cat /proc/cpuinfo
 
-      - name: Test
+      - name: Test(non Windows)
+        if: matrix.platform != 'windows-latest'
         run: cargo test --features "llama llama-build" -- --nocapture
+
+      - name: Test(Windows)
+        if: matrix.platform == 'windows-latest'
+        run: cargo test --features "llama" -- --nocapture
