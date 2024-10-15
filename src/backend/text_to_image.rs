@@ -300,7 +300,7 @@ impl WuerstchenBackend {
                 prior: prior,
                 vqgan: vqgan,
                 decoder: decoder,
-                samples_count: options.samples_count,
+                samples_count: 1,
             }
         )
     }
@@ -313,7 +313,7 @@ impl TextToImageBackend for WuerstchenBackend {
             let weights = WuerstchenModelFile::PriorClip.get(None)?;
             text_embeddings_wuerstchen(
                 &prompt,
-                None,
+                Some(""),
                 tokenizer.clone(),
                 weights,
                 stable_diffusion::clip::Config::wuerstchen_prior(),
