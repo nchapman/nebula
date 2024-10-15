@@ -61,11 +61,18 @@ async fn main() {
 
     let ctx_options = ContextOptions::default();
 
-    let server = Server::new(
+    let mut server = Server::new(
         "0.0.0.0".parse::<IpAddr>().expect("parse failed"),
         8081,
         model,
         ctx_options,
     );
     server.run().await.unwrap();
+
+
+    eprintln!("Started! Press enter to stop...");
+    let mut buffer = String::new();
+    std::io::stdin()
+        .read_line(&mut buffer)
+        .expect("Failed to read line");
 }

@@ -1,10 +1,10 @@
+use actix_web::{dev::ServerHandle, web::Bytes};
 #[cfg(feature = "llama-http")]
 use actix_web::{App, HttpResponse, HttpServer, Responder};
 use options::{ContextOptions, Message, PredictOptions, TokenCallback};
 use serde::Deserialize;
 #[cfg(feature = "llama-http")]
 use tokio::sync::RwLock;
-
 
 //#![allow(clippy::type_complexity)]
 //#![allow(clippy::arc_with_non_send_sync)]
@@ -162,13 +162,15 @@ impl Drop for Model {
     fn drop(&mut self) {}
 }
 
-fn default_f32_1() -> f32{
+fn default_f32_1() -> f32 {
     1.0
 }
 
 #[cfg(feature = "llama-http")]
-#[derive(Deserialize)]
-struct CompletionRequest {
+#[derive(Deserialize, Debug)]
+pub struct CompletionRequest {
+    #[serde(default)]
+    stream: bool,
     #[serde(default)]
     frequency_penalty: f32,
     max_completion_tokens: Option<i32>,
@@ -183,47 +185,118 @@ struct CompletionRequest {
     messages: Vec<Message>,
 }
 
-
 #[cfg(feature = "llama-http")]
 #[actix_web::post("/v1/chat/completions")]
-async fn complitions(state: actix_web::web::Data<AppState>, json: actix_web::web::Json<CompletionRequest>) -> Result<impl Responder> {
+async fn complitions(
+    state: actix_web::web::Data<AppState>,
+    json: actix_web::web::Json<CompletionRequest>,
+) -> Result<impl Responder> {
     let data = json.into_inner();
-    let mut ctx = state.model.read().await.context(state.context_options.clone())?;
+    log::debug!("Request: {:?}", data);
+    let mut ctx = state
+        .model
+        .read()
+        .await
+        .context(state.context_options.clone())?;
     ctx.eval(data.messages)?;
-    let mut predict_options = PredictOptions::builder()
-        .penalty_freq(data.frequency_penalty)
-        .penalty_present(data.presence_penalty)
-        .temp(data.temperature)
-        .top_p(data.top_p)
-        .build();
-    if let Some(ss) = data.seed{
-        predict_options.seed = ss;
-    }
-    predict_options.max_len = data.max_completion_tokens;
-    Ok(HttpResponse::Ok().json(serde_json::json!({
-        "id": "chatcmpl",
-        "object": "chat.completion",
-        "created": 1677652288,
-        "model": state.model.read().await.backend.name()?,
-        "system_fingerprint": "fp",
-        "choices": [{
-            "index": 0,
-            "message": {
-                "role": "assistant",
-                "content": ctx.predict(predict_options).predict()?
-            },
-            "logprobs": null,
-            "finish_reason": "stop"
-        }],
-        "usage": {
-            "prompt_tokens": 0,
-            "completion_tokens": 0,
-            "total_tokens": 0,
-            "completion_tokens_details": {
-                "reasoning_tokens": 0
-            }
+    if data.stream{
+        let (tx, mut reciever) = tokio::sync::mpsc::channel(100);
+        let mut predict_options = PredictOptions::builder()
+            .penalty_freq(data.frequency_penalty)
+            .penalty_present(data.presence_penalty)
+            .temp(data.temperature)
+            .top_p(data.top_p)
+            .token_callback(Arc::new(Box::new(move |token| {
+                if let Ok(_) = tx.blocking_send(token){
+                    true
+                } else {
+                    false
+                }
+            })))
+            .build();
+        if let Some(ss) = data.seed {
+            predict_options.seed = ss;
         }
-    })))
+        predict_options.max_len = data.max_completion_tokens;
+        tokio::task::spawn_blocking(move ||{
+            ctx.predict(predict_options).predict()
+        });
+        let model_name = state.model.read().await.backend.name()?.to_string();
+        Ok(HttpResponse::Ok().streaming(async_stream::stream!{
+            let partial_response = serde_json::to_string(&serde_json::json!({
+                "object":"chat.completion.chunk",
+                "model": model_name,
+                "choices":[{
+                    "index":0,
+                    "delta":{
+                        "role":"assistant",
+                        "content":""
+                    },
+                    "finish_reason":null
+                }]}))?;
+            log::debug!("Respose(part): {partial_response}");
+            yield Ok::<Bytes, actix_web::Error>((partial_response + "\n").into_bytes().into());
+            while let Some(ss) = reciever.recv().await{
+            let partial_response = serde_json::to_string(&serde_json::json!({
+                "object":"chat.completion.chunk",
+                "model": model_name,
+                "choices":[{
+                    "index":0,
+                    "delta":{
+                        "content": ss
+                    },
+                    "finish_reason":null
+                }]}))?;
+                log::debug!("Respose(part): {partial_response}");
+                yield Ok::<Bytes, actix_web::Error>((partial_response + "\n").into_bytes().into());
+            }
+            let partial_response = serde_json::to_string(&serde_json::json!({
+                "object":"chat.completion.chunk",
+                "model": model_name,
+                "choices":[{
+                    "index":0,
+                    "delta":{},
+                    "finish_reason":"stop"
+                }]}))?;
+            log::debug!("Respose(part): {partial_response}");
+            yield Ok::<Bytes, actix_web::Error>((partial_response + "\n").into_bytes().into());
+        }).into())
+    } else {
+        let mut predict_options = PredictOptions::builder()
+            .penalty_freq(data.frequency_penalty)
+            .penalty_present(data.presence_penalty)
+            .temp(data.temperature)
+            .top_p(data.top_p)
+            .build();
+        if let Some(ss) = data.seed {
+            predict_options.seed = ss;
+        }
+        predict_options.max_len = data.max_completion_tokens;
+        Ok(HttpResponse::Ok().json(serde_json::json!({
+            "id": "chatcmpl",
+            "object": "chat.completion",
+            "created": 1677652288,
+            "model": state.model.read().await.backend.name()?,
+            "system_fingerprint": "fp",
+            "choices": [{
+                "index": 0,
+                "message": {
+                    "role": "assistant",
+                    "content": ctx.predict(predict_options).predict()?
+                },
+                "logprobs": null,
+                "finish_reason": "stop"
+            }],
+            "usage": {
+                "prompt_tokens": 0,
+                "completion_tokens": 0,
+                "total_tokens": 0,
+                "completion_tokens_details": {
+                    "reasoning_tokens": 0
+                }
+            }
+        })))
+    }
 }
 
 #[cfg(feature = "llama-http")]
@@ -237,25 +310,31 @@ pub struct Server {
     host: IpAddr,
     port: u16,
     model: Model,
-    context_options: ContextOptions
+    context_options: ContextOptions,
+    handle: tokio::sync::Mutex<Option<ServerHandle>>,
 }
 
 #[cfg(feature = "llama-http")]
 impl Server {
-    pub fn new(host: impl Into<IpAddr>, port: u16, model: Model, context_options: ContextOptions) -> Self{
-        Self{
+    pub fn new(
+        host: impl Into<IpAddr>,
+        port: u16,
+        model: Model,
+        context_options: ContextOptions,
+    ) -> Self {
+        Self {
             host: host.into(),
             port,
             model,
-            context_options
+            context_options,
+            handle: tokio::sync::Mutex::new(None),
         }
-
     }
 
-    pub async fn run(self) -> Result<()>{
+    pub async fn run(&mut self) -> Result<()> {
         let mm = Arc::new(RwLock::new(self.model.clone()));
         let context_options = self.context_options.clone();
-        HttpServer::new(move || {
+        let server = HttpServer::new(move || {
             App::new()
                 .app_data(actix_web::web::Data::new(AppState {
                     context_options: context_options.clone(),
@@ -264,12 +343,19 @@ impl Server {
                 .service(complitions)
         })
             .bind((self.host, self.port))?
-            .run().await?;
-            Ok(())
+            .run();
+        (*self.handle.lock().await) = Some(server.handle());
+        tokio::spawn(server);
+        Ok(())
+    }
+
+    pub async fn stop(&mut self) -> Result<()> {
+        if let Some(sh) = self.handle.lock().await.as_ref(){
+            sh.stop(true).await;
+        }
+        Ok(())
     }
 }
-
-
 
 #[cfg(test)]
 #[cfg(feature = "llama")]
@@ -339,11 +425,15 @@ mod test {
         let eval_result = ctx.eval(vec![prompt.try_into().unwrap()]);
         assert!(eval_result.is_ok());
         let answer = ctx
-            .predict(super::options::PredictOptions::builder().token_callback(std::sync::Arc::new(Box::new(|token| {
-            print!("{}", token);
-            std::io::stdout().flush().unwrap();
-            true
-        }))).build())
+            .predict(
+                super::options::PredictOptions::builder()
+                    .token_callback(std::sync::Arc::new(Box::new(|token| {
+                        print!("{}", token);
+                        std::io::stdout().flush().unwrap();
+                        true
+                    })))
+                    .build(),
+            )
             .predict();
         assert!(answer.is_ok());
         let answer = answer.unwrap();
