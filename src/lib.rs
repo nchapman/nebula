@@ -207,11 +207,7 @@ async fn complitions(
             .temp(data.temperature)
             .top_p(data.top_p)
             .token_callback(Arc::new(Box::new(move |token| {
-                if let Ok(_) = tx.blocking_send(token){
-                    true
-                } else {
-                    false
-                }
+                tx.blocking_send(token).is_ok()
             })))
             .build();
         if let Some(ss) = data.seed {
@@ -260,7 +256,7 @@ async fn complitions(
                 }]}))?;
             log::debug!("Respose(part): {partial_response}");
             yield Ok::<Bytes, actix_web::Error>((partial_response + "\n").into_bytes().into());
-        }).into())
+        }))
     } else {
         let mut predict_options = PredictOptions::builder()
             .penalty_freq(data.frequency_penalty)
