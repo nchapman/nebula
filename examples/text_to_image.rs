@@ -30,7 +30,7 @@ fn main() -> anyhow::Result<()> {
         .to_string();
 
     let samples = model.generate(prompt)?;
-    for sample_index in 0..SAMPLES_COUNT {
+    for sample_index in 0..samples.shape().dims()[0] {
         let image = samples.i(sample_index)?;
         let image_filename = format!("test_{}.png", sample_index);
         save_image(&image, image_filename)?;
