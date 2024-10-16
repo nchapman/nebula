@@ -23,6 +23,13 @@ use crate::{
     Result,
 };
 
+#[cfg(feature = "text-to-image")]
+use candle_core::Tensor as CandleTensor;
+#[cfg(feature = "text-to-image")]
+use crate::options::{TextToImageOptions, TextToImageModelType};
+#[cfg(feature = "text-to-image")]
+pub mod text_to_image;
+
 #[cfg(feature = "llama")]
 pub mod llama;
 
@@ -107,4 +114,20 @@ pub fn init_text_to_speech_backend(
     options: TTSOptions,
 ) -> anyhow::Result<impl TextToSpeechBackend> {
     anyhow::Ok(tts::StyleTTSBackend::new(options)?)
+}
+
+#[cfg(feature = "text-to-image")]
+pub trait TextToImageBackend {
+    fn generate(&mut self, prompt: String) -> anyhow::Result<CandleTensor>;
+}
+
+#[cfg(feature = "text-to-image")]
+pub fn init_text_to_image_backend(
+        options: TextToImageOptions
+) -> anyhow::Result<Box<dyn TextToImageBackend>> {
+    match options.model_type {
+        TextToImageModelType::StableDiffusion => anyhow::Ok(Box::new(text_to_image::StableDiffusionBackend::new(options)?)),
+        TextToImageModelType::Wuerstchen => anyhow::Ok(Box::new(text_to_image::WuerstchenBackend::new(options)?)),
+        _ => { panic!("This model type is not implemented yet!") }
+    }
 }

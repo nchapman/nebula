@@ -68,7 +68,7 @@ llama-http = ["llama", "actix-web", "tokio", "async-stream"]
 whisper = ["whisper-rs", "hound", "cpal", "anyhow", "rubato"]
 embeddings = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow", "itertools", "serde_json"]
 tts = ["anyhow", "espeakng-sys", "fancy-regex", "ffi-support", "hound", "once_cell", "punkt", "regex", "rubato", "tch"]
-
+text-to-image = ["candle-core", "candle-transformers", "candle-nn", "candle-examples", "tokenizers", "anyhow"]
 
 [[example]]
 name = "basic"
